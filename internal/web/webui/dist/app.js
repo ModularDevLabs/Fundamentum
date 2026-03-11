@@ -18,6 +18,7 @@ const FEATURE_AUTOMOD = 'automod';
 const FEATURE_REACTION_ROLES = 'reaction_roles';
 const FEATURE_WARNINGS = 'warnings';
 const FEATURE_SCHEDULED = 'scheduled_messages';
+const FEATURE_VERIFICATION = 'verification';
 
 function setModuleBadge(enabled, badgeEl, cardEl) {
   if (!badgeEl || !cardEl) return;
@@ -36,6 +37,7 @@ function syncModuleBadges() {
   const reactionRolesEnabled = qs('#settingsReactionRolesEnabled').value === 'true';
   const warningsEnabled = qs('#settingsWarningsEnabled').value === 'true';
   const scheduledEnabled = qs('#settingsScheduledEnabled').value === 'true';
+  const verificationEnabled = qs('#settingsVerificationEnabled').value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
   setModuleBadge(goodbyeEnabled, qs('#moduleGoodbyeBadge'), qs('#moduleGoodbyeCard'));
   setModuleBadge(auditEnabled, qs('#moduleAuditBadge'), qs('#moduleAuditCard'));
@@ -44,6 +46,7 @@ function syncModuleBadges() {
   setModuleBadge(reactionRolesEnabled, qs('#moduleReactionRolesBadge'), qs('#moduleReactionRolesCard'));
   setModuleBadge(warningsEnabled, qs('#moduleWarningsBadge'), qs('#moduleWarningsCard'));
   setModuleBadge(scheduledEnabled, qs('#moduleScheduledBadge'), qs('#moduleScheduledCard'));
+  setModuleBadge(verificationEnabled, qs('#moduleVerificationBadge'), qs('#moduleVerificationCard'));
 }
 
 const qs = (sel) => document.querySelector(sel);
@@ -244,6 +247,11 @@ async function loadSettings() {
   qs('#settingsWarnQuarantineThreshold').value = cfg.warn_quarantine_threshold || 3;
   qs('#settingsWarnKickThreshold').value = cfg.warn_kick_threshold || 5;
   qs('#settingsScheduledEnabled').value = String(!!flags[FEATURE_SCHEDULED]);
+  qs('#settingsVerificationEnabled').value = String(!!flags[FEATURE_VERIFICATION]);
+  qs('#settingsVerificationChannel').value = cfg.verification_channel_id || '';
+  qs('#settingsVerificationPhrase').value = cfg.verification_phrase || '!verify';
+  qs('#settingsUnverifiedRole').value = cfg.unverified_role_id || '';
+  qs('#settingsVerifiedRole').value = cfg.verified_role_id || '';
   syncModuleBadges();
   await loadInvitePermissionStatus();
   await loadReactionRoleRules();
@@ -651,6 +659,39 @@ async function saveScheduledModule() {
   }
 }
 
+async function saveVerificationModule() {
+  const restore = setBusy(qs('#verificationSave'), 'Saving...');
+  const status = qs('#verificationStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_VERIFICATION]: qs('#settingsVerificationEnabled').value === 'true',
+      },
+      verification_channel_id: qs('#settingsVerificationChannel').value.trim(),
+      verification_phrase: qs('#settingsVerificationPhrase').value.trim(),
+      unverified_role_id: qs('#settingsUnverifiedRole').value.trim(),
+      verified_role_id: qs('#settingsVerifiedRole').value.trim(),
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Verification module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Verification save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
 async function loadScheduledMessages() {
   const table = qs('#scheduledTable');
   if (!table || !state.guildId) return;
@@ -898,6 +939,7 @@ function wireEvents() {
   qs('#reactionRolesSave').onclick = saveReactionRoles;
   qs('#warningsSave').onclick = saveWarningsModule;
   qs('#scheduledSave').onclick = saveScheduledModule;
+  qs('#verificationSave').onclick = saveVerificationModule;
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = addReactionRoleRule;
   qs('#warnRefresh').onclick = () => loadWarnings().catch((err) => showToast(`Warnings load failed: ${err.message}`, 'error'));
@@ -912,6 +954,7 @@ function wireEvents() {
   qs('#settingsReactionRolesEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsWarningsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsScheduledEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsVerificationEnabled').addEventListener('change', syncModuleBadges);
   qs('#memberRefresh').onclick = loadMembers;
   qs('#memberStatus').addEventListener('change', reloadMembersForFilters);
   qs('#memberStatus').addEventListener('input', reloadMembersForFilters);

@@ -73,6 +73,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `reaction_roles=false`
 - `warnings=false`
 - `scheduled_messages=false`
+- `verification=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -206,6 +207,23 @@ Each schedule contains:
 3. `interval_minutes`
 4. `enabled`
 5. `next_run_at` (managed automatically by the worker)
+
+27. `verification_channel_id`
+- UI label: `Verification channel ID` (Verification module)
+- Type: Discord channel ID (string)
+
+28. `verification_phrase`
+- UI label: `Verify phrase` (Verification module)
+- Type: string
+- Default: `!verify`
+
+29. `unverified_role_id`
+- UI label: `Unverified role ID` (Verification module)
+- Type: Discord role ID (string)
+
+30. `verified_role_id`
+- UI label: `Verified role ID (optional)` (Verification module)
+- Type: Discord role ID (string)
 
 ## Advanced Per-Guild Setting (API/DB)
 

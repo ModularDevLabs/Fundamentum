@@ -112,5 +112,8 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.WarnKickThreshold <= 0 {
 		cfg.WarnKickThreshold = def.WarnKickThreshold
 	}
+	if cfg.VerificationPhrase == "" {
+		cfg.VerificationPhrase = def.VerificationPhrase
+	}
 	return cfg
 }

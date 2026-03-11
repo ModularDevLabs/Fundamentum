@@ -31,6 +31,10 @@ type GuildSettings struct {
 	WarningLogChannelID     string          `json:"warning_log_channel_id"`
 	WarnQuarantineThreshold int             `json:"warn_quarantine_threshold"`
 	WarnKickThreshold       int             `json:"warn_kick_threshold"`
+	VerificationChannelID   string          `json:"verification_channel_id"`
+	VerificationPhrase      string          `json:"verification_phrase"`
+	UnverifiedRoleID        string          `json:"unverified_role_id"`
+	VerifiedRoleID          string          `json:"verified_role_id"`
 }
 
 type MemberRow struct {
@@ -105,6 +109,7 @@ const (
 	FeatureReactionRoles   = "reaction_roles"
 	FeatureWarnings        = "warnings"
 	FeatureScheduled       = "scheduled_messages"
+	FeatureVerification    = "verification"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -131,6 +136,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureReactionRoles:   false,
 			FeatureWarnings:        false,
 			FeatureScheduled:       false,
+			FeatureVerification:    false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",
@@ -154,5 +160,6 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		AutoModAction:           "delete_warn",
 		WarnQuarantineThreshold: 3,
 		WarnKickThreshold:       5,
+		VerificationPhrase:      "!verify",
 	}
 }

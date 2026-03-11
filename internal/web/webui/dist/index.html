@@ -33,6 +33,7 @@
         <button data-view="reactionroles">Reaction Roles</button>
         <button data-view="warnings">Warnings</button>
         <button data-view="scheduled">Scheduled</button>
+        <button data-view="verification">Verification</button>
         <button data-view="settings">Settings</button>
       </nav>
       <div class="sidebar-footer">
@@ -607,6 +608,50 @@
               <div>Action</div>
             </div>
             <div id="scheduledTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-verification" class="view">
+        <div class="panel">
+          <div class="panel-header">Verification Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleVerificationCard">
+              <div class="module-head">
+                <div class="module-title">Join Verification</div>
+                <span class="module-badge off" id="moduleVerificationBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Assign an unverified role on join and verify members when they type the phrase in verification channel.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsVerificationEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Verification channel ID
+                  <input id="settingsVerificationChannel" />
+                </label>
+                <label>
+                  Verify phrase
+                  <input id="settingsVerificationPhrase" placeholder="!verify" />
+                </label>
+                <label>
+                  Unverified role ID
+                  <input id="settingsUnverifiedRole" />
+                </label>
+                <label>
+                  Verified role ID (optional)
+                  <input id="settingsVerifiedRole" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="verificationSave" class="primary">Save verification module</button>
+            <span id="verificationStatus" class="status-line"></span>
           </div>
         </div>
       </section>

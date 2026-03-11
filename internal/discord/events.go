@@ -35,6 +35,7 @@ func (s *Service) OnMessageCreate(_ *discordgo.Session, m *discordgo.MessageCrea
 	if err != nil {
 		settings = models.DefaultGuildSettings(m.GuildID)
 	}
+	s.handleVerificationMessage(m, settings)
 	s.handleAutoMod(ctx, m, settings)
 	cutoff := time.Now().AddDate(0, 0, -settings.InactiveDays)
 	_, _ = s.repos.Activity.UpsertActivityIfStale(ctx, m.GuildID, m.Author.ID, m.ChannelID, m.Timestamp, username, globalName, displayName, cutoff)
@@ -58,6 +59,19 @@ func (s *Service) OnGuildMemberAdd(_ *discordgo.Session, m *discordgo.GuildMembe
 			if _, err := s.session.ChannelMessageSend(settings.WelcomeChannelID, content); err != nil {
 				s.logger.Error("welcome message failed guild=%s channel=%s user=%s err=%v", m.GuildID, settings.WelcomeChannelID, m.User.ID, err)
 			}
+		}
+	}
+
+	if settings.FeatureEnabled(models.FeatureVerification) && settings.UnverifiedRoleID != "" {
+		if err := s.session.GuildMemberRoleAdd(m.GuildID, m.User.ID, settings.UnverifiedRoleID); err != nil {
+			s.logger.Error("verification add unverified role failed guild=%s user=%s role=%s err=%v", m.GuildID, m.User.ID, settings.UnverifiedRoleID, err)
+		}
+		if settings.VerificationChannelID != "" {
+			phrase := settings.VerificationPhrase
+			if strings.TrimSpace(phrase) == "" {
+				phrase = "!verify"
+			}
+			_, _ = s.session.ChannelMessageSend(settings.VerificationChannelID, fmt.Sprintf("%s welcome. Type `%s` here to verify.", m.User.Mention(), phrase))
 		}
 	}
 

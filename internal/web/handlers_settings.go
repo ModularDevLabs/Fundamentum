@@ -49,6 +49,10 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			WarningLogChannelID     string          `json:"warning_log_channel_id"`
 			WarnQuarantineThreshold int             `json:"warn_quarantine_threshold"`
 			WarnKickThreshold       int             `json:"warn_kick_threshold"`
+			VerificationChannelID   string          `json:"verification_channel_id"`
+			VerificationPhrase      string          `json:"verification_phrase"`
+			UnverifiedRoleID        string          `json:"unverified_role_id"`
+			VerifiedRoleID          string          `json:"verified_role_id"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -86,6 +90,10 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.WarningLogChannelID = cfg.WarningLogChannelID
 		current.WarnQuarantineThreshold = cfg.WarnQuarantineThreshold
 		current.WarnKickThreshold = cfg.WarnKickThreshold
+		current.VerificationChannelID = cfg.VerificationChannelID
+		current.VerificationPhrase = cfg.VerificationPhrase
+		current.UnverifiedRoleID = cfg.UnverifiedRoleID
+		current.VerifiedRoleID = cfg.VerifiedRoleID
 
 		if err := s.repos.Settings.Upsert(r.Context(), current); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
