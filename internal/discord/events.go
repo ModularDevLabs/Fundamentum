@@ -53,6 +53,7 @@ func (s *Service) OnGuildMemberAdd(_ *discordgo.Session, m *discordgo.GuildMembe
 	if err != nil {
 		return
 	}
+	s.handleAntiRaidOnJoin(ctx, m.GuildID, m.User.ID, settings)
 
 	if settings.FeatureEnabled(models.FeatureWelcomeMessages) && settings.WelcomeChannelID != "" {
 		content := renderMessageTemplate(settings.WelcomeMessage, m.User.Mention(), s.guildName(m.GuildID))

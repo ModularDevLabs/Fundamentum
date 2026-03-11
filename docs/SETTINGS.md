@@ -75,6 +75,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `scheduled_messages=false`
 - `verification=false`
 - `tickets=false`
+- `anti_raid=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -257,6 +258,33 @@ Each schedule contains:
 - Type: integer
 - Default: `0`
 - When greater than zero, open tickets with no recent ticket-channel activity for this many minutes are auto-closed.
+
+38. `anti_raid_join_threshold`
+- UI label: `Join threshold` (Anti-Raid module)
+- Type: integer
+- Default: `6`
+
+39. `anti_raid_window_seconds`
+- UI label: `Window (seconds)` (Anti-Raid module)
+- Type: integer
+- Default: `30`
+
+40. `anti_raid_cooldown_minutes`
+- UI label: `Cooldown (minutes)` (Anti-Raid module)
+- Type: integer
+- Default: `10`
+
+41. `anti_raid_action`
+- UI label: `Action` (Anti-Raid module)
+- Type: enum
+- Default: `verification_only`
+- Options:
+- `verification_only`
+- `quarantine`
+
+42. `anti_raid_alert_channel_id`
+- UI label: `Alert channel ID` (Anti-Raid module)
+- Type: Discord channel ID (string)
 
 ## Advanced Per-Guild Setting (API/DB)
 

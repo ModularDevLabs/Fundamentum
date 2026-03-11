@@ -20,6 +20,7 @@ const FEATURE_WARNINGS = 'warnings';
 const FEATURE_SCHEDULED = 'scheduled_messages';
 const FEATURE_VERIFICATION = 'verification';
 const FEATURE_TICKETS = 'tickets';
+const FEATURE_ANTI_RAID = 'anti_raid';
 
 function setModuleBadge(enabled, badgeEl, cardEl) {
   if (!badgeEl || !cardEl) return;
@@ -40,6 +41,7 @@ function syncModuleBadges() {
   const scheduledEnabled = qs('#settingsScheduledEnabled').value === 'true';
   const verificationEnabled = qs('#settingsVerificationEnabled').value === 'true';
   const ticketsEnabled = qs('#settingsTicketsEnabled').value === 'true';
+  const antiRaidEnabled = qs('#settingsAntiRaidEnabled').value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
   setModuleBadge(goodbyeEnabled, qs('#moduleGoodbyeBadge'), qs('#moduleGoodbyeCard'));
   setModuleBadge(auditEnabled, qs('#moduleAuditBadge'), qs('#moduleAuditCard'));
@@ -50,6 +52,7 @@ function syncModuleBadges() {
   setModuleBadge(scheduledEnabled, qs('#moduleScheduledBadge'), qs('#moduleScheduledCard'));
   setModuleBadge(verificationEnabled, qs('#moduleVerificationBadge'), qs('#moduleVerificationCard'));
   setModuleBadge(ticketsEnabled, qs('#moduleTicketsBadge'), qs('#moduleTicketsCard'));
+  setModuleBadge(antiRaidEnabled, qs('#moduleAntiRaidBadge'), qs('#moduleAntiRaidCard'));
 }
 
 const qs = (sel) => document.querySelector(sel);
@@ -263,6 +266,12 @@ async function loadSettings() {
   qs('#settingsTicketOpenPhrase').value = cfg.ticket_open_phrase || '!ticket';
   qs('#settingsTicketClosePhrase').value = cfg.ticket_close_phrase || '!close';
   qs('#settingsTicketAutoClose').value = cfg.ticket_auto_close_minutes || 0;
+  qs('#settingsAntiRaidEnabled').value = String(!!flags[FEATURE_ANTI_RAID]);
+  qs('#settingsAntiRaidThreshold').value = cfg.anti_raid_join_threshold || 6;
+  qs('#settingsAntiRaidWindow').value = cfg.anti_raid_window_seconds || 30;
+  qs('#settingsAntiRaidCooldown').value = cfg.anti_raid_cooldown_minutes || 10;
+  qs('#settingsAntiRaidAction').value = cfg.anti_raid_action || 'verification_only';
+  qs('#settingsAntiRaidAlertChannel').value = cfg.anti_raid_alert_channel_id || '';
   syncModuleBadges();
   await loadInvitePermissionStatus();
   await loadReactionRoleRules();
@@ -828,6 +837,40 @@ async function loadTicketTranscript(id) {
   qs('#ticketTranscript').textContent = res.transcript || '';
 }
 
+async function saveAntiRaidModule() {
+  const restore = setBusy(qs('#antiRaidSave'), 'Saving...');
+  const status = qs('#antiRaidStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_ANTI_RAID]: qs('#settingsAntiRaidEnabled').value === 'true',
+      },
+      anti_raid_join_threshold: parseInt(qs('#settingsAntiRaidThreshold').value, 10),
+      anti_raid_window_seconds: parseInt(qs('#settingsAntiRaidWindow').value, 10),
+      anti_raid_cooldown_minutes: parseInt(qs('#settingsAntiRaidCooldown').value, 10),
+      anti_raid_action: qs('#settingsAntiRaidAction').value,
+      anti_raid_alert_channel_id: qs('#settingsAntiRaidAlertChannel').value.trim(),
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Anti-raid module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Anti-raid save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
 function formatDate(value) {
   if (!value) return '—';
   const date = new Date(value);
@@ -1025,6 +1068,7 @@ function wireEvents() {
   qs('#scheduledSave').onclick = saveScheduledModule;
   qs('#verificationSave').onclick = saveVerificationModule;
   qs('#ticketsSave').onclick = saveTicketsModule;
+  qs('#antiRaidSave').onclick = saveAntiRaidModule;
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = addReactionRoleRule;
   qs('#warnRefresh').onclick = () => loadWarnings().catch((err) => showToast(`Warnings load failed: ${err.message}`, 'error'));
@@ -1043,6 +1087,7 @@ function wireEvents() {
   qs('#settingsScheduledEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsVerificationEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsTicketsEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsAntiRaidEnabled').addEventListener('change', syncModuleBadges);
   qs('#memberRefresh').onclick = loadMembers;
   qs('#memberStatus').addEventListener('change', reloadMembersForFilters);
   qs('#memberStatus').addEventListener('input', reloadMembersForFilters);

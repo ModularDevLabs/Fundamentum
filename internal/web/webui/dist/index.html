@@ -35,6 +35,7 @@
         <button data-view="scheduled">Scheduled</button>
         <button data-view="verification">Verification</button>
         <button data-view="tickets">Tickets</button>
+        <button data-view="antiraid">Anti-Raid</button>
         <button data-view="settings">Settings</button>
       </nav>
       <div class="sidebar-footer">
@@ -734,6 +735,57 @@
             <div id="ticketsTable"></div>
           </div>
           <pre id="ticketTranscript" class="event-log" style="margin-top:12px; min-height:120px; max-height:240px;"></pre>
+        </div>
+      </section>
+
+      <section id="view-antiraid" class="view">
+        <div class="panel">
+          <div class="panel-header">Anti-Raid Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleAntiRaidCard">
+              <div class="module-head">
+                <div class="module-title">Anti-Raid</div>
+                <span class="module-badge off" id="moduleAntiRaidBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Detect join spikes and apply temporary protection policies.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsAntiRaidEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Join threshold
+                  <input id="settingsAntiRaidThreshold" type="number" min="1" />
+                </label>
+                <label>
+                  Window (seconds)
+                  <input id="settingsAntiRaidWindow" type="number" min="1" />
+                </label>
+                <label>
+                  Cooldown (minutes)
+                  <input id="settingsAntiRaidCooldown" type="number" min="1" />
+                </label>
+                <label>
+                  Action
+                  <select id="settingsAntiRaidAction">
+                    <option value="verification_only">Verification Only</option>
+                    <option value="quarantine">Quarantine New Joins</option>
+                  </select>
+                </label>
+                <label>
+                  Alert channel ID
+                  <input id="settingsAntiRaidAlertChannel" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="antiRaidSave" class="primary">Save anti-raid module</button>
+            <span id="antiRaidStatus" class="status-line"></span>
+          </div>
         </div>
       </section>
     </main>

@@ -491,7 +491,7 @@ button[disabled] {
 @media (max-width: 980px) {
   .app { grid-template-columns: 1fr; }
   .sidebar { flex-direction: row; align-items: center; gap: 16px; overflow-x: auto; }
-  .nav { grid-auto-flow: column; grid-template-columns: repeat(15, auto); }
+  .nav { grid-auto-flow: column; grid-template-columns: repeat(16, auto); }
   .content { padding: 20px; }
   .stats { grid-template-columns: 1fr; }
   .filters { grid-template-columns: 1fr; }

@@ -42,6 +42,11 @@ type GuildSettings struct {
 	TicketOpenPhrase        string          `json:"ticket_open_phrase"`
 	TicketClosePhrase       string          `json:"ticket_close_phrase"`
 	TicketAutoCloseMinutes  int             `json:"ticket_auto_close_minutes"`
+	AntiRaidJoinThreshold   int             `json:"anti_raid_join_threshold"`
+	AntiRaidWindowSeconds   int             `json:"anti_raid_window_seconds"`
+	AntiRaidCooldownMinutes int             `json:"anti_raid_cooldown_minutes"`
+	AntiRaidAction          string          `json:"anti_raid_action"`
+	AntiRaidAlertChannelID  string          `json:"anti_raid_alert_channel_id"`
 }
 
 type MemberRow struct {
@@ -139,6 +144,7 @@ const (
 	FeatureScheduled       = "scheduled_messages"
 	FeatureVerification    = "verification"
 	FeatureTickets         = "tickets"
+	FeatureAntiRaid        = "anti_raid"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -167,6 +173,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureScheduled:       false,
 			FeatureVerification:    false,
 			FeatureTickets:         false,
+			FeatureAntiRaid:        false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",
@@ -182,6 +189,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			"action_success",
 			"action_failed",
 			"automod_action",
+			"anti_raid_trigger",
 		},
 		AutoModBlockLinks:       true,
 		AutoModBlockedWords:     []string{},
@@ -194,5 +202,9 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		TicketOpenPhrase:        "!ticket",
 		TicketClosePhrase:       "!close",
 		TicketAutoCloseMinutes:  0,
+		AntiRaidJoinThreshold:   6,
+		AntiRaidWindowSeconds:   30,
+		AntiRaidCooldownMinutes: 10,
+		AntiRaidAction:          "verification_only",
 	}
 }

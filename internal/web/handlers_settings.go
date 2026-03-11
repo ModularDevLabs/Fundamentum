@@ -60,6 +60,11 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			TicketOpenPhrase        string          `json:"ticket_open_phrase"`
 			TicketClosePhrase       string          `json:"ticket_close_phrase"`
 			TicketAutoCloseMinutes  int             `json:"ticket_auto_close_minutes"`
+			AntiRaidJoinThreshold   int             `json:"anti_raid_join_threshold"`
+			AntiRaidWindowSeconds   int             `json:"anti_raid_window_seconds"`
+			AntiRaidCooldownMinutes int             `json:"anti_raid_cooldown_minutes"`
+			AntiRaidAction          string          `json:"anti_raid_action"`
+			AntiRaidAlertChannelID  string          `json:"anti_raid_alert_channel_id"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -108,6 +113,11 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.TicketOpenPhrase = cfg.TicketOpenPhrase
 		current.TicketClosePhrase = cfg.TicketClosePhrase
 		current.TicketAutoCloseMinutes = cfg.TicketAutoCloseMinutes
+		current.AntiRaidJoinThreshold = cfg.AntiRaidJoinThreshold
+		current.AntiRaidWindowSeconds = cfg.AntiRaidWindowSeconds
+		current.AntiRaidCooldownMinutes = cfg.AntiRaidCooldownMinutes
+		current.AntiRaidAction = cfg.AntiRaidAction
+		current.AntiRaidAlertChannelID = cfg.AntiRaidAlertChannelID
 
 		if err := s.repos.Settings.Upsert(r.Context(), current); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

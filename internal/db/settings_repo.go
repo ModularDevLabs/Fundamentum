@@ -124,5 +124,17 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.TicketAutoCloseMinutes < 0 {
 		cfg.TicketAutoCloseMinutes = 0
 	}
+	if cfg.AntiRaidJoinThreshold <= 0 {
+		cfg.AntiRaidJoinThreshold = def.AntiRaidJoinThreshold
+	}
+	if cfg.AntiRaidWindowSeconds <= 0 {
+		cfg.AntiRaidWindowSeconds = def.AntiRaidWindowSeconds
+	}
+	if cfg.AntiRaidCooldownMinutes <= 0 {
+		cfg.AntiRaidCooldownMinutes = def.AntiRaidCooldownMinutes
+	}
+	if cfg.AntiRaidAction == "" {
+		cfg.AntiRaidAction = def.AntiRaidAction
+	}
 	return cfg
 }

@@ -30,6 +30,9 @@ type Service struct {
 	invitesCache map[string]map[string]int
 	automodMu    sync.Mutex
 	automodSeen  map[string][]time.Time
+	raidMu       sync.Mutex
+	raidJoins    map[string][]time.Time
+	raidUntil    map[string]time.Time
 }
 
 func NewService(token string, repos *db.Repositories, logger Logger) (*Service, error) {
@@ -47,6 +50,8 @@ func NewService(token string, repos *db.Repositories, logger Logger) (*Service, 
 		actionWakeCh: make(chan struct{}, 1),
 		invitesCache: make(map[string]map[string]int),
 		automodSeen:  make(map[string][]time.Time),
+		raidJoins:    make(map[string][]time.Time),
+		raidUntil:    make(map[string]time.Time),
 	}
 
 	s.AddHandler(svc.onReady)
