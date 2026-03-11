@@ -60,6 +60,6 @@ For a complete settings catalog (dashboard fields, enums, defaults, and advanced
 - Actions view shows target usernames/display names and preserves names even after the user leaves (for queued/history rows).
 - Events view exposes recent raw logs to help troubleshoot failed actions/backfills.
 - Quarantine uses a `Quarantined` role and `quarantine-readme` channel (auto-created on startup and when the bot joins a new guild, if missing).
-- Feature modules are configured per guild via dedicated dashboard menus (Welcome, Goodbye, Audit Log, Invite Tracker, AutoMod, Reaction Roles, Warnings, Scheduled, Verification, Tickets, Anti-Raid) backed by per-guild `feature_flags`.
+- Feature modules are configured per guild via dedicated dashboard menus (Welcome, Goodbye, Audit Log, Invite Tracker, AutoMod, Reaction Roles, Warnings, Scheduled, Verification, Tickets, Anti-Raid, Analytics) backed by per-guild `feature_flags`.
 - Tickets include transcript viewing/export in the dashboard and optional inactivity auto-close.
 - AutoMod supports ignored channels/roles to exempt moderation or staff workflows.

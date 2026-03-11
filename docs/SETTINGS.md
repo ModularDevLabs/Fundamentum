@@ -76,6 +76,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `verification=false`
 - `tickets=false`
 - `anti_raid=false`
+- `analytics=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -285,6 +286,15 @@ Each schedule contains:
 42. `anti_raid_alert_channel_id`
 - UI label: `Alert channel ID` (Anti-Raid module)
 - Type: Discord channel ID (string)
+
+43. `analytics_channel_id`
+- UI label: `Report channel ID` (Analytics module)
+- Type: Discord channel ID (string)
+
+44. `analytics_interval_days`
+- UI label: `Interval (days)` (Analytics module)
+- Type: integer
+- Default: `7`
 
 ## Advanced Per-Guild Setting (API/DB)
 

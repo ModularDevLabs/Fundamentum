@@ -47,6 +47,8 @@ type GuildSettings struct {
 	AntiRaidCooldownMinutes int             `json:"anti_raid_cooldown_minutes"`
 	AntiRaidAction          string          `json:"anti_raid_action"`
 	AntiRaidAlertChannelID  string          `json:"anti_raid_alert_channel_id"`
+	AnalyticsChannelID      string          `json:"analytics_channel_id"`
+	AnalyticsIntervalDays   int             `json:"analytics_interval_days"`
 }
 
 type MemberRow struct {
@@ -145,6 +147,7 @@ const (
 	FeatureVerification    = "verification"
 	FeatureTickets         = "tickets"
 	FeatureAntiRaid        = "anti_raid"
+	FeatureAnalytics       = "analytics"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -174,6 +177,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureVerification:    false,
 			FeatureTickets:         false,
 			FeatureAntiRaid:        false,
+			FeatureAnalytics:       false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",
@@ -206,5 +210,6 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		AntiRaidWindowSeconds:   30,
 		AntiRaidCooldownMinutes: 10,
 		AntiRaidAction:          "verification_only",
+		AnalyticsIntervalDays:   7,
 	}
 }

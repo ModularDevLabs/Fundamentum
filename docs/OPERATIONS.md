@@ -20,7 +20,7 @@ Stop: `Ctrl+C`
 - **Members**: Quarantined users are visually highlighted and labeled with a `Quarantined` badge.
 - **Events**: Shows raw process logs (INFO/DEBUG/ERROR) for troubleshooting actions and backfill.
 - **Settings**: Update inactivity days, backfill days, and quarantine behavior.
-- **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid**: Each module has its own menu and save action, and settings are per-guild.
+- **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics**: Each module has its own menu and save action, and settings are per-guild.
 - **Invite Tracker**: Includes a built-in permission check panel for `Manage Server` capability in the selected guild.
 - **AutoMod**: Supports ignored channels and ignored roles to exempt staff/private workflows.
 - **Reaction Roles**: Add rules mapping `(channel_id, message_id, emoji) -> role_id`; role can be removed on unreact.
@@ -31,6 +31,7 @@ Stop: `Ctrl+C`
 - **Tickets**: Transcript can be viewed from the dashboard and is included in ticket-log messages on close.
 - **Tickets**: Optional inactivity auto-close runs continuously based on `ticket_auto_close_minutes`.
 - **Anti-Raid**: Monitors join spikes and applies a temporary protection action (`verification_only` or `quarantine`) during cooldown.
+- **Analytics**: Periodic report worker posts moderation/activity summaries to configured channel.
 - Full field-by-field settings reference: `docs/SETTINGS.md`.
 
 ## Activity tracking lifecycle

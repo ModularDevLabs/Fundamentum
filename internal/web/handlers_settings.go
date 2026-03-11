@@ -65,6 +65,8 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			AntiRaidCooldownMinutes int             `json:"anti_raid_cooldown_minutes"`
 			AntiRaidAction          string          `json:"anti_raid_action"`
 			AntiRaidAlertChannelID  string          `json:"anti_raid_alert_channel_id"`
+			AnalyticsChannelID      string          `json:"analytics_channel_id"`
+			AnalyticsIntervalDays   int             `json:"analytics_interval_days"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -118,6 +120,8 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.AntiRaidCooldownMinutes = cfg.AntiRaidCooldownMinutes
 		current.AntiRaidAction = cfg.AntiRaidAction
 		current.AntiRaidAlertChannelID = cfg.AntiRaidAlertChannelID
+		current.AnalyticsChannelID = cfg.AnalyticsChannelID
+		current.AnalyticsIntervalDays = cfg.AnalyticsIntervalDays
 
 		if err := s.repos.Settings.Upsert(r.Context(), current); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

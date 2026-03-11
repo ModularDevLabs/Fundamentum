@@ -54,3 +54,14 @@ func (r *WarningsRepo) ListByGuild(ctx context.Context, guildID string, limit in
 	}
 	return out, rows.Err()
 }
+
+func (r *WarningsRepo) CountSince(ctx context.Context, guildID string, since time.Time) (int, error) {
+	row := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM warnings WHERE guild_id = ? AND created_at >= ?`,
+		guildID, since.UTC().Format(time.RFC3339),
+	)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}

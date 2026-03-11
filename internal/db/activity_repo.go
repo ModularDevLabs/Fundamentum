@@ -150,3 +150,23 @@ func (r *ActivityRepo) ListMembersAll(ctx context.Context, guildID string) ([]mo
 	}
 	return out, rows.Err()
 }
+
+func (r *ActivityRepo) CountTracked(ctx context.Context, guildID string) (int, error) {
+	row := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity WHERE guild_id = ?`, guildID)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+func (r *ActivityRepo) CountInactiveBefore(ctx context.Context, guildID string, cutoff time.Time) (int, error) {
+	row := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity WHERE guild_id = ? AND last_message_at < ?`,
+		guildID, cutoff.UTC().Format(time.RFC3339),
+	)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}

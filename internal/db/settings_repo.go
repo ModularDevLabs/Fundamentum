@@ -136,5 +136,8 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.AntiRaidAction == "" {
 		cfg.AntiRaidAction = def.AntiRaidAction
 	}
+	if cfg.AnalyticsIntervalDays <= 0 {
+		cfg.AnalyticsIntervalDays = def.AnalyticsIntervalDays
+	}
 	return cfg
 }

@@ -96,3 +96,18 @@ func (r *ActionsRepo) NextQueued(ctx context.Context) (models.ActionRow, bool, e
 	out.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
 	return out, true, nil
 }
+
+func (r *ActionsRepo) CountSince(ctx context.Context, guildID string, since time.Time, status string) (int, error) {
+	query := `SELECT COUNT(*) FROM actions WHERE guild_id = ? AND created_at >= ?`
+	args := []any{guildID, since.UTC().Format(time.RFC3339)}
+	if status != "" {
+		query += " AND status = ?"
+		args = append(args, status)
+	}
+	row := r.db.QueryRowContext(ctx, query, args...)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}

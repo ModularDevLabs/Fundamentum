@@ -36,6 +36,7 @@
         <button data-view="verification">Verification</button>
         <button data-view="tickets">Tickets</button>
         <button data-view="antiraid">Anti-Raid</button>
+        <button data-view="analytics">Analytics</button>
         <button data-view="settings">Settings</button>
       </nav>
       <div class="sidebar-footer">
@@ -785,6 +786,42 @@
           <div class="panel-actions">
             <button id="antiRaidSave" class="primary">Save anti-raid module</button>
             <span id="antiRaidStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-analytics" class="view">
+        <div class="panel">
+          <div class="panel-header">Analytics Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleAnalyticsCard">
+              <div class="module-head">
+                <div class="module-title">Analytics Reports</div>
+                <span class="module-badge off" id="moduleAnalyticsBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Post periodic summary reports for moderation and activity metrics.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsAnalyticsEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Report channel ID
+                  <input id="settingsAnalyticsChannel" />
+                </label>
+                <label>
+                  Interval (days)
+                  <input id="settingsAnalyticsIntervalDays" type="number" min="1" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="analyticsSave" class="primary">Save analytics module</button>
+            <span id="analyticsStatus" class="status-line"></span>
           </div>
         </div>
       </section>

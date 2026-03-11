@@ -152,6 +152,26 @@ LIMIT ?`, guildID, before.UTC().Format(time.RFC3339), limit)
 	return out, rows.Err()
 }
 
+func (r *TicketsRepo) CountByStatus(ctx context.Context, guildID, status string) (int, error) {
+	row := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM tickets WHERE guild_id = ? AND status = ?`, guildID, status)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+func (r *TicketsRepo) CountCreatedSince(ctx context.Context, guildID string, since time.Time) (int, error) {
+	row := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM tickets WHERE guild_id = ? AND created_at >= ?`,
+		guildID, since.UTC().Format(time.RFC3339),
+	)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
 func (r *TicketsRepo) GetByID(ctx context.Context, guildID string, id int64) (models.TicketRow, bool, error) {
 	row := r.db.QueryRowContext(ctx, `SELECT id, guild_id, channel_id, creator_user_id, subject, status, created_at, closed_at
 		FROM tickets WHERE guild_id = ? AND id = ?`, guildID, id)
