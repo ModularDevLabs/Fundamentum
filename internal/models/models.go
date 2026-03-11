@@ -49,6 +49,9 @@ type GuildSettings struct {
 	AntiRaidAlertChannelID  string          `json:"anti_raid_alert_channel_id"`
 	AnalyticsChannelID      string          `json:"analytics_channel_id"`
 	AnalyticsIntervalDays   int             `json:"analytics_interval_days"`
+	AppealsChannelID        string          `json:"appeals_channel_id"`
+	AppealsLogChannelID     string          `json:"appeals_log_channel_id"`
+	AppealsOpenPhrase       string          `json:"appeals_open_phrase"`
 }
 
 type MemberRow struct {
@@ -130,6 +133,18 @@ type TicketMessageRow struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+type AppealRow struct {
+	ID         int64      `json:"id"`
+	GuildID    string     `json:"guild_id"`
+	UserID     string     `json:"user_id"`
+	Reason     string     `json:"reason"`
+	Status     string     `json:"status"`
+	Resolution string     `json:"resolution"`
+	ReviewedBy string     `json:"reviewed_by"`
+	CreatedAt  time.Time  `json:"created_at"`
+	ReviewedAt *time.Time `json:"reviewed_at,omitempty"`
+}
+
 type GuildInfo struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -148,6 +163,7 @@ const (
 	FeatureTickets         = "tickets"
 	FeatureAntiRaid        = "anti_raid"
 	FeatureAnalytics       = "analytics"
+	FeatureAppeals         = "appeals"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -178,6 +194,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureTickets:         false,
 			FeatureAntiRaid:        false,
 			FeatureAnalytics:       false,
+			FeatureAppeals:         false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",
@@ -211,5 +228,6 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		AntiRaidCooldownMinutes: 10,
 		AntiRaidAction:          "verification_only",
 		AnalyticsIntervalDays:   7,
+		AppealsOpenPhrase:       "!appeal",
 	}
 }

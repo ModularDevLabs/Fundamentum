@@ -22,6 +22,7 @@ const FEATURE_VERIFICATION = 'verification';
 const FEATURE_TICKETS = 'tickets';
 const FEATURE_ANTI_RAID = 'anti_raid';
 const FEATURE_ANALYTICS = 'analytics';
+const FEATURE_APPEALS = 'appeals';
 
 function setModuleBadge(enabled, badgeEl, cardEl) {
   if (!badgeEl || !cardEl) return;
@@ -44,6 +45,7 @@ function syncModuleBadges() {
   const ticketsEnabled = qs('#settingsTicketsEnabled').value === 'true';
   const antiRaidEnabled = qs('#settingsAntiRaidEnabled').value === 'true';
   const analyticsEnabled = qs('#settingsAnalyticsEnabled').value === 'true';
+  const appealsEnabled = qs('#settingsAppealsEnabled').value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
   setModuleBadge(goodbyeEnabled, qs('#moduleGoodbyeBadge'), qs('#moduleGoodbyeCard'));
   setModuleBadge(auditEnabled, qs('#moduleAuditBadge'), qs('#moduleAuditCard'));
@@ -56,6 +58,7 @@ function syncModuleBadges() {
   setModuleBadge(ticketsEnabled, qs('#moduleTicketsBadge'), qs('#moduleTicketsCard'));
   setModuleBadge(antiRaidEnabled, qs('#moduleAntiRaidBadge'), qs('#moduleAntiRaidCard'));
   setModuleBadge(analyticsEnabled, qs('#moduleAnalyticsBadge'), qs('#moduleAnalyticsCard'));
+  setModuleBadge(appealsEnabled, qs('#moduleAppealsBadge'), qs('#moduleAppealsCard'));
 }
 
 const qs = (sel) => document.querySelector(sel);
@@ -278,12 +281,17 @@ async function loadSettings() {
   qs('#settingsAnalyticsEnabled').value = String(!!flags[FEATURE_ANALYTICS]);
   qs('#settingsAnalyticsChannel').value = cfg.analytics_channel_id || '';
   qs('#settingsAnalyticsIntervalDays').value = cfg.analytics_interval_days || 7;
+  qs('#settingsAppealsEnabled').value = String(!!flags[FEATURE_APPEALS]);
+  qs('#settingsAppealsChannel').value = cfg.appeals_channel_id || '';
+  qs('#settingsAppealsLogChannel').value = cfg.appeals_log_channel_id || '';
+  qs('#settingsAppealsPhrase').value = cfg.appeals_open_phrase || '!appeal';
   syncModuleBadges();
   await loadInvitePermissionStatus();
   await loadReactionRoleRules();
   await loadWarnings();
   await loadScheduledMessages();
   await loadTickets();
+  await loadAppeals();
 }
 
 async function loadInvitePermissionStatus() {
@@ -908,6 +916,71 @@ async function saveAnalyticsModule() {
   }
 }
 
+async function saveAppealsModule() {
+  const restore = setBusy(qs('#appealsSave'), 'Saving...');
+  const status = qs('#appealsStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_APPEALS]: qs('#settingsAppealsEnabled').value === 'true',
+      },
+      appeals_channel_id: qs('#settingsAppealsChannel').value.trim(),
+      appeals_log_channel_id: qs('#settingsAppealsLogChannel').value.trim(),
+      appeals_open_phrase: qs('#settingsAppealsPhrase').value.trim(),
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Appeals module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Appeals save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
+async function loadAppeals() {
+  const table = qs('#appealsTable');
+  if (!table || !state.guildId) return;
+  const status = qs('#appealStatusFilter')?.value || '';
+  const rows = (await apiFetch(`/api/modules/appeals?guild_id=${state.guildId}&status=${encodeURIComponent(status)}`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row appeal-row';
+    div.innerHTML = `
+      <div>${row.id}</div>
+      <div>${row.user_id}</div>
+      <div>${row.reason || ''}</div>
+      <div>${row.status}</div>
+      <div>${formatDate(row.created_at)}</div>
+      <div>
+        ${row.status === 'open' ? `<button class="ghost" data-appeal-resolve="${row.id}">Resolve</button>` : ''}
+      </div>
+    `;
+    table.appendChild(div);
+  });
+}
+
+async function resolveAppeal(id) {
+  if (!id) return;
+  const resolution = prompt('Resolution notes (optional):') || '';
+  await apiFetch(`/api/modules/appeals/${id}/resolve?guild_id=${state.guildId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resolution }),
+  });
+}
+
 function formatDate(value) {
   if (!value) return '—';
   const date = new Date(value);
@@ -1107,6 +1180,7 @@ function wireEvents() {
   qs('#ticketsSave').onclick = saveTicketsModule;
   qs('#antiRaidSave').onclick = saveAntiRaidModule;
   qs('#analyticsSave').onclick = saveAnalyticsModule;
+  qs('#appealsSave').onclick = saveAppealsModule;
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = addReactionRoleRule;
   qs('#warnRefresh').onclick = () => loadWarnings().catch((err) => showToast(`Warnings load failed: ${err.message}`, 'error'));
@@ -1115,6 +1189,8 @@ function wireEvents() {
   qs('#schedAdd').onclick = addScheduledMessage;
   qs('#ticketsRefresh').onclick = () => loadTickets().catch((err) => showToast(`Tickets load failed: ${err.message}`, 'error'));
   qs('#ticketStatusFilter').addEventListener('change', () => loadTickets().catch((err) => showToast(`Tickets load failed: ${err.message}`, 'error')));
+  qs('#appealsRefresh').onclick = () => loadAppeals().catch((err) => showToast(`Appeals load failed: ${err.message}`, 'error'));
+  qs('#appealStatusFilter').addEventListener('change', () => loadAppeals().catch((err) => showToast(`Appeals load failed: ${err.message}`, 'error')));
   qs('#settingsWelcomeEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsGoodbyeEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAuditEnabled').addEventListener('change', syncModuleBadges);
@@ -1127,6 +1203,7 @@ function wireEvents() {
   qs('#settingsTicketsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAntiRaidEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAnalyticsEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsAppealsEnabled').addEventListener('change', syncModuleBadges);
   qs('#memberRefresh').onclick = loadMembers;
   qs('#memberStatus').addEventListener('change', reloadMembersForFilters);
   qs('#memberStatus').addEventListener('input', reloadMembersForFilters);
@@ -1193,6 +1270,18 @@ function wireEvents() {
     }
   });
 
+  qs('#appealsTable').addEventListener('click', async (e) => {
+    const resolveBtn = e.target.closest('button[data-appeal-resolve]');
+    if (!resolveBtn) return;
+    try {
+      await resolveAppeal(resolveBtn.getAttribute('data-appeal-resolve'));
+      showToast('Appeal resolved.');
+      await loadAppeals();
+    } catch (err) {
+      showToast(`Resolve appeal failed: ${err.message}`, 'error');
+    }
+  });
+
   qs('#membersTable').addEventListener('change', (e) => {
     const checkbox = e.target.closest('.member-select');
     if (!checkbox) return;
@@ -1254,6 +1343,7 @@ async function refreshAll() {
   await loadWarnings();
   await loadScheduledMessages();
   await loadTickets();
+  await loadAppeals();
 }
 
 async function bootstrap() {

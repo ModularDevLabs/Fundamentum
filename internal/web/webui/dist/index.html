@@ -37,6 +37,7 @@
         <button data-view="tickets">Tickets</button>
         <button data-view="antiraid">Anti-Raid</button>
         <button data-view="analytics">Analytics</button>
+        <button data-view="appeals">Appeals</button>
         <button data-view="settings">Settings</button>
       </nav>
       <div class="sidebar-footer">
@@ -822,6 +823,69 @@
           <div class="panel-actions">
             <button id="analyticsSave" class="primary">Save analytics module</button>
             <span id="analyticsStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-appeals" class="view">
+        <div class="panel">
+          <div class="panel-header">Appeals Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleAppealsCard">
+              <div class="module-head">
+                <div class="module-title">Appeals Intake</div>
+                <span class="module-badge off" id="moduleAppealsBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Users submit appeals by sending an open phrase in the configured appeals channel.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsAppealsEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Appeals channel ID
+                  <input id="settingsAppealsChannel" />
+                </label>
+                <label>
+                  Log channel ID (optional)
+                  <input id="settingsAppealsLogChannel" />
+                </label>
+                <label>
+                  Open phrase
+                  <input id="settingsAppealsPhrase" placeholder="!appeal" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="appealsSave" class="primary">Save appeals module</button>
+            <span id="appealsStatus" class="status-line"></span>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Appeals</div>
+          <div class="filters">
+            <select id="appealStatusFilter">
+              <option value="">All</option>
+              <option value="open">Open</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <div></div>
+            <button id="appealsRefresh" class="ghost">Refresh</button>
+          </div>
+          <div class="table">
+            <div class="table-row table-header appeal-row">
+              <div>ID</div>
+              <div>User</div>
+              <div>Reason</div>
+              <div>Status</div>
+              <div>Created</div>
+              <div>Action</div>
+            </div>
+            <div id="appealsTable"></div>
           </div>
         </div>
       </section>

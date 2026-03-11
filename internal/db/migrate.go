@@ -100,6 +100,19 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket
 		ON ticket_messages(ticket_id, created_at);`,
+		`CREATE TABLE IF NOT EXISTS appeals (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			reason TEXT NOT NULL,
+			status TEXT NOT NULL,
+			resolution TEXT,
+			reviewed_by TEXT,
+			created_at TEXT NOT NULL,
+			reviewed_at TEXT
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_appeals_guild_status
+		ON appeals(guild_id, status, created_at);`,
 	}
 
 	for _, stmt := range stmts {

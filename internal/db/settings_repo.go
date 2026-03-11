@@ -139,5 +139,8 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.AnalyticsIntervalDays <= 0 {
 		cfg.AnalyticsIntervalDays = def.AnalyticsIntervalDays
 	}
+	if cfg.AppealsOpenPhrase == "" {
+		cfg.AppealsOpenPhrase = def.AppealsOpenPhrase
+	}
 	return cfg
 }

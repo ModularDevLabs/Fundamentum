@@ -67,6 +67,9 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			AntiRaidAlertChannelID  string          `json:"anti_raid_alert_channel_id"`
 			AnalyticsChannelID      string          `json:"analytics_channel_id"`
 			AnalyticsIntervalDays   int             `json:"analytics_interval_days"`
+			AppealsChannelID        string          `json:"appeals_channel_id"`
+			AppealsLogChannelID     string          `json:"appeals_log_channel_id"`
+			AppealsOpenPhrase       string          `json:"appeals_open_phrase"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -122,6 +125,9 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.AntiRaidAlertChannelID = cfg.AntiRaidAlertChannelID
 		current.AnalyticsChannelID = cfg.AnalyticsChannelID
 		current.AnalyticsIntervalDays = cfg.AnalyticsIntervalDays
+		current.AppealsChannelID = cfg.AppealsChannelID
+		current.AppealsLogChannelID = cfg.AppealsLogChannelID
+		current.AppealsOpenPhrase = cfg.AppealsOpenPhrase
 
 		if err := s.repos.Settings.Upsert(r.Context(), current); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

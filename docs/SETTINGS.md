@@ -77,6 +77,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `tickets=false`
 - `anti_raid=false`
 - `analytics=false`
+- `appeals=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -295,6 +296,19 @@ Each schedule contains:
 - UI label: `Interval (days)` (Analytics module)
 - Type: integer
 - Default: `7`
+
+45. `appeals_channel_id`
+- UI label: `Appeals channel ID` (Appeals module)
+- Type: Discord channel ID (string)
+
+46. `appeals_log_channel_id`
+- UI label: `Log channel ID (optional)` (Appeals module)
+- Type: Discord channel ID (string)
+
+47. `appeals_open_phrase`
+- UI label: `Open phrase` (Appeals module)
+- Type: string
+- Default: `!appeal`
 
 ## Advanced Per-Guild Setting (API/DB)
 

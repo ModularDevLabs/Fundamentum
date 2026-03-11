@@ -31,6 +31,8 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/modules/scheduled/messages/", s.handleScheduledMessageDetail)
 	api.HandleFunc("/api/modules/tickets", s.handleTickets)
 	api.HandleFunc("/api/modules/tickets/", s.handleTicketDetail)
+	api.HandleFunc("/api/modules/appeals", s.handleAppeals)
+	api.HandleFunc("/api/modules/appeals/", s.handleAppealDetail)
 
 	mux.Handle("/api/", s.authMiddleware(api))
 
