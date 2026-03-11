@@ -26,21 +26,23 @@ The bot needs the following minimum permissions for the current feature set:
 - Manage Channels
 - Kick Members
 - Manage Server (required for Invite Tracker to resolve invite usage)
+- Manage Messages (required for AutoMod message deletion)
 
 These map to the following permission bit values in the Discord docs: `KICK_MEMBERS (1<<1)`, `MANAGE_CHANNELS (1<<4)`, `VIEW_CHANNEL (1<<10)`, `SEND_MESSAGES (1<<11)`, `READ_MESSAGE_HISTORY (1<<16)`, `MANAGE_ROLES (1<<28)`.
+Also used by modules: `MANAGE_GUILD (1<<5)` and `MANAGE_MESSAGES (1<<13)`.
 
 ### Combined permissions integer
 
 With `SEND_MESSAGES` included:
 
 ```
-268504082
+268512306
 ```
 
 Without `SEND_MESSAGES`:
 
 ```
-268502034
+268510258
 ```
 
 ## 4) One-click invite
@@ -48,7 +50,7 @@ Without `SEND_MESSAGES`:
 Replace `CLIENT_ID` with your application client ID and open the URL:
 
 ```
-https://discord.com/oauth2/authorize?client_id=CLIENT_ID&scope=bot&permissions=268504082
+https://discord.com/oauth2/authorize?client_id=CLIENT_ID&scope=bot&permissions=268512306
 ```
 
 ## 5) Role hierarchy

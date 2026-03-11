@@ -85,6 +85,26 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	}
 	if len(cfg.AuditLogEventTypes) == 0 {
 		cfg.AuditLogEventTypes = append([]string{}, def.AuditLogEventTypes...)
+	} else {
+		seen := map[string]struct{}{}
+		for _, t := range cfg.AuditLogEventTypes {
+			seen[t] = struct{}{}
+		}
+		for _, t := range def.AuditLogEventTypes {
+			if _, ok := seen[t]; ok {
+				continue
+			}
+			cfg.AuditLogEventTypes = append(cfg.AuditLogEventTypes, t)
+		}
+	}
+	if cfg.AutoModDupWindowSec <= 0 {
+		cfg.AutoModDupWindowSec = def.AutoModDupWindowSec
+	}
+	if cfg.AutoModDupThreshold <= 0 {
+		cfg.AutoModDupThreshold = def.AutoModDupThreshold
+	}
+	if cfg.AutoModAction == "" {
+		cfg.AutoModAction = def.AutoModAction
 	}
 	return cfg
 }

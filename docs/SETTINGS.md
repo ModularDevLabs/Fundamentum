@@ -69,6 +69,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `goodbye_messages=false`
 - `audit_log_stream=false`
 - `invite_tracker=false`
+- `automod=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -116,11 +117,52 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `channel_delete`
 - `action_success`
 - `action_failed`
+- `automod_action`
 
 16. `invite_log_channel_id`
 - UI label: `Log channel ID` (Invite Tracker module)
 - Type: Discord channel ID (string)
 - Used when `feature_flags.invite_tracker=true`.
+
+17. `automod_block_links`
+- UI label: `Block links` (AutoMod module)
+- Type: boolean
+- Default: `true`
+
+18. `automod_blocked_words`
+- UI label: `Blocked words (comma)` (AutoMod module)
+- Type: list of strings
+- Default: empty list
+
+19. `automod_dup_window_sec`
+- UI label: `Duplicate window (seconds)` (AutoMod module)
+- Type: integer
+- Default: `20`
+
+20. `automod_dup_threshold`
+- UI label: `Duplicate threshold` (AutoMod module)
+- Type: integer
+- Default: `3`
+- When the same member sends the same content this many times inside the window, AutoMod triggers.
+
+21. `automod_action`
+- UI label: `Action` (AutoMod module)
+- Type: enum
+- Default: `delete_warn`
+- Options:
+- `delete_warn`
+- `delete_only`
+- `delete_quarantine`
+
+22. `automod_ignore_channel_ids`
+- UI label: `Ignored channel IDs (comma)` (AutoMod module)
+- Type: list of Discord channel IDs
+- Messages in these channels are ignored by AutoMod.
+
+23. `automod_ignore_role_ids`
+- UI label: `Ignored role IDs (comma)` (AutoMod module)
+- Type: list of Discord role IDs
+- Members with any ignored role are skipped by AutoMod.
 
 ## Advanced Per-Guild Setting (API/DB)
 

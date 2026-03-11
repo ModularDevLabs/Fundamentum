@@ -22,23 +22,30 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, cfg)
 	case http.MethodPut:
 		var cfg struct {
-			InactiveDays         int             `json:"inactive_days"`
-			BackfillDays         int             `json:"backfill_days"`
-			QuarantineRoleID     string          `json:"quarantine_role_id"`
-			ReadmeChannelID      string          `json:"readme_channel_id"`
-			AllowlistRoleIDs     []string        `json:"allowlist_role_ids"`
-			AdminUserPolicy      string          `json:"admin_user_policy"`
-			BackfillConcurrency  int             `json:"backfill_concurrency"`
-			BackfillIncludeTypes []string        `json:"backfill_include_types"`
-			SafeQuarantineMode   bool            `json:"safe_quarantine_mode"`
-			FeatureFlags         map[string]bool `json:"feature_flags"`
-			WelcomeChannelID     string          `json:"welcome_channel_id"`
-			WelcomeMessage       string          `json:"welcome_message"`
-			GoodbyeChannelID     string          `json:"goodbye_channel_id"`
-			GoodbyeMessage       string          `json:"goodbye_message"`
-			AuditLogChannelID    string          `json:"audit_log_channel_id"`
-			AuditLogEventTypes   []string        `json:"audit_log_event_types"`
-			InviteLogChannelID   string          `json:"invite_log_channel_id"`
+			InactiveDays            int             `json:"inactive_days"`
+			BackfillDays            int             `json:"backfill_days"`
+			QuarantineRoleID        string          `json:"quarantine_role_id"`
+			ReadmeChannelID         string          `json:"readme_channel_id"`
+			AllowlistRoleIDs        []string        `json:"allowlist_role_ids"`
+			AdminUserPolicy         string          `json:"admin_user_policy"`
+			BackfillConcurrency     int             `json:"backfill_concurrency"`
+			BackfillIncludeTypes    []string        `json:"backfill_include_types"`
+			SafeQuarantineMode      bool            `json:"safe_quarantine_mode"`
+			FeatureFlags            map[string]bool `json:"feature_flags"`
+			WelcomeChannelID        string          `json:"welcome_channel_id"`
+			WelcomeMessage          string          `json:"welcome_message"`
+			GoodbyeChannelID        string          `json:"goodbye_channel_id"`
+			GoodbyeMessage          string          `json:"goodbye_message"`
+			AuditLogChannelID       string          `json:"audit_log_channel_id"`
+			AuditLogEventTypes      []string        `json:"audit_log_event_types"`
+			InviteLogChannelID      string          `json:"invite_log_channel_id"`
+			AutoModBlockLinks       bool            `json:"automod_block_links"`
+			AutoModBlockedWords     []string        `json:"automod_blocked_words"`
+			AutoModDupWindowSec     int             `json:"automod_dup_window_sec"`
+			AutoModDupThreshold     int             `json:"automod_dup_threshold"`
+			AutoModAction           string          `json:"automod_action"`
+			AutoModIgnoreChannelIDs []string        `json:"automod_ignore_channel_ids"`
+			AutoModIgnoreRoleIDs    []string        `json:"automod_ignore_role_ids"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -66,6 +73,13 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.AuditLogChannelID = cfg.AuditLogChannelID
 		current.AuditLogEventTypes = cfg.AuditLogEventTypes
 		current.InviteLogChannelID = cfg.InviteLogChannelID
+		current.AutoModBlockLinks = cfg.AutoModBlockLinks
+		current.AutoModBlockedWords = cfg.AutoModBlockedWords
+		current.AutoModDupWindowSec = cfg.AutoModDupWindowSec
+		current.AutoModDupThreshold = cfg.AutoModDupThreshold
+		current.AutoModAction = cfg.AutoModAction
+		current.AutoModIgnoreChannelIDs = cfg.AutoModIgnoreChannelIDs
+		current.AutoModIgnoreRoleIDs = cfg.AutoModIgnoreRoleIDs
 
 		if err := s.repos.Settings.Upsert(r.Context(), current); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

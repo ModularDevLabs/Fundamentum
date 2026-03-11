@@ -35,6 +35,7 @@ func (s *Service) OnMessageCreate(_ *discordgo.Session, m *discordgo.MessageCrea
 	if err != nil {
 		settings = models.DefaultGuildSettings(m.GuildID)
 	}
+	s.handleAutoMod(ctx, m, settings)
 	cutoff := time.Now().AddDate(0, 0, -settings.InactiveDays)
 	_, _ = s.repos.Activity.UpsertActivityIfStale(ctx, m.GuildID, m.Author.ID, m.ChannelID, m.Timestamp, username, globalName, displayName, cutoff)
 }

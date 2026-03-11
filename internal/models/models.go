@@ -3,24 +3,31 @@ package models
 import "time"
 
 type GuildSettings struct {
-	GuildID              string          `json:"guild_id"`
-	InactiveDays         int             `json:"inactive_days"`
-	BackfillDays         int             `json:"backfill_days"`
-	QuarantineRoleID     string          `json:"quarantine_role_id"`
-	ReadmeChannelID      string          `json:"readme_channel_id"`
-	AllowlistRoleIDs     []string        `json:"allowlist_role_ids"`
-	AdminUserPolicy      string          `json:"admin_user_policy"`
-	BackfillConcurrency  int             `json:"backfill_concurrency"`
-	BackfillIncludeTypes []string        `json:"backfill_include_types"`
-	SafeQuarantineMode   bool            `json:"safe_quarantine_mode"`
-	FeatureFlags         map[string]bool `json:"feature_flags"`
-	WelcomeChannelID     string          `json:"welcome_channel_id"`
-	WelcomeMessage       string          `json:"welcome_message"`
-	GoodbyeChannelID     string          `json:"goodbye_channel_id"`
-	GoodbyeMessage       string          `json:"goodbye_message"`
-	AuditLogChannelID    string          `json:"audit_log_channel_id"`
-	AuditLogEventTypes   []string        `json:"audit_log_event_types"`
-	InviteLogChannelID   string          `json:"invite_log_channel_id"`
+	GuildID                 string          `json:"guild_id"`
+	InactiveDays            int             `json:"inactive_days"`
+	BackfillDays            int             `json:"backfill_days"`
+	QuarantineRoleID        string          `json:"quarantine_role_id"`
+	ReadmeChannelID         string          `json:"readme_channel_id"`
+	AllowlistRoleIDs        []string        `json:"allowlist_role_ids"`
+	AdminUserPolicy         string          `json:"admin_user_policy"`
+	BackfillConcurrency     int             `json:"backfill_concurrency"`
+	BackfillIncludeTypes    []string        `json:"backfill_include_types"`
+	SafeQuarantineMode      bool            `json:"safe_quarantine_mode"`
+	FeatureFlags            map[string]bool `json:"feature_flags"`
+	WelcomeChannelID        string          `json:"welcome_channel_id"`
+	WelcomeMessage          string          `json:"welcome_message"`
+	GoodbyeChannelID        string          `json:"goodbye_channel_id"`
+	GoodbyeMessage          string          `json:"goodbye_message"`
+	AuditLogChannelID       string          `json:"audit_log_channel_id"`
+	AuditLogEventTypes      []string        `json:"audit_log_event_types"`
+	InviteLogChannelID      string          `json:"invite_log_channel_id"`
+	AutoModBlockLinks       bool            `json:"automod_block_links"`
+	AutoModBlockedWords     []string        `json:"automod_blocked_words"`
+	AutoModDupWindowSec     int             `json:"automod_dup_window_sec"`
+	AutoModDupThreshold     int             `json:"automod_dup_threshold"`
+	AutoModAction           string          `json:"automod_action"`
+	AutoModIgnoreChannelIDs []string        `json:"automod_ignore_channel_ids"`
+	AutoModIgnoreRoleIDs    []string        `json:"automod_ignore_role_ids"`
 }
 
 type MemberRow struct {
@@ -59,6 +66,7 @@ const (
 	FeatureGoodbyeMessages = "goodbye_messages"
 	FeatureAuditLogStream  = "audit_log_stream"
 	FeatureInviteTracker   = "invite_tracker"
+	FeatureAutoMod         = "automod"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -81,6 +89,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureGoodbyeMessages: false,
 			FeatureAuditLogStream:  false,
 			FeatureInviteTracker:   false,
+			FeatureAutoMod:         false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",
@@ -95,6 +104,12 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			"channel_delete",
 			"action_success",
 			"action_failed",
+			"automod_action",
 		},
+		AutoModBlockLinks:   true,
+		AutoModBlockedWords: []string{},
+		AutoModDupWindowSec: 20,
+		AutoModDupThreshold: 3,
+		AutoModAction:       "delete_warn",
 	}
 }
