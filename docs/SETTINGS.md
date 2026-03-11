@@ -74,6 +74,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `warnings=false`
 - `scheduled_messages=false`
 - `verification=false`
+- `tickets=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -224,6 +225,32 @@ Each schedule contains:
 30. `verified_role_id`
 - UI label: `Verified role ID (optional)` (Verification module)
 - Type: Discord role ID (string)
+
+31. `ticket_inbox_channel_id`
+- UI label: `Inbox channel ID` (Tickets module)
+- Type: Discord channel ID (string)
+
+32. `ticket_category_id`
+- UI label: `Category ID` (Tickets module)
+- Type: Discord category channel ID (string)
+
+33. `ticket_support_role_id`
+- UI label: `Support role ID` (Tickets module)
+- Type: Discord role ID (string)
+
+34. `ticket_log_channel_id`
+- UI label: `Log channel ID` (Tickets module)
+- Type: Discord channel ID (string)
+
+35. `ticket_open_phrase`
+- UI label: `Open phrase` (Tickets module)
+- Type: string
+- Default: `!ticket`
+
+36. `ticket_close_phrase`
+- UI label: `Close phrase` (Tickets module)
+- Type: string
+- Default: `!close`
 
 ## Advanced Per-Guild Setting (API/DB)
 

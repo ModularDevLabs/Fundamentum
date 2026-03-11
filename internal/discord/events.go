@@ -35,6 +35,7 @@ func (s *Service) OnMessageCreate(_ *discordgo.Session, m *discordgo.MessageCrea
 	if err != nil {
 		settings = models.DefaultGuildSettings(m.GuildID)
 	}
+	s.handleTicketMessage(ctx, m, settings)
 	s.handleVerificationMessage(m, settings)
 	s.handleAutoMod(ctx, m, settings)
 	cutoff := time.Now().AddDate(0, 0, -settings.InactiveDays)

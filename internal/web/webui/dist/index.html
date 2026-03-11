@@ -34,6 +34,7 @@
         <button data-view="warnings">Warnings</button>
         <button data-view="scheduled">Scheduled</button>
         <button data-view="verification">Verification</button>
+        <button data-view="tickets">Tickets</button>
         <button data-view="settings">Settings</button>
       </nav>
       <div class="sidebar-footer">
@@ -652,6 +653,81 @@
           <div class="panel-actions">
             <button id="verificationSave" class="primary">Save verification module</button>
             <span id="verificationStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-tickets" class="view">
+        <div class="panel">
+          <div class="panel-header">Tickets Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleTicketsCard">
+              <div class="module-head">
+                <div class="module-title">Support Tickets</div>
+                <span class="module-badge off" id="moduleTicketsBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Users open tickets by sending the open phrase in the inbox channel. Bot creates a private channel under the configured category.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsTicketsEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Inbox channel ID
+                  <input id="settingsTicketInbox" />
+                </label>
+                <label>
+                  Category ID
+                  <input id="settingsTicketCategory" />
+                </label>
+                <label>
+                  Support role ID
+                  <input id="settingsTicketSupportRole" />
+                </label>
+                <label>
+                  Log channel ID
+                  <input id="settingsTicketLogChannel" />
+                </label>
+                <label>
+                  Open phrase
+                  <input id="settingsTicketOpenPhrase" placeholder="!ticket" />
+                </label>
+                <label>
+                  Close phrase
+                  <input id="settingsTicketClosePhrase" placeholder="!close" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="ticketsSave" class="primary">Save tickets module</button>
+            <span id="ticketsStatus" class="status-line"></span>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Tickets</div>
+          <div class="filters">
+            <select id="ticketStatusFilter">
+              <option value="">All</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+            </select>
+            <button id="ticketsRefresh" class="ghost">Refresh</button>
+          </div>
+          <div class="table">
+            <div class="table-row table-header ticket-row">
+              <div>ID</div>
+              <div>Creator</div>
+              <div>Channel</div>
+              <div>Subject</div>
+              <div>Status</div>
+              <div>Created</div>
+              <div>Action</div>
+            </div>
+            <div id="ticketsTable"></div>
           </div>
         </div>
       </section>

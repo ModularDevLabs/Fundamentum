@@ -115,5 +115,11 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.VerificationPhrase == "" {
 		cfg.VerificationPhrase = def.VerificationPhrase
 	}
+	if cfg.TicketOpenPhrase == "" {
+		cfg.TicketOpenPhrase = def.TicketOpenPhrase
+	}
+	if cfg.TicketClosePhrase == "" {
+		cfg.TicketClosePhrase = def.TicketClosePhrase
+	}
 	return cfg
 }

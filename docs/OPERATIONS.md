@@ -20,13 +20,14 @@ Stop: `Ctrl+C`
 - **Members**: Quarantined users are visually highlighted and labeled with a `Quarantined` badge.
 - **Events**: Shows raw process logs (INFO/DEBUG/ERROR) for troubleshooting actions and backfill.
 - **Settings**: Update inactivity days, backfill days, and quarantine behavior.
-- **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification**: Each module has its own menu and save action, and settings are per-guild.
+- **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets**: Each module has its own menu and save action, and settings are per-guild.
 - **Invite Tracker**: Includes a built-in permission check panel for `Manage Server` capability in the selected guild.
 - **AutoMod**: Supports ignored channels and ignored roles to exempt staff/private workflows.
 - **Reaction Roles**: Add rules mapping `(channel_id, message_id, emoji) -> role_id`; role can be removed on unreact.
 - **Warnings**: Issue warnings from the dashboard; thresholds can auto-queue quarantine/kick actions.
 - **Scheduled**: Configure recurring messages with channel, content, and interval minutes.
 - **Verification**: On join, assigns unverified role and prompts user to type verification phrase in the configured channel.
+- **Tickets**: Users open tickets from inbox phrase; bot creates private channels and supports close command/dashboard close.
 - Full field-by-field settings reference: `docs/SETTINGS.md`.
 
 ## Activity tracking lifecycle

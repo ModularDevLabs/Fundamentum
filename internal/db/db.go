@@ -42,6 +42,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 		ReactionRoles: &ReactionRolesRepo{db: db},
 		Warnings:      &WarningsRepo{db: db},
 		Scheduled:     &ScheduledMessagesRepo{db: db},
+		Tickets:       &TicketsRepo{db: db},
 	}
 }
 
@@ -53,4 +54,5 @@ type Repositories struct {
 	ReactionRoles *ReactionRolesRepo
 	Warnings      *WarningsRepo
 	Scheduled     *ScheduledMessagesRepo
+	Tickets       *TicketsRepo
 }

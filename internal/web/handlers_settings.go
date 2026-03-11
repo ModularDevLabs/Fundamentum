@@ -53,6 +53,12 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			VerificationPhrase      string          `json:"verification_phrase"`
 			UnverifiedRoleID        string          `json:"unverified_role_id"`
 			VerifiedRoleID          string          `json:"verified_role_id"`
+			TicketInboxChannelID    string          `json:"ticket_inbox_channel_id"`
+			TicketCategoryID        string          `json:"ticket_category_id"`
+			TicketSupportRoleID     string          `json:"ticket_support_role_id"`
+			TicketLogChannelID      string          `json:"ticket_log_channel_id"`
+			TicketOpenPhrase        string          `json:"ticket_open_phrase"`
+			TicketClosePhrase       string          `json:"ticket_close_phrase"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -94,6 +100,12 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.VerificationPhrase = cfg.VerificationPhrase
 		current.UnverifiedRoleID = cfg.UnverifiedRoleID
 		current.VerifiedRoleID = cfg.VerifiedRoleID
+		current.TicketInboxChannelID = cfg.TicketInboxChannelID
+		current.TicketCategoryID = cfg.TicketCategoryID
+		current.TicketSupportRoleID = cfg.TicketSupportRoleID
+		current.TicketLogChannelID = cfg.TicketLogChannelID
+		current.TicketOpenPhrase = cfg.TicketOpenPhrase
+		current.TicketClosePhrase = cfg.TicketClosePhrase
 
 		if err := s.repos.Settings.Upsert(r.Context(), current); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

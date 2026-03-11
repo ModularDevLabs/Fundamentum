@@ -35,6 +35,12 @@ type GuildSettings struct {
 	VerificationPhrase      string          `json:"verification_phrase"`
 	UnverifiedRoleID        string          `json:"unverified_role_id"`
 	VerifiedRoleID          string          `json:"verified_role_id"`
+	TicketInboxChannelID    string          `json:"ticket_inbox_channel_id"`
+	TicketCategoryID        string          `json:"ticket_category_id"`
+	TicketSupportRoleID     string          `json:"ticket_support_role_id"`
+	TicketLogChannelID      string          `json:"ticket_log_channel_id"`
+	TicketOpenPhrase        string          `json:"ticket_open_phrase"`
+	TicketClosePhrase       string          `json:"ticket_close_phrase"`
 }
 
 type MemberRow struct {
@@ -95,6 +101,17 @@ type ScheduledMessageRow struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
+type TicketRow struct {
+	ID            int64      `json:"id"`
+	GuildID       string     `json:"guild_id"`
+	ChannelID     string     `json:"channel_id"`
+	CreatorUserID string     `json:"creator_user_id"`
+	Subject       string     `json:"subject"`
+	Status        string     `json:"status"`
+	CreatedAt     time.Time  `json:"created_at"`
+	ClosedAt      *time.Time `json:"closed_at,omitempty"`
+}
+
 type GuildInfo struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -110,6 +127,7 @@ const (
 	FeatureWarnings        = "warnings"
 	FeatureScheduled       = "scheduled_messages"
 	FeatureVerification    = "verification"
+	FeatureTickets         = "tickets"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -137,6 +155,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureWarnings:        false,
 			FeatureScheduled:       false,
 			FeatureVerification:    false,
+			FeatureTickets:         false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",
@@ -161,5 +180,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		WarnQuarantineThreshold: 3,
 		WarnKickThreshold:       5,
 		VerificationPhrase:      "!verify",
+		TicketOpenPhrase:        "!ticket",
+		TicketClosePhrase:       "!close",
 	}
 }

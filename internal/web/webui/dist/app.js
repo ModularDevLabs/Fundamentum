@@ -19,6 +19,7 @@ const FEATURE_REACTION_ROLES = 'reaction_roles';
 const FEATURE_WARNINGS = 'warnings';
 const FEATURE_SCHEDULED = 'scheduled_messages';
 const FEATURE_VERIFICATION = 'verification';
+const FEATURE_TICKETS = 'tickets';
 
 function setModuleBadge(enabled, badgeEl, cardEl) {
   if (!badgeEl || !cardEl) return;
@@ -38,6 +39,7 @@ function syncModuleBadges() {
   const warningsEnabled = qs('#settingsWarningsEnabled').value === 'true';
   const scheduledEnabled = qs('#settingsScheduledEnabled').value === 'true';
   const verificationEnabled = qs('#settingsVerificationEnabled').value === 'true';
+  const ticketsEnabled = qs('#settingsTicketsEnabled').value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
   setModuleBadge(goodbyeEnabled, qs('#moduleGoodbyeBadge'), qs('#moduleGoodbyeCard'));
   setModuleBadge(auditEnabled, qs('#moduleAuditBadge'), qs('#moduleAuditCard'));
@@ -47,6 +49,7 @@ function syncModuleBadges() {
   setModuleBadge(warningsEnabled, qs('#moduleWarningsBadge'), qs('#moduleWarningsCard'));
   setModuleBadge(scheduledEnabled, qs('#moduleScheduledBadge'), qs('#moduleScheduledCard'));
   setModuleBadge(verificationEnabled, qs('#moduleVerificationBadge'), qs('#moduleVerificationCard'));
+  setModuleBadge(ticketsEnabled, qs('#moduleTicketsBadge'), qs('#moduleTicketsCard'));
 }
 
 const qs = (sel) => document.querySelector(sel);
@@ -252,11 +255,19 @@ async function loadSettings() {
   qs('#settingsVerificationPhrase').value = cfg.verification_phrase || '!verify';
   qs('#settingsUnverifiedRole').value = cfg.unverified_role_id || '';
   qs('#settingsVerifiedRole').value = cfg.verified_role_id || '';
+  qs('#settingsTicketsEnabled').value = String(!!flags[FEATURE_TICKETS]);
+  qs('#settingsTicketInbox').value = cfg.ticket_inbox_channel_id || '';
+  qs('#settingsTicketCategory').value = cfg.ticket_category_id || '';
+  qs('#settingsTicketSupportRole').value = cfg.ticket_support_role_id || '';
+  qs('#settingsTicketLogChannel').value = cfg.ticket_log_channel_id || '';
+  qs('#settingsTicketOpenPhrase').value = cfg.ticket_open_phrase || '!ticket';
+  qs('#settingsTicketClosePhrase').value = cfg.ticket_close_phrase || '!close';
   syncModuleBadges();
   await loadInvitePermissionStatus();
   await loadReactionRoleRules();
   await loadWarnings();
   await loadScheduledMessages();
+  await loadTickets();
 }
 
 async function loadInvitePermissionStatus() {
@@ -744,6 +755,68 @@ async function deleteScheduledMessage(id) {
   await apiFetch(`/api/modules/scheduled/messages/${id}?guild_id=${state.guildId}`, { method: 'DELETE' });
 }
 
+async function saveTicketsModule() {
+  const restore = setBusy(qs('#ticketsSave'), 'Saving...');
+  const status = qs('#ticketsStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_TICKETS]: qs('#settingsTicketsEnabled').value === 'true',
+      },
+      ticket_inbox_channel_id: qs('#settingsTicketInbox').value.trim(),
+      ticket_category_id: qs('#settingsTicketCategory').value.trim(),
+      ticket_support_role_id: qs('#settingsTicketSupportRole').value.trim(),
+      ticket_log_channel_id: qs('#settingsTicketLogChannel').value.trim(),
+      ticket_open_phrase: qs('#settingsTicketOpenPhrase').value.trim(),
+      ticket_close_phrase: qs('#settingsTicketClosePhrase').value.trim(),
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Tickets module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Tickets save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
+async function loadTickets() {
+  const table = qs('#ticketsTable');
+  if (!table || !state.guildId) return;
+  const status = qs('#ticketStatusFilter')?.value || '';
+  const rows = (await apiFetch(`/api/modules/tickets?guild_id=${state.guildId}&status=${encodeURIComponent(status)}`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row ticket-row';
+    div.innerHTML = `
+      <div>${row.id}</div>
+      <div>${row.creator_user_id}</div>
+      <div>${row.channel_id}</div>
+      <div>${row.subject || ''}</div>
+      <div>${row.status}</div>
+      <div>${formatDate(row.created_at)}</div>
+      <div>${row.status === 'open' ? `<button class="ghost" data-ticket-close="${row.id}">Close</button>` : ''}</div>
+    `;
+    table.appendChild(div);
+  });
+}
+
+async function closeTicket(id) {
+  if (!id) return;
+  await apiFetch(`/api/modules/tickets/${id}/close?guild_id=${state.guildId}`, { method: 'POST' });
+}
+
 function formatDate(value) {
   if (!value) return '—';
   const date = new Date(value);
@@ -940,12 +1013,15 @@ function wireEvents() {
   qs('#warningsSave').onclick = saveWarningsModule;
   qs('#scheduledSave').onclick = saveScheduledModule;
   qs('#verificationSave').onclick = saveVerificationModule;
+  qs('#ticketsSave').onclick = saveTicketsModule;
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = addReactionRoleRule;
   qs('#warnRefresh').onclick = () => loadWarnings().catch((err) => showToast(`Warnings load failed: ${err.message}`, 'error'));
   qs('#warnIssue').onclick = issueWarning;
   qs('#schedRefresh').onclick = () => loadScheduledMessages().catch((err) => showToast(`Schedules load failed: ${err.message}`, 'error'));
   qs('#schedAdd').onclick = addScheduledMessage;
+  qs('#ticketsRefresh').onclick = () => loadTickets().catch((err) => showToast(`Tickets load failed: ${err.message}`, 'error'));
+  qs('#ticketStatusFilter').addEventListener('change', () => loadTickets().catch((err) => showToast(`Tickets load failed: ${err.message}`, 'error')));
   qs('#settingsWelcomeEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsGoodbyeEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAuditEnabled').addEventListener('change', syncModuleBadges);
@@ -955,6 +1031,7 @@ function wireEvents() {
   qs('#settingsWarningsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsScheduledEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsVerificationEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsTicketsEnabled').addEventListener('change', syncModuleBadges);
   qs('#memberRefresh').onclick = loadMembers;
   qs('#memberStatus').addEventListener('change', reloadMembersForFilters);
   qs('#memberStatus').addEventListener('input', reloadMembersForFilters);
@@ -996,6 +1073,18 @@ function wireEvents() {
       await loadScheduledMessages();
     } catch (err) {
       showToast(`Delete schedule failed: ${err.message}`, 'error');
+    }
+  });
+
+  qs('#ticketsTable').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-ticket-close]');
+    if (!btn) return;
+    try {
+      await closeTicket(btn.getAttribute('data-ticket-close'));
+      showToast('Ticket closed.');
+      await loadTickets();
+    } catch (err) {
+      showToast(`Close ticket failed: ${err.message}`, 'error');
     }
   });
 
@@ -1059,6 +1148,7 @@ async function refreshAll() {
   await loadReactionRoleRules();
   await loadWarnings();
   await loadScheduledMessages();
+  await loadTickets();
 }
 
 async function bootstrap() {

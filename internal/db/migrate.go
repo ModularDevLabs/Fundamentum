@@ -77,6 +77,18 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_scheduled_due
 		ON scheduled_messages(enabled, next_run_at);`,
+		`CREATE TABLE IF NOT EXISTS tickets (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			channel_id TEXT NOT NULL,
+			creator_user_id TEXT NOT NULL,
+			subject TEXT,
+			status TEXT NOT NULL,
+			created_at TEXT NOT NULL,
+			closed_at TEXT
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_guild_status
+		ON tickets(guild_id, status, created_at);`,
 	}
 
 	for _, stmt := range stmts {
