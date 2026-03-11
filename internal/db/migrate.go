@@ -42,6 +42,18 @@ func Migrate(db *sql.DB) error {
 			updated_at TEXT NOT NULL,
 			PRIMARY KEY (guild_id, channel_id)
 		);`,
+		`CREATE TABLE IF NOT EXISTS reaction_role_rules (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			channel_id TEXT NOT NULL,
+			message_id TEXT NOT NULL,
+			emoji TEXT NOT NULL,
+			role_id TEXT NOT NULL,
+			remove_on_unreact INTEGER NOT NULL DEFAULT 1,
+			created_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_reaction_rules_guild
+		ON reaction_role_rules(guild_id, message_id);`,
 	}
 
 	for _, stmt := range stmts {

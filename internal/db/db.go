@@ -35,16 +35,18 @@ func Open(path string) (*sql.DB, error) {
 
 func NewRepositories(db *sql.DB) *Repositories {
 	return &Repositories{
-		Activity: &ActivityRepo{db: db},
-		Actions:  &ActionsRepo{db: db},
-		Settings: &SettingsRepo{db: db},
-		Backfill: &BackfillRepo{db: db},
+		Activity:      &ActivityRepo{db: db},
+		Actions:       &ActionsRepo{db: db},
+		Settings:      &SettingsRepo{db: db},
+		Backfill:      &BackfillRepo{db: db},
+		ReactionRoles: &ReactionRolesRepo{db: db},
 	}
 }
 
 type Repositories struct {
-	Activity *ActivityRepo
-	Actions  *ActionsRepo
-	Settings *SettingsRepo
-	Backfill *BackfillRepo
+	Activity      *ActivityRepo
+	Actions       *ActionsRepo
+	Settings      *SettingsRepo
+	Backfill      *BackfillRepo
+	ReactionRoles *ReactionRolesRepo
 }

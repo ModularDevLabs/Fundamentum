@@ -56,6 +56,17 @@ type ActionRow struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
+type ReactionRoleRule struct {
+	ID              int64     `json:"id"`
+	GuildID         string    `json:"guild_id"`
+	ChannelID       string    `json:"channel_id"`
+	MessageID       string    `json:"message_id"`
+	Emoji           string    `json:"emoji"`
+	RoleID          string    `json:"role_id"`
+	RemoveOnUnreact bool      `json:"remove_on_unreact"`
+	CreatedAt       time.Time `json:"created_at"`
+}
+
 type GuildInfo struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -67,6 +78,7 @@ const (
 	FeatureAuditLogStream  = "audit_log_stream"
 	FeatureInviteTracker   = "invite_tracker"
 	FeatureAutoMod         = "automod"
+	FeatureReactionRoles   = "reaction_roles"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -90,6 +102,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureAuditLogStream:  false,
 			FeatureInviteTracker:   false,
 			FeatureAutoMod:         false,
+			FeatureReactionRoles:   false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",

@@ -2,6 +2,8 @@ DiscordBot.md
 .modbot.config.json
 modbot
 dist/
+!internal/web/webui/dist/
+!internal/web/webui/dist/*
 modbot.sqlite
 modbot.sqlite-shm
 modbot.sqlite-wal

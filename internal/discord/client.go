@@ -38,7 +38,7 @@ func NewService(token string, repos *db.Repositories, logger Logger) (*Service, 
 		return nil, err
 	}
 
-	s.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMembers | discordgo.IntentsGuildMessages | discordgo.IntentsMessageContent
+	s.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMembers | discordgo.IntentsGuildMessages | discordgo.IntentsGuildMessageReactions | discordgo.IntentsMessageContent
 
 	svc := &Service{
 		session:      s,
@@ -64,6 +64,8 @@ func NewService(token string, repos *db.Repositories, logger Logger) (*Service, 
 	s.AddHandler(svc.OnChannelDelete)
 	s.AddHandler(svc.OnInviteCreate)
 	s.AddHandler(svc.OnInviteDelete)
+	s.AddHandler(svc.OnMessageReactionAdd)
+	s.AddHandler(svc.OnMessageReactionRemove)
 	svc.ensureBackfillInit()
 
 	return svc, nil

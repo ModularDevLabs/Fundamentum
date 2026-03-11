@@ -15,6 +15,10 @@ Enable these privileged intents for the bot:
 - `MESSAGE CONTENT` (for message activity tracking)
 - `SERVER MEMBERS INTENT` (for member join/leave events)
 
+Also enable gateway intent:
+
+- `GUILD MESSAGE REACTIONS` (for Reaction Roles)
+
 ## 3) Required permissions
 
 The bot needs the following minimum permissions for the current feature set:

@@ -70,6 +70,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `audit_log_stream=false`
 - `invite_tracker=false`
 - `automod=false`
+- `reaction_roles=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -163,6 +164,18 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - UI label: `Ignored role IDs (comma)` (AutoMod module)
 - Type: list of Discord role IDs
 - Members with any ignored role are skipped by AutoMod.
+
+## Reaction Roles Rules
+
+Configured in the `Reaction Roles` module UI and stored in `reaction_role_rules`.
+
+Each rule contains:
+
+1. `channel_id`
+2. `message_id`
+3. `emoji` (unicode emoji or custom emoji ID)
+4. `role_id`
+5. `remove_on_unreact` (boolean)
 
 ## Advanced Per-Guild Setting (API/DB)
 

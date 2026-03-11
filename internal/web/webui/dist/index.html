@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GoBot Control</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">Go</div>
+        <div>
+          <div class="title">GoBot Control</div>
+          <div class="subtitle">Multi-guild dashboard</div>
+        </div>
+      </div>
+      <div class="guild-select">
+        <label>Guild</label>
+        <select id="guildSelect"></select>
+      </div>
+      <nav class="nav">
+        <button data-view="overview" class="active">Overview</button>
+        <button data-view="members">Members</button>
+        <button data-view="actions">Actions</button>
+        <button data-view="events">Events</button>
+        <button data-view="welcome">Welcome</button>
+        <button data-view="goodbye">Goodbye</button>
+        <button data-view="auditlog">Audit Log</button>
+        <button data-view="invites">Invite Tracker</button>
+        <button data-view="automod">AutoMod</button>
+        <button data-view="reactionroles">Reaction Roles</button>
+        <button data-view="settings">Settings</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logoutBtn" class="ghost">Logout</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section id="view-overview" class="view active">
+        <div class="hero">
+          <div>
+            <h1>Moderation at a glance</h1>
+            <p>Track activity, quarantine inactive members, and keep your guild clean.</p>
+          </div>
+          <div class="hero-actions">
+            <button id="backfillBtn" class="primary">Run Backfill</button>
+            <button id="refreshOverview" class="ghost">Refresh</button>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Tracked Members</div>
+            <div class="stat-value" id="statTracked">—</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Inactive</div>
+            <div class="stat-value" id="statInactive">—</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Actions Queued</div>
+            <div class="stat-value" id="statQueued">—</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">Backfill Jobs</div>
+          <div id="overviewStatus" class="status-line"></div>
+          <div id="backfillList" class="list"></div>
+        </div>
+      </section>
+
+      <section id="view-members" class="view">
+        <div class="panel">
+          <div class="panel-header">Members</div>
+          <div class="filters">
+            <input id="memberSearch" placeholder="Search user id or name" />
+            <select id="memberStatus">
+              <option value="">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <button id="memberRefresh" class="ghost">Refresh</button>
+          </div>
+          <div class="bulk-actions">
+            <div class="bulk-left">
+              <label class="check">
+                <input type="checkbox" id="selectAllMembers" />
+                <span>Select all on page</span>
+              </label>
+              <span id="selectedCount" class="muted">0 selected</span>
+            </div>
+            <div class="bulk-right">
+              <button id="bulkQuarantine" class="primary">Quarantine</button>
+              <button id="bulkKick" class="ghost">Kick</button>
+              <button id="bulkRemoveRoles" class="ghost">Remove Roles</button>
+            </div>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div></div>
+              <div>User</div>
+              <div>Last Message</div>
+              <div>Status</div>
+              <div>Actions</div>
+            </div>
+            <div id="membersTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-actions" class="view">
+        <div class="panel">
+          <div class="panel-header">Actions</div>
+          <div class="filters">
+            <select id="actionStatus">
+              <option value="">All</option>
+              <option value="queued">Queued</option>
+              <option value="running">Running</option>
+              <option value="success">Success</option>
+              <option value="failed">Failed</option>
+            </select>
+            <button id="actionRefresh" class="ghost">Refresh</button>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>ID</div>
+              <div>Target</div>
+              <div>Type</div>
+              <div>Status</div>
+              <div>Updated</div>
+            </div>
+            <div id="actionsTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-events" class="view">
+        <div class="panel">
+          <div class="panel-header">Event Log</div>
+          <div class="filters">
+            <input id="eventsLimit" type="number" min="20" max="1000" value="200" />
+            <button id="eventsRefresh" class="ghost">Refresh</button>
+          </div>
+          <pre id="eventsLog" class="event-log"></pre>
+        </div>
+      </section>
+
+      <section id="view-settings" class="view">
+        <div class="panel">
+          <div class="panel-header">Settings</div>
+          <div class="form-grid">
+            <label>
+              Inactive days
+              <input id="settingsInactive" type="number" min="1" />
+            </label>
+            <label>
+              Backfill days
+              <input id="settingsBackfill" type="number" min="1" />
+            </label>
+            <label>
+              Backfill concurrency
+              <input id="settingsConcurrency" type="number" min="1" />
+            </label>
+            <label>
+              Admin user policy
+              <select id="settingsAdminPolicy">
+                <option value="refuse">Refuse</option>
+                <option value="quarantine">Quarantine</option>
+                <option value="remove_admin_roles">Remove Admin Roles</option>
+              </select>
+            </label>
+            <label>
+              Quarantine role ID
+              <input id="settingsQuarantineRole" />
+            </label>
+            <label>
+              Readme channel ID
+              <input id="settingsReadmeChannel" />
+            </label>
+            <label>
+              Allowlist roles (comma)
+              <input id="settingsAllowlist" />
+            </label>
+            <label>
+              Safe quarantine mode
+              <select id="settingsSafeMode">
+                <option value="false">Auto-apply to all categories</option>
+                <option value="true">Only configured categories</option>
+              </select>
+            </label>
+          </div>
+          <div class="panel-actions">
+            <button id="settingsSave" class="primary">Save settings</button>
+            <span id="settingsStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-welcome" class="view">
+        <div class="panel">
+          <div class="panel-header">Welcome Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleWelcomeCard">
+              <div class="module-head">
+                <div class="module-title">Welcome Messages</div>
+                <span class="module-badge off" id="moduleWelcomeBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Send a templated greeting when a member joins. Supports <code>{user}</code> and <code>{server}</code>.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsWelcomeEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Channel ID
+                  <input id="settingsWelcomeChannel" />
+                </label>
+                <label>
+                  Message template
+                  <input id="settingsWelcomeMessage" placeholder="Welcome {user} to {server}." />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="welcomeSave" class="primary">Save welcome module</button>
+            <span id="welcomeStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-goodbye" class="view">
+        <div class="panel">
+          <div class="panel-header">Goodbye Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleGoodbyeCard">
+              <div class="module-head">
+                <div class="module-title">Goodbye Messages</div>
+                <span class="module-badge off" id="moduleGoodbyeBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Send a templated message when a member leaves. Supports <code>{user}</code> and <code>{server}</code>.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsGoodbyeEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Channel ID
+                  <input id="settingsGoodbyeChannel" />
+                </label>
+                <label>
+                  Message template
+                  <input id="settingsGoodbyeMessage" placeholder="Goodbye {user}." />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="goodbyeSave" class="primary">Save goodbye module</button>
+            <span id="goodbyeStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-auditlog" class="view">
+        <div class="panel">
+          <div class="panel-header">Audit Log Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleAuditCard">
+              <div class="module-head">
+                <div class="module-title">Audit Log Stream</div>
+                <span class="module-badge off" id="moduleAuditBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Stream selected moderation/server events to one channel.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsAuditEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Channel ID
+                  <input id="settingsAuditChannel" />
+                </label>
+                <label>
+                  Event types (comma)
+                  <input id="settingsAuditEvents" placeholder="ban_add,action_failed,action_success" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="auditSave" class="primary">Save audit module</button>
+            <span id="auditStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-invites" class="view">
+        <div class="panel">
+          <div class="panel-header">Invite Tracker Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleInviteCard">
+              <div class="module-head">
+                <div class="module-title">Invite Tracker</div>
+                <span class="module-badge off" id="moduleInviteBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Tracks new joins and attempts to attribute the invite code/inviter.</p>
+              <div id="invitePermStatus" class="module-note">Checking bot permission requirements...</div>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsInviteEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Log channel ID
+                  <input id="settingsInviteChannel" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="inviteSave" class="primary">Save invite tracker</button>
+            <span id="inviteStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-automod" class="view">
+        <div class="panel">
+          <div class="panel-header">AutoMod Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleAutoModCard">
+              <div class="module-head">
+                <div class="module-title">AutoMod</div>
+                <span class="module-badge off" id="moduleAutoModBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Automatic filtering for links, blocked words, and repeated-message spam.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsAutoModEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Action
+                  <select id="settingsAutoModAction">
+                    <option value="delete_warn">Delete + Warn</option>
+                    <option value="delete_only">Delete Only</option>
+                    <option value="delete_quarantine">Delete + Quarantine</option>
+                  </select>
+                </label>
+                <label>
+                  Block links
+                  <select id="settingsAutoModBlockLinks">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                </label>
+                <label>
+                  Blocked words (comma)
+                  <input id="settingsAutoModWords" placeholder="word1,word2" />
+                </label>
+                <label>
+                  Duplicate window (seconds)
+                  <input id="settingsAutoModDupWindow" type="number" min="1" />
+                </label>
+                <label>
+                  Duplicate threshold
+                  <input id="settingsAutoModDupThreshold" type="number" min="2" />
+                </label>
+                <label>
+                  Ignored channel IDs (comma)
+                  <input id="settingsAutoModIgnoreChannels" placeholder="123,456" />
+                </label>
+                <label>
+                  Ignored role IDs (comma)
+                  <input id="settingsAutoModIgnoreRoles" placeholder="789,012" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="automodSave" class="primary">Save automod</button>
+            <span id="automodStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-reactionroles" class="view">
+        <div class="panel">
+          <div class="panel-header">Reaction Roles Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleReactionRolesCard">
+              <div class="module-head">
+                <div class="module-title">Reaction Roles</div>
+                <span class="module-badge off" id="moduleReactionRolesBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Assign roles when members react to a configured message emoji.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsReactionRolesEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="reactionRolesSave" class="primary">Save reaction roles module</button>
+            <span id="reactionRolesStatus" class="status-line"></span>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Rules</div>
+          <div class="form-grid">
+            <label>
+              Channel ID
+              <input id="rrChannelId" />
+            </label>
+            <label>
+              Message ID
+              <input id="rrMessageId" />
+            </label>
+            <label>
+              Emoji (unicode or custom emoji ID)
+              <input id="rrEmoji" />
+            </label>
+            <label>
+              Role ID
+              <input id="rrRoleId" />
+            </label>
+            <label>
+              Remove role on unreact
+              <select id="rrRemoveOnUnreact">
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </label>
+          </div>
+          <div class="panel-actions">
+            <button id="rrAddRule" class="primary">Add rule</button>
+            <button id="rrRefresh" class="ghost">Refresh rules</button>
+            <span id="rrStatus" class="status-line"></span>
+          </div>
+          <div class="table" style="margin-top: 12px;">
+            <div class="table-row table-header rr-row">
+              <div>Channel</div>
+              <div>Message</div>
+              <div>Emoji</div>
+              <div>Role</div>
+              <div>Remove</div>
+              <div>Action</div>
+            </div>
+            <div id="rrRulesTable"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="loginModal" class="modal hidden">
+    <div class="modal-card">
+      <h2>Admin Login</h2>
+      <p>Enter the admin password to unlock the dashboard.</p>
+      <input id="loginPassword" type="password" placeholder="Admin password" />
+      <button id="loginBtn" class="primary">Unlock</button>
+      <div id="loginError" class="error"></div>
+    </div>
+  </div>
+
+  <div id="toastHost" class="toast-host"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
