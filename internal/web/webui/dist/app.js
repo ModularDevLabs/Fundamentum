@@ -17,6 +17,7 @@ const FEATURE_INVITE = 'invite_tracker';
 const FEATURE_AUTOMOD = 'automod';
 const FEATURE_REACTION_ROLES = 'reaction_roles';
 const FEATURE_WARNINGS = 'warnings';
+const FEATURE_SCHEDULED = 'scheduled_messages';
 
 function setModuleBadge(enabled, badgeEl, cardEl) {
   if (!badgeEl || !cardEl) return;
@@ -34,6 +35,7 @@ function syncModuleBadges() {
   const autoModEnabled = qs('#settingsAutoModEnabled').value === 'true';
   const reactionRolesEnabled = qs('#settingsReactionRolesEnabled').value === 'true';
   const warningsEnabled = qs('#settingsWarningsEnabled').value === 'true';
+  const scheduledEnabled = qs('#settingsScheduledEnabled').value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
   setModuleBadge(goodbyeEnabled, qs('#moduleGoodbyeBadge'), qs('#moduleGoodbyeCard'));
   setModuleBadge(auditEnabled, qs('#moduleAuditBadge'), qs('#moduleAuditCard'));
@@ -41,6 +43,7 @@ function syncModuleBadges() {
   setModuleBadge(autoModEnabled, qs('#moduleAutoModBadge'), qs('#moduleAutoModCard'));
   setModuleBadge(reactionRolesEnabled, qs('#moduleReactionRolesBadge'), qs('#moduleReactionRolesCard'));
   setModuleBadge(warningsEnabled, qs('#moduleWarningsBadge'), qs('#moduleWarningsCard'));
+  setModuleBadge(scheduledEnabled, qs('#moduleScheduledBadge'), qs('#moduleScheduledCard'));
 }
 
 const qs = (sel) => document.querySelector(sel);
@@ -240,10 +243,12 @@ async function loadSettings() {
   qs('#settingsWarningLogChannel').value = cfg.warning_log_channel_id || '';
   qs('#settingsWarnQuarantineThreshold').value = cfg.warn_quarantine_threshold || 3;
   qs('#settingsWarnKickThreshold').value = cfg.warn_kick_threshold || 5;
+  qs('#settingsScheduledEnabled').value = String(!!flags[FEATURE_SCHEDULED]);
   syncModuleBadges();
   await loadInvitePermissionStatus();
   await loadReactionRoleRules();
   await loadWarnings();
+  await loadScheduledMessages();
 }
 
 async function loadInvitePermissionStatus() {
@@ -617,6 +622,87 @@ async function issueWarning() {
   }
 }
 
+async function saveScheduledModule() {
+  const restore = setBusy(qs('#scheduledSave'), 'Saving...');
+  const status = qs('#scheduledStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_SCHEDULED]: qs('#settingsScheduledEnabled').value === 'true',
+      },
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Scheduled module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Scheduled module save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
+async function loadScheduledMessages() {
+  const table = qs('#scheduledTable');
+  if (!table || !state.guildId) return;
+  const rows = (await apiFetch(`/api/modules/scheduled/messages?guild_id=${state.guildId}`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row sched-row';
+    div.innerHTML = `
+      <div>${row.channel_id}</div>
+      <div>${row.interval_minutes}m</div>
+      <div>${formatDate(row.next_run_at)}</div>
+      <div>${row.enabled ? 'yes' : 'no'}</div>
+      <div>${row.content}</div>
+      <div><button class="ghost" data-sched-del="${row.id}">Delete</button></div>
+    `;
+    table.appendChild(div);
+  });
+}
+
+async function addScheduledMessage() {
+  const restore = setBusy(qs('#schedAdd'), 'Adding...');
+  const status = qs('#schedMsgStatus');
+  status.textContent = 'Adding...';
+  try {
+    const payload = {
+      channel_id: qs('#schedChannelId').value.trim(),
+      interval_minutes: parseInt(qs('#schedInterval').value, 10),
+      content: qs('#schedContent').value.trim(),
+      enabled: qs('#schedEnabled').value === 'true',
+    };
+    await apiFetch(`/api/modules/scheduled/messages?guild_id=${state.guildId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    status.textContent = `Added at ${new Date().toLocaleTimeString()}`;
+    showToast('Schedule added.');
+    await loadScheduledMessages();
+  } catch (err) {
+    status.textContent = 'Add failed.';
+    showToast(`Add schedule failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
+async function deleteScheduledMessage(id) {
+  if (!id) return;
+  await apiFetch(`/api/modules/scheduled/messages/${id}?guild_id=${state.guildId}`, { method: 'DELETE' });
+}
+
 function formatDate(value) {
   if (!value) return '—';
   const date = new Date(value);
@@ -811,10 +897,13 @@ function wireEvents() {
   qs('#automodSave').onclick = saveAutoMod;
   qs('#reactionRolesSave').onclick = saveReactionRoles;
   qs('#warningsSave').onclick = saveWarningsModule;
+  qs('#scheduledSave').onclick = saveScheduledModule;
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = addReactionRoleRule;
   qs('#warnRefresh').onclick = () => loadWarnings().catch((err) => showToast(`Warnings load failed: ${err.message}`, 'error'));
   qs('#warnIssue').onclick = issueWarning;
+  qs('#schedRefresh').onclick = () => loadScheduledMessages().catch((err) => showToast(`Schedules load failed: ${err.message}`, 'error'));
+  qs('#schedAdd').onclick = addScheduledMessage;
   qs('#settingsWelcomeEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsGoodbyeEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAuditEnabled').addEventListener('change', syncModuleBadges);
@@ -822,6 +911,7 @@ function wireEvents() {
   qs('#settingsAutoModEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsReactionRolesEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsWarningsEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsScheduledEnabled').addEventListener('change', syncModuleBadges);
   qs('#memberRefresh').onclick = loadMembers;
   qs('#memberStatus').addEventListener('change', reloadMembersForFilters);
   qs('#memberStatus').addEventListener('input', reloadMembersForFilters);
@@ -851,6 +941,18 @@ function wireEvents() {
       await loadReactionRoleRules();
     } catch (err) {
       showToast(`Delete rule failed: ${err.message}`, 'error');
+    }
+  });
+
+  qs('#scheduledTable').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-sched-del]');
+    if (!btn) return;
+    try {
+      await deleteScheduledMessage(btn.getAttribute('data-sched-del'));
+      showToast('Schedule deleted.');
+      await loadScheduledMessages();
+    } catch (err) {
+      showToast(`Delete schedule failed: ${err.message}`, 'error');
     }
   });
 
@@ -913,6 +1015,7 @@ async function refreshAll() {
   await loadSettings();
   await loadReactionRoleRules();
   await loadWarnings();
+  await loadScheduledMessages();
 }
 
 async function bootstrap() {

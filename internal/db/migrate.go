@@ -64,6 +64,19 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_warnings_guild_user
 		ON warnings(guild_id, user_id, created_at);`,
+		`CREATE TABLE IF NOT EXISTS scheduled_messages (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			channel_id TEXT NOT NULL,
+			content TEXT NOT NULL,
+			interval_minutes INTEGER NOT NULL,
+			next_run_at TEXT NOT NULL,
+			enabled INTEGER NOT NULL DEFAULT 1,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_scheduled_due
+		ON scheduled_messages(enabled, next_run_at);`,
 	}
 
 	for _, stmt := range stmts {

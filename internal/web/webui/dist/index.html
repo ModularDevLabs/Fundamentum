@@ -32,6 +32,7 @@
         <button data-view="automod">AutoMod</button>
         <button data-view="reactionroles">Reaction Roles</button>
         <button data-view="warnings">Warnings</button>
+        <button data-view="scheduled">Scheduled</button>
         <button data-view="settings">Settings</button>
       </nav>
       <div class="sidebar-footer">
@@ -538,6 +539,74 @@
               <div>Created</div>
             </div>
             <div id="warningsTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-scheduled" class="view">
+        <div class="panel">
+          <div class="panel-header">Scheduled Messages Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleScheduledCard">
+              <div class="module-head">
+                <div class="module-title">Scheduled Messages</div>
+                <span class="module-badge off" id="moduleScheduledBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Post recurring messages every N minutes in a selected channel.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsScheduledEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="scheduledSave" class="primary">Save scheduled module</button>
+            <span id="scheduledStatus" class="status-line"></span>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Schedules</div>
+          <div class="form-grid">
+            <label>
+              Channel ID
+              <input id="schedChannelId" />
+            </label>
+            <label>
+              Interval (minutes)
+              <input id="schedInterval" type="number" min="1" />
+            </label>
+            <label>
+              Message content
+              <input id="schedContent" />
+            </label>
+            <label>
+              Enabled
+              <select id="schedEnabled">
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </label>
+          </div>
+          <div class="panel-actions">
+            <button id="schedAdd" class="primary">Add schedule</button>
+            <button id="schedRefresh" class="ghost">Refresh schedules</button>
+            <span id="schedMsgStatus" class="status-line"></span>
+          </div>
+          <div class="table" style="margin-top: 12px;">
+            <div class="table-row table-header sched-row">
+              <div>Channel</div>
+              <div>Interval</div>
+              <div>Next Run</div>
+              <div>Enabled</div>
+              <div>Content</div>
+              <div>Action</div>
+            </div>
+            <div id="scheduledTable"></div>
           </div>
         </div>
       </section>

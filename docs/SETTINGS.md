@@ -72,6 +72,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `automod=false`
 - `reaction_roles=false`
 - `warnings=false`
+- `scheduled_messages=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -193,6 +194,18 @@ Each rule contains:
 3. `emoji` (unicode emoji or custom emoji ID)
 4. `role_id`
 5. `remove_on_unreact` (boolean)
+
+## Scheduled Messages
+
+Configured in the `Scheduled` module UI and stored in `scheduled_messages`.
+
+Each schedule contains:
+
+1. `channel_id`
+2. `content`
+3. `interval_minutes`
+4. `enabled`
+5. `next_run_at` (managed automatically by the worker)
 
 ## Advanced Per-Guild Setting (API/DB)
 

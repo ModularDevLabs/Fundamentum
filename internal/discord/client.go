@@ -89,6 +89,7 @@ func (s *Service) SendChannelMessage(channelID, content string) (string, error) 
 
 func (s *Service) StartWorkers(ctx context.Context) {
 	go s.runActionWorker(ctx)
+	go s.runScheduledWorker(ctx)
 }
 
 func (s *Service) ListGuilds(ctx context.Context) ([]models.GuildInfo, error) {

@@ -79,6 +79,18 @@ type WarningRow struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
+type ScheduledMessageRow struct {
+	ID              int64     `json:"id"`
+	GuildID         string    `json:"guild_id"`
+	ChannelID       string    `json:"channel_id"`
+	Content         string    `json:"content"`
+	IntervalMinutes int       `json:"interval_minutes"`
+	NextRunAt       time.Time `json:"next_run_at"`
+	Enabled         bool      `json:"enabled"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
 type GuildInfo struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -92,6 +104,7 @@ const (
 	FeatureAutoMod         = "automod"
 	FeatureReactionRoles   = "reaction_roles"
 	FeatureWarnings        = "warnings"
+	FeatureScheduled       = "scheduled_messages"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -117,6 +130,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureAutoMod:         false,
 			FeatureReactionRoles:   false,
 			FeatureWarnings:        false,
+			FeatureScheduled:       false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",
