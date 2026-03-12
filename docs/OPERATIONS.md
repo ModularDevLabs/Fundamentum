@@ -21,6 +21,7 @@ Stop: `Ctrl+C`
 - **Events**: Shows raw process logs (INFO/DEBUG/ERROR) for troubleshooting actions and backfill.
 - **Settings**: Update inactivity days, backfill days, and quarantine behavior.
 - **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics / Starboard / Leveling / Giveaways / Polls / Suggestions / Keyword Alerts / AFK / Reminders / Account Age Guard / Member Notes / Appeals / Custom Commands**: Each module has its own menu and save action, and settings are per-guild.
+- **Module permission checks**: Each module card shows missing bot permissions and disables save/run actions until required permissions are granted.
 - **Invite Tracker**: Includes a built-in permission check panel for `Manage Server` capability in the selected guild.
 - **AutoMod**: Supports ignored channels and ignored roles to exempt staff/private workflows.
 - **Reaction Roles**: Add rules mapping `(channel_id, message_id, emoji) -> role_id`; role can be removed on unreact.

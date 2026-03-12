@@ -2,6 +2,7 @@ const state = {
   token: localStorage.getItem('modbot_token') || '',
   guildId: localStorage.getItem('modbot_guild') || '',
   guilds: [],
+  modulePermissions: {},
   selectedUsers: new Map(),
   overviewPollTimer: null,
   overviewPollBusy: false,
@@ -34,6 +35,32 @@ const FEATURE_ACCOUNT_AGE_GUARD = 'account_age_guard';
 const FEATURE_MEMBER_NOTES = 'member_notes';
 const FEATURE_APPEALS = 'appeals';
 const FEATURE_CUSTOM_COMMANDS = 'custom_commands';
+const FEATURE_BY_VIEW = {
+  welcome: FEATURE_WELCOME,
+  goodbye: FEATURE_GOODBYE,
+  auditlog: FEATURE_AUDIT,
+  invites: FEATURE_INVITE,
+  automod: FEATURE_AUTOMOD,
+  reactionroles: FEATURE_REACTION_ROLES,
+  warnings: FEATURE_WARNINGS,
+  scheduled: FEATURE_SCHEDULED,
+  verification: FEATURE_VERIFICATION,
+  tickets: FEATURE_TICKETS,
+  antiraid: FEATURE_ANTI_RAID,
+  analytics: FEATURE_ANALYTICS,
+  starboard: FEATURE_STARBOARD,
+  leveling: FEATURE_LEVELING,
+  giveaways: FEATURE_GIVEAWAYS,
+  polls: FEATURE_POLLS,
+  suggestions: FEATURE_SUGGESTIONS,
+  keywordalerts: FEATURE_KEYWORD_ALERTS,
+  afk: FEATURE_AFK,
+  reminders: FEATURE_REMINDERS,
+  accountageguard: FEATURE_ACCOUNT_AGE_GUARD,
+  membernotes: FEATURE_MEMBER_NOTES,
+  appeals: FEATURE_APPEALS,
+  customcommands: FEATURE_CUSTOM_COMMANDS,
+};
 const NAV_GROUPS_STORAGE_KEY = 'modbot_nav_groups';
 const ACTIVE_VIEW_STORAGE_KEY = 'modbot_active_view';
 const THEME_STORAGE_KEY = 'modbot_theme';
@@ -219,6 +246,122 @@ function updateLevelingGuideExamples() {
   });
   const curveLabel = curve === 'linear' ? 'linear' : 'quadratic';
   host.textContent = `Current curve: ${curveLabel}, base: ${base}. Milestones -> ${rows.join(' | ')}`;
+}
+
+function modulePermissionState(featureKey) {
+  if (!featureKey) return null;
+  return (state.modulePermissions && state.modulePermissions[featureKey]) || null;
+}
+
+function moduleMissingPermissions(featureKey) {
+  const status = modulePermissionState(featureKey);
+  if (!status || status.has_all) return [];
+  return status.missing_permissions || [];
+}
+
+function moduleHasPermissions(featureKey) {
+  const missing = moduleMissingPermissions(featureKey);
+  return missing.length === 0;
+}
+
+function requireModulePermissions(featureKey, actionLabel) {
+  if (!featureKey) return true;
+  const missing = moduleMissingPermissions(featureKey);
+  if (!missing.length) return true;
+  const text = `${actionLabel} blocked. Missing bot permissions: ${missing.join(', ')}`;
+  showToast(text, 'error');
+  return false;
+}
+
+function renderModulePermissionNotes() {
+  qsa('section.view[id^="view-"]').forEach((section) => {
+    const view = section.id.replace('view-', '');
+    const featureKey = FEATURE_BY_VIEW[view];
+    if (!featureKey) return;
+    const card = section.querySelector('.module-card[id^="module"]');
+    if (!card) return;
+    let note = card.querySelector('.module-perm-note');
+    if (!note) {
+      note = document.createElement('p');
+      note.className = 'module-note module-perm-note';
+      const desc = card.querySelector('.module-desc');
+      if (desc && desc.nextSibling) {
+        card.insertBefore(note, desc.nextSibling);
+      } else {
+        card.appendChild(note);
+      }
+    }
+    const missing = moduleMissingPermissions(featureKey);
+    note.classList.remove('ok', 'warn');
+    if (!missing.length) {
+      note.classList.add('ok');
+      note.textContent = 'Permission check: all required bot permissions are present.';
+    } else {
+      note.classList.add('warn');
+      note.textContent = `Missing bot permissions: ${missing.join(', ')}`;
+    }
+  });
+}
+
+function applyModulePermissionDisabling() {
+  const buttonFeatureMap = {
+    welcomeSave: FEATURE_WELCOME,
+    goodbyeSave: FEATURE_GOODBYE,
+    auditSave: FEATURE_AUDIT,
+    inviteSave: FEATURE_INVITE,
+    automodSave: FEATURE_AUTOMOD,
+    reactionRolesSave: FEATURE_REACTION_ROLES,
+    warningsSave: FEATURE_WARNINGS,
+    warnIssue: FEATURE_WARNINGS,
+    scheduledSave: FEATURE_SCHEDULED,
+    schedAdd: FEATURE_SCHEDULED,
+    verificationSave: FEATURE_VERIFICATION,
+    ticketsSave: FEATURE_TICKETS,
+    antiRaidSave: FEATURE_ANTI_RAID,
+    analyticsSave: FEATURE_ANALYTICS,
+    starboardSave: FEATURE_STARBOARD,
+    levelingSave: FEATURE_LEVELING,
+    giveawaysSave: FEATURE_GIVEAWAYS,
+    giveawayStart: FEATURE_GIVEAWAYS,
+    pollsSave: FEATURE_POLLS,
+    pollStart: FEATURE_POLLS,
+    suggestionsSave: FEATURE_SUGGESTIONS,
+    keywordAlertsSave: FEATURE_KEYWORD_ALERTS,
+    afkSave: FEATURE_AFK,
+    remindersSave: FEATURE_REMINDERS,
+    reminderAdd: FEATURE_REMINDERS,
+    accountAgeGuardSave: FEATURE_ACCOUNT_AGE_GUARD,
+    memberNotesSave: FEATURE_MEMBER_NOTES,
+    memberNoteAdd: FEATURE_MEMBER_NOTES,
+    appealsSave: FEATURE_APPEALS,
+    customCommandsSave: FEATURE_CUSTOM_COMMANDS,
+    customCommandAdd: FEATURE_CUSTOM_COMMANDS,
+  };
+  Object.entries(buttonFeatureMap).forEach(([id, feature]) => {
+    const button = qs(`#${id}`);
+    if (!button) return;
+    const missing = moduleMissingPermissions(feature);
+    const blocked = missing.length > 0;
+    button.disabled = blocked;
+    if (blocked) {
+      button.title = `Missing bot permissions: ${missing.join(', ')}`;
+    } else {
+      button.removeAttribute('title');
+    }
+  });
+}
+
+async function loadModulePermissions() {
+  if (!state.guildId) return;
+  try {
+    const res = await apiFetch(`/api/modules/permissions?guild_id=${state.guildId}`);
+    state.modulePermissions = (res && res.modules) || {};
+  } catch (err) {
+    state.modulePermissions = {};
+    showToast(`Module permission check failed: ${err.message}`, 'error');
+  }
+  renderModulePermissionNotes();
+  applyModulePermissionDisabling();
 }
 
 function loadNavGroupState() {
@@ -2076,53 +2219,53 @@ function wireEvents() {
     themeSelect.onchange = () => applyTheme(themeSelect.value);
   }
   qs('#settingsSave').onclick = saveSettings;
-  qs('#welcomeSave').onclick = saveWelcome;
-  qs('#goodbyeSave').onclick = saveGoodbye;
-  qs('#auditSave').onclick = saveAudit;
-  qs('#inviteSave').onclick = saveInviteTracker;
-  qs('#automodSave').onclick = saveAutoMod;
-  qs('#reactionRolesSave').onclick = saveReactionRoles;
-  qs('#warningsSave').onclick = saveWarningsModule;
-  qs('#scheduledSave').onclick = saveScheduledModule;
-  qs('#verificationSave').onclick = saveVerificationModule;
-  qs('#ticketsSave').onclick = saveTicketsModule;
-  qs('#antiRaidSave').onclick = saveAntiRaidModule;
-  qs('#analyticsSave').onclick = saveAnalyticsModule;
-  qs('#appealsSave').onclick = saveAppealsModule;
-  qs('#starboardSave').onclick = saveStarboardModule;
-  qs('#levelingSave').onclick = saveLevelingModule;
-  qs('#giveawaysSave').onclick = saveGiveawaysModule;
-  qs('#pollsSave').onclick = savePollsModule;
-  qs('#suggestionsSave').onclick = saveSuggestionsModule;
-  qs('#keywordAlertsSave').onclick = saveKeywordAlertsModule;
-  qs('#afkSave').onclick = saveAFKModule;
-  qs('#remindersSave').onclick = saveRemindersModule;
-  qs('#accountAgeGuardSave').onclick = saveAccountAgeGuardModule;
-  qs('#memberNotesSave').onclick = saveMemberNotesModule;
-  qs('#customCommandsSave').onclick = saveCustomCommandsModule;
+  qs('#welcomeSave').onclick = () => { if (requireModulePermissions(FEATURE_WELCOME, 'Save welcome module')) saveWelcome(); };
+  qs('#goodbyeSave').onclick = () => { if (requireModulePermissions(FEATURE_GOODBYE, 'Save goodbye module')) saveGoodbye(); };
+  qs('#auditSave').onclick = () => { if (requireModulePermissions(FEATURE_AUDIT, 'Save audit module')) saveAudit(); };
+  qs('#inviteSave').onclick = () => { if (requireModulePermissions(FEATURE_INVITE, 'Save invite tracker module')) saveInviteTracker(); };
+  qs('#automodSave').onclick = () => { if (requireModulePermissions(FEATURE_AUTOMOD, 'Save automod module')) saveAutoMod(); };
+  qs('#reactionRolesSave').onclick = () => { if (requireModulePermissions(FEATURE_REACTION_ROLES, 'Save reaction roles module')) saveReactionRoles(); };
+  qs('#warningsSave').onclick = () => { if (requireModulePermissions(FEATURE_WARNINGS, 'Save warnings module')) saveWarningsModule(); };
+  qs('#scheduledSave').onclick = () => { if (requireModulePermissions(FEATURE_SCHEDULED, 'Save scheduled module')) saveScheduledModule(); };
+  qs('#verificationSave').onclick = () => { if (requireModulePermissions(FEATURE_VERIFICATION, 'Save verification module')) saveVerificationModule(); };
+  qs('#ticketsSave').onclick = () => { if (requireModulePermissions(FEATURE_TICKETS, 'Save tickets module')) saveTicketsModule(); };
+  qs('#antiRaidSave').onclick = () => { if (requireModulePermissions(FEATURE_ANTI_RAID, 'Save anti-raid module')) saveAntiRaidModule(); };
+  qs('#analyticsSave').onclick = () => { if (requireModulePermissions(FEATURE_ANALYTICS, 'Save analytics module')) saveAnalyticsModule(); };
+  qs('#appealsSave').onclick = () => { if (requireModulePermissions(FEATURE_APPEALS, 'Save appeals module')) saveAppealsModule(); };
+  qs('#starboardSave').onclick = () => { if (requireModulePermissions(FEATURE_STARBOARD, 'Save starboard module')) saveStarboardModule(); };
+  qs('#levelingSave').onclick = () => { if (requireModulePermissions(FEATURE_LEVELING, 'Save leveling module')) saveLevelingModule(); };
+  qs('#giveawaysSave').onclick = () => { if (requireModulePermissions(FEATURE_GIVEAWAYS, 'Save giveaways module')) saveGiveawaysModule(); };
+  qs('#pollsSave').onclick = () => { if (requireModulePermissions(FEATURE_POLLS, 'Save polls module')) savePollsModule(); };
+  qs('#suggestionsSave').onclick = () => { if (requireModulePermissions(FEATURE_SUGGESTIONS, 'Save suggestions module')) saveSuggestionsModule(); };
+  qs('#keywordAlertsSave').onclick = () => { if (requireModulePermissions(FEATURE_KEYWORD_ALERTS, 'Save keyword alerts module')) saveKeywordAlertsModule(); };
+  qs('#afkSave').onclick = () => { if (requireModulePermissions(FEATURE_AFK, 'Save AFK module')) saveAFKModule(); };
+  qs('#remindersSave').onclick = () => { if (requireModulePermissions(FEATURE_REMINDERS, 'Save reminders module')) saveRemindersModule(); };
+  qs('#accountAgeGuardSave').onclick = () => { if (requireModulePermissions(FEATURE_ACCOUNT_AGE_GUARD, 'Save account age guard module')) saveAccountAgeGuardModule(); };
+  qs('#memberNotesSave').onclick = () => { if (requireModulePermissions(FEATURE_MEMBER_NOTES, 'Save member notes module')) saveMemberNotesModule(); };
+  qs('#customCommandsSave').onclick = () => { if (requireModulePermissions(FEATURE_CUSTOM_COMMANDS, 'Save custom commands module')) saveCustomCommandsModule(); };
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
-  qs('#rrAddRule').onclick = addReactionRoleRule;
+  qs('#rrAddRule').onclick = () => { if (requireModulePermissions(FEATURE_REACTION_ROLES, 'Add reaction role rule')) addReactionRoleRule(); };
   qs('#warnRefresh').onclick = () => loadWarnings().catch((err) => showToast(`Warnings load failed: ${err.message}`, 'error'));
-  qs('#warnIssue').onclick = issueWarning;
+  qs('#warnIssue').onclick = () => { if (requireModulePermissions(FEATURE_WARNINGS, 'Issue warning')) issueWarning(); };
   qs('#schedRefresh').onclick = () => loadScheduledMessages().catch((err) => showToast(`Schedules load failed: ${err.message}`, 'error'));
-  qs('#schedAdd').onclick = addScheduledMessage;
+  qs('#schedAdd').onclick = () => { if (requireModulePermissions(FEATURE_SCHEDULED, 'Add scheduled message')) addScheduledMessage(); };
   qs('#ticketsRefresh').onclick = () => loadTickets().catch((err) => showToast(`Tickets load failed: ${err.message}`, 'error'));
   qs('#ticketStatusFilter').addEventListener('change', () => loadTickets().catch((err) => showToast(`Tickets load failed: ${err.message}`, 'error')));
   qs('#appealsRefresh').onclick = () => loadAppeals().catch((err) => showToast(`Appeals load failed: ${err.message}`, 'error'));
   qs('#appealStatusFilter').addEventListener('change', () => loadAppeals().catch((err) => showToast(`Appeals load failed: ${err.message}`, 'error')));
   qs('#customCommandsRefresh').onclick = () => loadCustomCommands().catch((err) => showToast(`Commands load failed: ${err.message}`, 'error'));
-  qs('#customCommandAdd').onclick = addCustomCommand;
+  qs('#customCommandAdd').onclick = () => { if (requireModulePermissions(FEATURE_CUSTOM_COMMANDS, 'Add custom command')) addCustomCommand(); };
   qs('#levelingRefresh').onclick = () => loadLeaderboard().catch((err) => showToast(`Leaderboard load failed: ${err.message}`, 'error'));
   qs('#giveawaysRefresh').onclick = () => loadGiveaways().catch((err) => showToast(`Giveaways load failed: ${err.message}`, 'error'));
-  qs('#giveawayStart').onclick = startGiveaway;
+  qs('#giveawayStart').onclick = () => { if (requireModulePermissions(FEATURE_GIVEAWAYS, 'Start giveaway')) startGiveaway(); };
   qs('#pollsRefresh').onclick = () => loadPolls().catch((err) => showToast(`Polls load failed: ${err.message}`, 'error'));
-  qs('#pollStart').onclick = startPoll;
+  qs('#pollStart').onclick = () => { if (requireModulePermissions(FEATURE_POLLS, 'Start poll')) startPoll(); };
   qs('#suggestionsRefresh').onclick = () => loadSuggestions().catch((err) => showToast(`Suggestions load failed: ${err.message}`, 'error'));
   qs('#suggestionStatusFilter').addEventListener('change', () => loadSuggestions().catch((err) => showToast(`Suggestions load failed: ${err.message}`, 'error')));
   qs('#remindersRefresh').onclick = () => loadReminders().catch((err) => showToast(`Reminders load failed: ${err.message}`, 'error'));
-  qs('#reminderAdd').onclick = addReminder;
+  qs('#reminderAdd').onclick = () => { if (requireModulePermissions(FEATURE_REMINDERS, 'Add reminder')) addReminder(); };
   qs('#memberNotesRefresh').onclick = () => loadMemberNotes().catch((err) => showToast(`Member notes load failed: ${err.message}`, 'error'));
-  qs('#memberNoteAdd').onclick = addMemberNote;
+  qs('#memberNoteAdd').onclick = () => { if (requireModulePermissions(FEATURE_MEMBER_NOTES, 'Add member note')) addMemberNote(); };
   qs('#memberNoteUserFilter').addEventListener('input', () => loadMemberNotes().catch((err) => showToast(`Member notes load failed: ${err.message}`, 'error')));
   qs('#settingsWelcomeEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsGoodbyeEnabled').addEventListener('change', syncModuleBadges);
@@ -2174,6 +2317,7 @@ function wireEvents() {
   qs('#rrRulesTable').addEventListener('click', async (e) => {
     const btn = e.target.closest('button[data-rr-delete]');
     if (!btn) return;
+    if (!requireModulePermissions(FEATURE_REACTION_ROLES, 'Delete reaction role rule')) return;
     try {
       await deleteReactionRoleRule(btn.getAttribute('data-rr-delete'));
       showToast('Reaction role rule deleted.');
@@ -2198,6 +2342,7 @@ function wireEvents() {
   qs('#ticketsTable').addEventListener('click', async (e) => {
     const closeBtn = e.target.closest('button[data-ticket-close]');
     if (closeBtn) {
+      if (!requireModulePermissions(FEATURE_TICKETS, 'Close ticket')) return;
       try {
         await closeTicket(closeBtn.getAttribute('data-ticket-close'));
         showToast('Ticket closed.');
@@ -2220,6 +2365,7 @@ function wireEvents() {
   qs('#appealsTable').addEventListener('click', async (e) => {
     const resolveBtn = e.target.closest('button[data-appeal-resolve]');
     if (!resolveBtn) return;
+    if (!requireModulePermissions(FEATURE_APPEALS, 'Resolve appeal')) return;
     try {
       await resolveAppeal(resolveBtn.getAttribute('data-appeal-resolve'));
       showToast('Appeal resolved.');
@@ -2244,6 +2390,7 @@ function wireEvents() {
   qs('#giveawaysTable').addEventListener('click', async (e) => {
     const drawBtn = e.target.closest('button[data-giveaway-draw]');
     if (!drawBtn) return;
+    if (!requireModulePermissions(FEATURE_GIVEAWAYS, 'Draw giveaway')) return;
     try {
       await drawGiveaway(drawBtn.getAttribute('data-giveaway-draw'));
       showToast('Giveaway drawn.');
@@ -2256,6 +2403,7 @@ function wireEvents() {
   qs('#pollsTable').addEventListener('click', async (e) => {
     const closeBtn = e.target.closest('button[data-poll-close]');
     if (!closeBtn) return;
+    if (!requireModulePermissions(FEATURE_POLLS, 'Close poll')) return;
     try {
       await closePoll(closeBtn.getAttribute('data-poll-close'));
       showToast('Poll closed.');
@@ -2268,6 +2416,7 @@ function wireEvents() {
   qs('#suggestionsTable').addEventListener('click', async (e) => {
     const approveBtn = e.target.closest('button[data-suggestion-approve]');
     if (approveBtn) {
+      if (!requireModulePermissions(FEATURE_SUGGESTIONS, 'Approve suggestion')) return;
       try {
         await decideSuggestion(approveBtn.getAttribute('data-suggestion-approve'), 'approve');
         showToast('Suggestion approved.');
@@ -2279,6 +2428,7 @@ function wireEvents() {
     }
     const rejectBtn = e.target.closest('button[data-suggestion-reject]');
     if (rejectBtn) {
+      if (!requireModulePermissions(FEATURE_SUGGESTIONS, 'Reject suggestion')) return;
       try {
         await decideSuggestion(rejectBtn.getAttribute('data-suggestion-reject'), 'reject');
         showToast('Suggestion rejected.');
@@ -2345,6 +2495,7 @@ async function refreshAll() {
   await loadActions();
   await loadEvents();
   await loadSettings();
+  await loadModulePermissions();
   await loadReactionRoleRules();
   await loadWarnings();
   await loadScheduledMessages();

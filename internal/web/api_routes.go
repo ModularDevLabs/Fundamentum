@@ -23,6 +23,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/actions", s.handleActions)
 	api.HandleFunc("/api/actions/", s.handleActionDetail)
 	api.HandleFunc("/api/modules/invite/status", s.handleInviteModuleStatus)
+	api.HandleFunc("/api/modules/permissions", s.handleModulePermissions)
 	api.HandleFunc("/api/modules/reaction-roles/rules", s.handleReactionRoleRules)
 	api.HandleFunc("/api/modules/reaction-roles/rules/", s.handleReactionRoleRuleDetail)
 	api.HandleFunc("/api/modules/warnings", s.handleWarnings)
