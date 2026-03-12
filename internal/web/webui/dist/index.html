@@ -27,6 +27,14 @@
           <option value="light">Light</option>
         </select>
       </div>
+      <div class="theme-select">
+        <label>Dashboard Role</label>
+        <select id="dashboardRoleSelect">
+          <option value="admin">Admin</option>
+          <option value="moderator">Moderator</option>
+          <option value="support">Support</option>
+        </select>
+      </div>
       <nav class="nav">
         <div class="nav-group expanded" data-group="core">
           <button type="button" class="nav-group-toggle" data-group-toggle="core" aria-expanded="true">Core</button>
@@ -280,6 +288,10 @@
                 <option value="false">Disabled</option>
                 <option value="true">Enabled</option>
               </select>
+            </label>
+            <label>
+              Role policies JSON (optional)
+              <textarea id="settingsRolePolicies" rows="6" placeholder='{"actions":["moderator"],"settings":["admin"],"tickets":["support","moderator"]}'></textarea>
             </label>
           </div>
           <div class="panel-actions">

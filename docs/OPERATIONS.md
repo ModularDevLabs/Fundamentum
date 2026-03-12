@@ -22,6 +22,7 @@ Stop: `Ctrl+C`
 - **Settings**: Update inactivity days, backfill days, and quarantine behavior.
 - **Settings profiles**: Apply profile presets (`Small Community`, `Gaming Server`, `Strict Moderation`) for quick baseline module configuration.
 - **Action safety controls**: Enable dry-run mode, confirm-token requirement, and optional two-person approval for destructive actions.
+- **Dashboard RBAC**: Use `dashboard_role_policies` with `X-Dashboard-Role` context to restrict which dashboard roles can call module/action/settings APIs.
 - **Exports**: Use Settings -> Exports to download JSON/CSV for members, actions, warnings, tickets, and per-user case timelines.
 - **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics / Starboard / Leveling / Giveaways / Polls / Suggestions / Keyword Alerts / AFK / Reminders / Account Age Guard / Member Notes / Appeals / Custom Commands**: Each module has its own menu and save action, and settings are per-guild.
 - **Module permission checks**: Each module card shows missing bot permissions and disables save/run actions until required permissions are granted.

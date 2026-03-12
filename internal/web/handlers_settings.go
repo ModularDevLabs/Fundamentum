@@ -36,6 +36,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			ActionDryRun            bool                 `json:"action_dry_run"`
 			ActionRequireConfirm    bool                 `json:"action_require_confirm"`
 			ActionTwoPersonApproval bool                 `json:"action_two_person_approval"`
+			DashboardRolePolicies   map[string][]string  `json:"dashboard_role_policies"`
 			FeatureFlags            map[string]bool      `json:"feature_flags"`
 			WelcomeChannelID        string               `json:"welcome_channel_id"`
 			WelcomeMessage          string               `json:"welcome_message"`
@@ -119,6 +120,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.ActionDryRun = cfg.ActionDryRun
 		current.ActionRequireConfirm = cfg.ActionRequireConfirm
 		current.ActionTwoPersonApproval = cfg.ActionTwoPersonApproval
+		current.DashboardRolePolicies = cfg.DashboardRolePolicies
 		current.FeatureFlags = cfg.FeatureFlags
 		current.WelcomeChannelID = cfg.WelcomeChannelID
 		current.WelcomeMessage = cfg.WelcomeMessage

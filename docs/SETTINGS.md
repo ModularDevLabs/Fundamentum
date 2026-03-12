@@ -81,6 +81,14 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - Default: `false`
 - Requires a distinct `approver_user` value for destructive action requests.
 
+8d. `dashboard_role_policies`
+- UI label: `Role policies JSON`
+- Type: map of policy key -> list of dashboard roles
+- Default: empty map
+- Example:
+- `{"actions":["moderator"],"tickets":["support","moderator"],"settings":["admin"]}`
+- Empty/missing policy for a key means unrestricted.
+
 9. `feature_flags`
 - Type: object/map of booleans
 - Default:

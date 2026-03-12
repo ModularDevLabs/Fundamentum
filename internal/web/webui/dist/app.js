@@ -2,6 +2,7 @@ const state = {
   token: localStorage.getItem('modbot_token') || '',
   guildId: localStorage.getItem('modbot_guild') || '',
   guilds: [],
+  dashboardRole: localStorage.getItem('modbot_dashboard_role') || 'admin',
   currentSettings: null,
   modulePermissions: {},
   selectedUsers: new Map(),
@@ -531,6 +532,9 @@ async function apiFetch(path, options = {}) {
   if (state.token) {
     headers['Authorization'] = `Bearer ${state.token}`;
   }
+  if (state.dashboardRole) {
+    headers['X-Dashboard-Role'] = state.dashboardRole;
+  }
   const res = await fetch(path, { ...options, headers });
   if (res.status === 401) {
     showLogin();
@@ -601,6 +605,7 @@ async function loadSettings() {
   qs('#settingsActionDryRun').value = String(!!cfg.action_dry_run);
   qs('#settingsActionRequireConfirm').value = String(cfg.action_require_confirm !== false);
   qs('#settingsActionTwoPerson').value = String(!!cfg.action_two_person_approval);
+  qs('#settingsRolePolicies').value = JSON.stringify(cfg.dashboard_role_policies || {}, null, 2);
   qs('#settingsWelcomeEnabled').value = String(!!flags[FEATURE_WELCOME]);
   qs('#settingsWelcomeChannel').value = cfg.welcome_channel_id || '';
   qs('#settingsWelcomeMessage').value = cfg.welcome_message || '';
@@ -727,6 +732,15 @@ async function saveSettings() {
   const status = qs('#settingsStatus');
   status.textContent = 'Saving...';
   try {
+    let rolePolicies = {};
+    const rolePoliciesRaw = qs('#settingsRolePolicies').value.trim();
+    if (rolePoliciesRaw) {
+      const parsed = JSON.parse(rolePoliciesRaw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('Role policies JSON must be an object.');
+      }
+      rolePolicies = parsed;
+    }
     const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
     const payload = {
       ...current,
@@ -741,6 +755,7 @@ async function saveSettings() {
       action_dry_run: qs('#settingsActionDryRun').value === 'true',
       action_require_confirm: qs('#settingsActionRequireConfirm').value === 'true',
       action_two_person_approval: qs('#settingsActionTwoPerson').value === 'true',
+      dashboard_role_policies: rolePolicies,
     };
     await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
       method: 'PUT',
@@ -2424,6 +2439,15 @@ function wireEvents() {
   const themeSelect = qs('#themeSelect');
   if (themeSelect) {
     themeSelect.onchange = () => applyTheme(themeSelect.value);
+  }
+  const roleSelect = qs('#dashboardRoleSelect');
+  if (roleSelect) {
+    roleSelect.value = state.dashboardRole || 'admin';
+    roleSelect.onchange = () => {
+      state.dashboardRole = roleSelect.value || 'admin';
+      localStorage.setItem('modbot_dashboard_role', state.dashboardRole);
+      refreshAll().catch((err) => showToast(`Reload failed: ${err.message}`, 'error'));
+    };
   }
   qs('#settingsSave').onclick = saveSettings;
   qs('#settingsApplyProfile').onclick = applySettingsProfile;
