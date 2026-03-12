@@ -36,6 +36,7 @@ const FEATURE_APPEALS = 'appeals';
 const FEATURE_CUSTOM_COMMANDS = 'custom_commands';
 const NAV_GROUPS_STORAGE_KEY = 'modbot_nav_groups';
 const ACTIVE_VIEW_STORAGE_KEY = 'modbot_active_view';
+const THEME_STORAGE_KEY = 'modbot_theme';
 
 function setModuleBadge(enabled, badgeEl, cardEl) {
   if (!badgeEl || !cardEl) return;
@@ -123,6 +124,27 @@ function setBusy(button, busyLabel) {
     button.disabled = false;
     button.textContent = original;
   };
+}
+
+function preferredTheme() {
+  const saved = localStorage.getItem(THEME_STORAGE_KEY);
+  if (saved === 'dark' || saved === 'light') {
+    return saved;
+  }
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+    return 'light';
+  }
+  return 'dark';
+}
+
+function applyTheme(theme) {
+  const normalized = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', normalized);
+  localStorage.setItem(THEME_STORAGE_KEY, normalized);
+  const select = qs('#themeSelect');
+  if (select && select.value !== normalized) {
+    select.value = normalized;
+  }
 }
 
 function loadNavGroupState() {
@@ -1970,6 +1992,10 @@ function wireEvents() {
     localStorage.removeItem('modbot_token');
     showLogin();
   };
+  const themeSelect = qs('#themeSelect');
+  if (themeSelect) {
+    themeSelect.onchange = () => applyTheme(themeSelect.value);
+  }
   qs('#settingsSave').onclick = saveSettings;
   qs('#welcomeSave').onclick = saveWelcome;
   qs('#goodbyeSave').onclick = saveGoodbye;
@@ -2260,6 +2286,7 @@ async function bootstrap() {
   }
 }
 
+applyTheme(preferredTheme());
 wireEvents();
 if (!state.token) {
   showLogin();
