@@ -85,6 +85,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `keyword_alerts=false`
 - `afk=false`
 - `reminders=false`
+- `account_age_guard=false`
 - `appeals=false`
 - `custom_commands=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
@@ -373,15 +374,33 @@ Each schedule contains:
 - UI label: `Default channel ID` (Reminders module)
 - Type: Discord channel ID (string)
 
-60. `appeals_channel_id`
+60. `account_age_min_days`
+- UI label: `Minimum account age (days)` (Account Age Guard module)
+- Type: integer
+- Default: `7`
+
+61. `account_age_action`
+- UI label: `Action` (Account Age Guard module)
+- Type: enum
+- Default: `log_only`
+- Options:
+- `log_only`
+- `quarantine`
+- `kick`
+
+62. `account_age_log_channel_id`
+- UI label: `Log channel ID (optional)` (Account Age Guard module)
+- Type: Discord channel ID (string)
+
+63. `appeals_channel_id`
 - UI label: `Appeals channel ID` (Appeals module)
 - Type: Discord channel ID (string)
 
-61. `appeals_log_channel_id`
+64. `appeals_log_channel_id`
 - UI label: `Log channel ID (optional)` (Appeals module)
 - Type: Discord channel ID (string)
 
-62. `appeals_open_phrase`
+65. `appeals_open_phrase`
 - UI label: `Open phrase` (Appeals module)
 - Type: string
 - Default: `!appeal`

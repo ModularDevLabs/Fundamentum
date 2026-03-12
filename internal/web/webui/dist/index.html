@@ -45,6 +45,7 @@
         <button data-view="keywordalerts">Keyword Alerts</button>
         <button data-view="afk">AFK</button>
         <button data-view="reminders">Reminders</button>
+        <button data-view="accountageguard">Account Age Guard</button>
         <button data-view="appeals">Appeals</button>
         <button data-view="customcommands">Custom Commands</button>
         <button data-view="settings">Settings</button>
@@ -1232,6 +1233,50 @@
               <div>Status</div>
             </div>
             <div id="remindersTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-accountageguard" class="view">
+        <div class="panel">
+          <div class="panel-header">Account Age Guard Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleAccountAgeGuardCard">
+              <div class="module-head">
+                <div class="module-title">Account Age Guard</div>
+                <span class="module-badge off" id="moduleAccountAgeGuardBadge">Disabled</span>
+              </div>
+              <p class="module-desc">On new joins, enforce a minimum Discord account age with optional quarantine/kick.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsAccountAgeGuardEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Minimum account age (days)
+                  <input id="settingsAccountAgeMinDays" type="number" min="1" />
+                </label>
+                <label>
+                  Action
+                  <select id="settingsAccountAgeAction">
+                    <option value="log_only">Log Only</option>
+                    <option value="quarantine">Quarantine</option>
+                    <option value="kick">Kick</option>
+                  </select>
+                </label>
+                <label>
+                  Log channel ID (optional)
+                  <input id="settingsAccountAgeLogChannel" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="accountAgeGuardSave" class="primary">Save account age guard module</button>
+            <span id="accountAgeGuardStatus" class="status-line"></span>
           </div>
         </div>
       </section>

@@ -61,6 +61,7 @@ func (s *Service) OnGuildMemberAdd(_ *discordgo.Session, m *discordgo.GuildMembe
 	if err != nil {
 		return
 	}
+	s.handleAccountAgeGuardOnJoin(ctx, m, settings)
 	s.handleAntiRaidOnJoin(ctx, m.GuildID, m.User.ID, settings)
 
 	if settings.FeatureEnabled(models.FeatureWelcomeMessages) && settings.WelcomeChannelID != "" {

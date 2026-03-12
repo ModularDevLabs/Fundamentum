@@ -64,6 +64,9 @@ type GuildSettings struct {
 	KeywordAlertWords       []string        `json:"keyword_alert_words"`
 	AFKSetPhrase            string          `json:"afk_set_phrase"`
 	RemindersChannelID      string          `json:"reminders_channel_id"`
+	AccountAgeMinDays       int             `json:"account_age_min_days"`
+	AccountAgeAction        string          `json:"account_age_action"`
+	AccountAgeLogChannelID  string          `json:"account_age_log_channel_id"`
 	AppealsChannelID        string          `json:"appeals_channel_id"`
 	AppealsLogChannelID     string          `json:"appeals_log_channel_id"`
 	AppealsOpenPhrase       string          `json:"appeals_open_phrase"`
@@ -272,6 +275,7 @@ const (
 	FeatureKeywordAlerts   = "keyword_alerts"
 	FeatureAFK             = "afk"
 	FeatureReminders       = "reminders"
+	FeatureAccountAgeGuard = "account_age_guard"
 	FeatureAppeals         = "appeals"
 	FeatureCustomCommands  = "custom_commands"
 )
@@ -312,6 +316,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureKeywordAlerts:   false,
 			FeatureAFK:             false,
 			FeatureReminders:       false,
+			FeatureAccountAgeGuard: false,
 			FeatureAppeals:         false,
 			FeatureCustomCommands:  false,
 		},
@@ -353,6 +358,8 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		LevelingCooldownSeconds: 60,
 		GiveawaysReactionEmoji:  "🎉",
 		AFKSetPhrase:            "!afk",
+		AccountAgeMinDays:       7,
+		AccountAgeAction:        "log_only",
 		AppealsOpenPhrase:       "!appeal",
 	}
 }

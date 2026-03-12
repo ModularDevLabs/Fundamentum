@@ -160,6 +160,12 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.AFKSetPhrase == "" {
 		cfg.AFKSetPhrase = def.AFKSetPhrase
 	}
+	if cfg.AccountAgeMinDays <= 0 {
+		cfg.AccountAgeMinDays = def.AccountAgeMinDays
+	}
+	if cfg.AccountAgeAction == "" {
+		cfg.AccountAgeAction = def.AccountAgeAction
+	}
 	if cfg.AppealsOpenPhrase == "" {
 		cfg.AppealsOpenPhrase = def.AppealsOpenPhrase
 	}

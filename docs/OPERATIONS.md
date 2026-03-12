@@ -20,7 +20,7 @@ Stop: `Ctrl+C`
 - **Members**: Quarantined users are visually highlighted and labeled with a `Quarantined` badge.
 - **Events**: Shows raw process logs (INFO/DEBUG/ERROR) for troubleshooting actions and backfill.
 - **Settings**: Update inactivity days, backfill days, and quarantine behavior.
-- **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics / Starboard / Leveling / Giveaways / Polls / Suggestions / Keyword Alerts / AFK / Reminders / Appeals / Custom Commands**: Each module has its own menu and save action, and settings are per-guild.
+- **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics / Starboard / Leveling / Giveaways / Polls / Suggestions / Keyword Alerts / AFK / Reminders / Account Age Guard / Appeals / Custom Commands**: Each module has its own menu and save action, and settings are per-guild.
 - **Invite Tracker**: Includes a built-in permission check panel for `Manage Server` capability in the selected guild.
 - **AutoMod**: Supports ignored channels and ignored roles to exempt staff/private workflows.
 - **Reaction Roles**: Add rules mapping `(channel_id, message_id, emoji) -> role_id`; role can be removed on unreact.
@@ -40,6 +40,7 @@ Stop: `Ctrl+C`
 - **Keyword Alerts**: Scans messages for configured keywords and posts alert links into a dedicated channel.
 - **AFK**: Users can set AFK with a phrase (default `!afk`); the bot clears AFK on return and warns mentioners.
 - **Reminders**: Queue one-time reminder messages for a specific future time from the dashboard.
+- **Account Age Guard**: On join, enforces minimum account age and can log-only, quarantine, or kick.
 - **Appeals**: Users submit appeals in one channel using a phrase (default `!appeal`); dashboard lists and resolves appeals.
 - **Custom Commands**: Responds to exact message triggers with configured text replies for the selected guild.
 - Full field-by-field settings reference: `docs/SETTINGS.md`.

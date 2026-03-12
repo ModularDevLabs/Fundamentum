@@ -30,6 +30,7 @@ const FEATURE_SUGGESTIONS = 'suggestions';
 const FEATURE_KEYWORD_ALERTS = 'keyword_alerts';
 const FEATURE_AFK = 'afk';
 const FEATURE_REMINDERS = 'reminders';
+const FEATURE_ACCOUNT_AGE_GUARD = 'account_age_guard';
 const FEATURE_APPEALS = 'appeals';
 const FEATURE_CUSTOM_COMMANDS = 'custom_commands';
 
@@ -62,6 +63,7 @@ function syncModuleBadges() {
   const keywordAlertsEnabled = qs('#settingsKeywordAlertsEnabled').value === 'true';
   const afkEnabled = qs('#settingsAFKEnabled').value === 'true';
   const remindersEnabled = qs('#settingsRemindersEnabled').value === 'true';
+  const accountAgeGuardEnabled = qs('#settingsAccountAgeGuardEnabled').value === 'true';
   const appealsEnabled = qs('#settingsAppealsEnabled').value === 'true';
   const customCommandsEnabled = qs('#settingsCustomCommandsEnabled').value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
@@ -84,6 +86,7 @@ function syncModuleBadges() {
   setModuleBadge(keywordAlertsEnabled, qs('#moduleKeywordAlertsBadge'), qs('#moduleKeywordAlertsCard'));
   setModuleBadge(afkEnabled, qs('#moduleAFKBadge'), qs('#moduleAFKCard'));
   setModuleBadge(remindersEnabled, qs('#moduleRemindersBadge'), qs('#moduleRemindersCard'));
+  setModuleBadge(accountAgeGuardEnabled, qs('#moduleAccountAgeGuardBadge'), qs('#moduleAccountAgeGuardCard'));
   setModuleBadge(appealsEnabled, qs('#moduleAppealsBadge'), qs('#moduleAppealsCard'));
   setModuleBadge(customCommandsEnabled, qs('#moduleCustomCommandsBadge'), qs('#moduleCustomCommandsCard'));
 }
@@ -331,6 +334,10 @@ async function loadSettings() {
   qs('#settingsAFKPhrase').value = cfg.afk_set_phrase || '!afk';
   qs('#settingsRemindersEnabled').value = String(!!flags[FEATURE_REMINDERS]);
   qs('#settingsRemindersChannel').value = cfg.reminders_channel_id || '';
+  qs('#settingsAccountAgeGuardEnabled').value = String(!!flags[FEATURE_ACCOUNT_AGE_GUARD]);
+  qs('#settingsAccountAgeMinDays').value = cfg.account_age_min_days || 7;
+  qs('#settingsAccountAgeAction').value = cfg.account_age_action || 'log_only';
+  qs('#settingsAccountAgeLogChannel').value = cfg.account_age_log_channel_id || '';
   qs('#settingsAppealsEnabled').value = String(!!flags[FEATURE_APPEALS]);
   qs('#settingsAppealsChannel').value = cfg.appeals_channel_id || '';
   qs('#settingsAppealsLogChannel').value = cfg.appeals_log_channel_id || '';
@@ -1252,6 +1259,38 @@ async function saveRemindersModule() {
   }
 }
 
+async function saveAccountAgeGuardModule() {
+  const restore = setBusy(qs('#accountAgeGuardSave'), 'Saving...');
+  const status = qs('#accountAgeGuardStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_ACCOUNT_AGE_GUARD]: qs('#settingsAccountAgeGuardEnabled').value === 'true',
+      },
+      account_age_min_days: parseInt(qs('#settingsAccountAgeMinDays').value, 10) || 7,
+      account_age_action: qs('#settingsAccountAgeAction').value,
+      account_age_log_channel_id: qs('#settingsAccountAgeLogChannel').value.trim(),
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Account-age guard module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Account-age guard save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
 async function loadGiveaways() {
   const table = qs('#giveawaysTable');
   if (!table || !state.guildId) return;
@@ -1776,6 +1815,7 @@ function wireEvents() {
   qs('#keywordAlertsSave').onclick = saveKeywordAlertsModule;
   qs('#afkSave').onclick = saveAFKModule;
   qs('#remindersSave').onclick = saveRemindersModule;
+  qs('#accountAgeGuardSave').onclick = saveAccountAgeGuardModule;
   qs('#customCommandsSave').onclick = saveCustomCommandsModule;
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = addReactionRoleRule;
@@ -1818,6 +1858,7 @@ function wireEvents() {
   qs('#settingsKeywordAlertsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAFKEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsRemindersEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsAccountAgeGuardEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAppealsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsCustomCommandsEnabled').addEventListener('change', syncModuleBadges);
   qs('#memberRefresh').onclick = loadMembers;
