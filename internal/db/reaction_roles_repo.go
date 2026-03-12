@@ -58,3 +58,8 @@ func (r *ReactionRolesRepo) Delete(ctx context.Context, guildID string, id int64
 	_, err := r.db.ExecContext(ctx, `DELETE FROM reaction_role_rules WHERE guild_id = ? AND id = ?`, guildID, id)
 	return err
 }
+
+func (r *ReactionRolesRepo) DeleteAllByGuild(ctx context.Context, guildID string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM reaction_role_rules WHERE guild_id = ?`, guildID)
+	return err
+}

@@ -822,6 +822,41 @@ function downloadExport() {
   window.open(url, '_blank');
 }
 
+function downloadBackupSnapshot() {
+  if (!state.guildId) return;
+  const status = qs('#backupStatus');
+  status.textContent = 'Downloading backup snapshot...';
+  window.open(`/api/backup/export?guild_id=${encodeURIComponent(state.guildId)}`, '_blank');
+}
+
+async function restoreBackupSnapshot() {
+  if (!state.guildId) return;
+  const raw = (qs('#backupRestoreJson').value || '').trim();
+  if (!raw) {
+    showToast('Paste backup JSON first.', 'error');
+    return;
+  }
+  const restore = setBusy(qs('#backupRestore'), 'Restoring...');
+  const status = qs('#backupStatus');
+  status.textContent = 'Restoring snapshot...';
+  try {
+    const payload = JSON.parse(raw);
+    await apiFetch(`/api/backup/import?guild_id=${state.guildId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await refreshAll();
+    status.textContent = `Restore completed at ${new Date().toLocaleTimeString()}`;
+    showToast('Backup restore completed.');
+  } catch (err) {
+    status.textContent = 'Restore failed.';
+    showToast(`Backup restore failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
 async function saveWelcome() {
   const restore = setBusy(qs('#welcomeSave'), 'Saving...');
   const status = qs('#welcomeStatus');
@@ -2452,6 +2487,8 @@ function wireEvents() {
   qs('#settingsSave').onclick = saveSettings;
   qs('#settingsApplyProfile').onclick = applySettingsProfile;
   qs('#exportDownload').onclick = downloadExport;
+  qs('#backupDownload').onclick = downloadBackupSnapshot;
+  qs('#backupRestore').onclick = restoreBackupSnapshot;
   qs('#welcomeSave').onclick = () => { if (requireModulePermissions(FEATURE_WELCOME, 'Save welcome module')) saveWelcome(); };
   qs('#goodbyeSave').onclick = () => { if (requireModulePermissions(FEATURE_GOODBYE, 'Save goodbye module')) saveGoodbye(); };
   qs('#auditSave').onclick = () => { if (requireModulePermissions(FEATURE_AUDIT, 'Save audit module')) saveAudit(); };

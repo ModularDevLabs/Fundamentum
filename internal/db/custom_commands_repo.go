@@ -54,6 +54,11 @@ func (r *CustomCommandsRepo) Delete(ctx context.Context, guildID string, id int6
 	return err
 }
 
+func (r *CustomCommandsRepo) DeleteAllByGuild(ctx context.Context, guildID string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM custom_commands WHERE guild_id = ?`, guildID)
+	return err
+}
+
 func (r *CustomCommandsRepo) FindByTrigger(ctx context.Context, guildID, trigger string) (models.CustomCommandRow, bool, error) {
 	var row models.CustomCommandRow
 	var created string

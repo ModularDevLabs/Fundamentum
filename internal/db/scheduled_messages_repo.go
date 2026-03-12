@@ -68,6 +68,11 @@ func (r *ScheduledMessagesRepo) Delete(ctx context.Context, guildID string, id i
 	return err
 }
 
+func (r *ScheduledMessagesRepo) DeleteAllByGuild(ctx context.Context, guildID string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM scheduled_messages WHERE guild_id = ?`, guildID)
+	return err
+}
+
 func (r *ScheduledMessagesRepo) Due(ctx context.Context, now time.Time, limit int) ([]models.ScheduledMessageRow, error) {
 	rows, err := r.db.QueryContext(ctx, `SELECT id, guild_id, channel_id, content, interval_minutes, next_run_at, enabled, created_at, updated_at
 		FROM scheduled_messages

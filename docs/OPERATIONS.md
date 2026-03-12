@@ -24,6 +24,7 @@ Stop: `Ctrl+C`
 - **Action safety controls**: Enable dry-run mode, confirm-token requirement, and optional two-person approval for destructive actions.
 - **Dashboard RBAC**: Use `dashboard_role_policies` with `X-Dashboard-Role` context to restrict which dashboard roles can call module/action/settings APIs.
 - **Exports**: Use Settings -> Exports to download JSON/CSV for members, actions, warnings, tickets, and per-user case timelines.
+- **Backup / Restore**: Use Settings -> Backup / Restore to download a guild snapshot and restore settings + reaction roles + scheduled messages + custom commands.
 - **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics / Starboard / Leveling / Giveaways / Polls / Suggestions / Keyword Alerts / AFK / Reminders / Account Age Guard / Member Notes / Appeals / Custom Commands**: Each module has its own menu and save action, and settings are per-guild.
 - **Module permission checks**: Each module card shows missing bot permissions and disables save/run actions until required permissions are granted.
 - **Invite Tracker**: Includes a built-in permission check panel for `Manage Server` capability in the selected guild.

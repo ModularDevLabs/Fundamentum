@@ -329,6 +329,22 @@
           </div>
           <div id="exportStatus" class="status-line"></div>
         </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Backup / Restore</div>
+          <div class="panel-actions" style="margin-top: 0;">
+            <button id="backupDownload" class="ghost">Download backup snapshot</button>
+            <span id="backupStatus" class="status-line"></span>
+          </div>
+          <div class="form-grid" style="margin-top: 12px;">
+            <label>
+              Restore snapshot JSON
+              <textarea id="backupRestoreJson" rows="10" placeholder="Paste backup JSON here"></textarea>
+            </label>
+          </div>
+          <div class="panel-actions">
+            <button id="backupRestore" class="primary">Restore snapshot</button>
+          </div>
+        </div>
       </section>
 
       <section id="view-welcome" class="view">

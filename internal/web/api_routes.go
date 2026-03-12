@@ -20,6 +20,8 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/backfill/status", s.handleBackfillStatus)
 	api.HandleFunc("/api/analytics/trends", s.handleAnalyticsTrends)
 	api.HandleFunc("/api/export", s.handleExport)
+	api.HandleFunc("/api/backup/export", s.handleBackupExport)
+	api.HandleFunc("/api/backup/import", s.handleBackupImport)
 	api.HandleFunc("/api/events", s.handleEvents)
 	api.HandleFunc("/api/members", s.handleMembers)
 	api.HandleFunc("/api/members/", s.handleMemberDetail)
