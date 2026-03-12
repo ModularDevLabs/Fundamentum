@@ -27,6 +27,7 @@ const FEATURE_LEVELING = 'leveling';
 const FEATURE_GIVEAWAYS = 'giveaways';
 const FEATURE_POLLS = 'polls';
 const FEATURE_SUGGESTIONS = 'suggestions';
+const FEATURE_KEYWORD_ALERTS = 'keyword_alerts';
 const FEATURE_APPEALS = 'appeals';
 const FEATURE_CUSTOM_COMMANDS = 'custom_commands';
 
@@ -56,6 +57,7 @@ function syncModuleBadges() {
   const giveawaysEnabled = qs('#settingsGiveawaysEnabled').value === 'true';
   const pollsEnabled = qs('#settingsPollsEnabled').value === 'true';
   const suggestionsEnabled = qs('#settingsSuggestionsEnabled').value === 'true';
+  const keywordAlertsEnabled = qs('#settingsKeywordAlertsEnabled').value === 'true';
   const appealsEnabled = qs('#settingsAppealsEnabled').value === 'true';
   const customCommandsEnabled = qs('#settingsCustomCommandsEnabled').value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
@@ -75,6 +77,7 @@ function syncModuleBadges() {
   setModuleBadge(giveawaysEnabled, qs('#moduleGiveawaysBadge'), qs('#moduleGiveawaysCard'));
   setModuleBadge(pollsEnabled, qs('#modulePollsBadge'), qs('#modulePollsCard'));
   setModuleBadge(suggestionsEnabled, qs('#moduleSuggestionsBadge'), qs('#moduleSuggestionsCard'));
+  setModuleBadge(keywordAlertsEnabled, qs('#moduleKeywordAlertsBadge'), qs('#moduleKeywordAlertsCard'));
   setModuleBadge(appealsEnabled, qs('#moduleAppealsBadge'), qs('#moduleAppealsCard'));
   setModuleBadge(customCommandsEnabled, qs('#moduleCustomCommandsBadge'), qs('#moduleCustomCommandsCard'));
 }
@@ -315,6 +318,9 @@ async function loadSettings() {
   qs('#settingsSuggestionsEnabled').value = String(!!flags[FEATURE_SUGGESTIONS]);
   qs('#settingsSuggestionsChannel').value = cfg.suggestions_channel_id || '';
   qs('#settingsSuggestionsLogChannel').value = cfg.suggestions_log_channel_id || '';
+  qs('#settingsKeywordAlertsEnabled').value = String(!!flags[FEATURE_KEYWORD_ALERTS]);
+  qs('#settingsKeywordAlertsChannel').value = cfg.keyword_alerts_channel_id || '';
+  qs('#settingsKeywordAlertWords').value = (cfg.keyword_alert_words || []).join(',');
   qs('#settingsAppealsEnabled').value = String(!!flags[FEATURE_APPEALS]);
   qs('#settingsAppealsChannel').value = cfg.appeals_channel_id || '';
   qs('#settingsAppealsLogChannel').value = cfg.appeals_log_channel_id || '';
@@ -1144,6 +1150,37 @@ async function saveSuggestionsModule() {
   }
 }
 
+async function saveKeywordAlertsModule() {
+  const restore = setBusy(qs('#keywordAlertsSave'), 'Saving...');
+  const status = qs('#keywordAlertsStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_KEYWORD_ALERTS]: qs('#settingsKeywordAlertsEnabled').value === 'true',
+      },
+      keyword_alerts_channel_id: qs('#settingsKeywordAlertsChannel').value.trim(),
+      keyword_alert_words: qs('#settingsKeywordAlertWords').value.split(',').map((v) => v.trim()).filter(Boolean),
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Keyword alerts module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Keyword alerts save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
 async function loadGiveaways() {
   const table = qs('#giveawaysTable');
   if (!table || !state.guildId) return;
@@ -1621,6 +1658,7 @@ function wireEvents() {
   qs('#giveawaysSave').onclick = saveGiveawaysModule;
   qs('#pollsSave').onclick = savePollsModule;
   qs('#suggestionsSave').onclick = saveSuggestionsModule;
+  qs('#keywordAlertsSave').onclick = saveKeywordAlertsModule;
   qs('#customCommandsSave').onclick = saveCustomCommandsModule;
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = addReactionRoleRule;
@@ -1658,6 +1696,7 @@ function wireEvents() {
   qs('#settingsGiveawaysEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsPollsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsSuggestionsEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsKeywordAlertsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAppealsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsCustomCommandsEnabled').addEventListener('change', syncModuleBadges);
   qs('#memberRefresh').onclick = loadMembers;

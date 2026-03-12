@@ -154,6 +154,9 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.GiveawaysReactionEmoji == "" {
 		cfg.GiveawaysReactionEmoji = def.GiveawaysReactionEmoji
 	}
+	if cfg.KeywordAlertWords == nil {
+		cfg.KeywordAlertWords = []string{}
+	}
 	if cfg.AppealsOpenPhrase == "" {
 		cfg.AppealsOpenPhrase = def.AppealsOpenPhrase
 	}

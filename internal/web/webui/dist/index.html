@@ -42,6 +42,7 @@
         <button data-view="giveaways">Giveaways</button>
         <button data-view="polls">Polls</button>
         <button data-view="suggestions">Suggestions</button>
+        <button data-view="keywordalerts">Keyword Alerts</button>
         <button data-view="appeals">Appeals</button>
         <button data-view="customcommands">Custom Commands</button>
         <button data-view="settings">Settings</button>
@@ -1106,6 +1107,42 @@
               <div>Action</div>
             </div>
             <div id="suggestionsTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-keywordalerts" class="view">
+        <div class="panel">
+          <div class="panel-header">Keyword Alerts Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleKeywordAlertsCard">
+              <div class="module-head">
+                <div class="module-title">Keyword Alerts</div>
+                <span class="module-badge off" id="moduleKeywordAlertsBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Watch for configured keywords and post an alert with jump link to the alert channel.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsKeywordAlertsEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Alert channel ID
+                  <input id="settingsKeywordAlertsChannel" />
+                </label>
+                <label>
+                  Keywords (comma)
+                  <input id="settingsKeywordAlertWords" placeholder="scam,raid,leak" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="keywordAlertsSave" class="primary">Save keyword alerts module</button>
+            <span id="keywordAlertsStatus" class="status-line"></span>
           </div>
         </div>
       </section>

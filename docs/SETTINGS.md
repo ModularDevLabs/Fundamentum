@@ -82,6 +82,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `giveaways=false`
 - `polls=false`
 - `suggestions=false`
+- `keyword_alerts=false`
 - `appeals=false`
 - `custom_commands=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
@@ -352,15 +353,24 @@ Each schedule contains:
 - UI label: `Decision log channel ID (optional)` (Suggestions module)
 - Type: Discord channel ID (string)
 
-56. `appeals_channel_id`
+56. `keyword_alerts_channel_id`
+- UI label: `Alert channel ID` (Keyword Alerts module)
+- Type: Discord channel ID (string)
+
+57. `keyword_alert_words`
+- UI label: `Keywords (comma)` (Keyword Alerts module)
+- Type: list of strings
+- Default: empty list
+
+58. `appeals_channel_id`
 - UI label: `Appeals channel ID` (Appeals module)
 - Type: Discord channel ID (string)
 
-57. `appeals_log_channel_id`
+59. `appeals_log_channel_id`
 - UI label: `Log channel ID (optional)` (Appeals module)
 - Type: Discord channel ID (string)
 
-58. `appeals_open_phrase`
+60. `appeals_open_phrase`
 - UI label: `Open phrase` (Appeals module)
 - Type: string
 - Default: `!appeal`
