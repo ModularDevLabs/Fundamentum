@@ -28,6 +28,7 @@ const FEATURE_GIVEAWAYS = 'giveaways';
 const FEATURE_POLLS = 'polls';
 const FEATURE_SUGGESTIONS = 'suggestions';
 const FEATURE_KEYWORD_ALERTS = 'keyword_alerts';
+const FEATURE_AFK = 'afk';
 const FEATURE_APPEALS = 'appeals';
 const FEATURE_CUSTOM_COMMANDS = 'custom_commands';
 
@@ -58,6 +59,7 @@ function syncModuleBadges() {
   const pollsEnabled = qs('#settingsPollsEnabled').value === 'true';
   const suggestionsEnabled = qs('#settingsSuggestionsEnabled').value === 'true';
   const keywordAlertsEnabled = qs('#settingsKeywordAlertsEnabled').value === 'true';
+  const afkEnabled = qs('#settingsAFKEnabled').value === 'true';
   const appealsEnabled = qs('#settingsAppealsEnabled').value === 'true';
   const customCommandsEnabled = qs('#settingsCustomCommandsEnabled').value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
@@ -78,6 +80,7 @@ function syncModuleBadges() {
   setModuleBadge(pollsEnabled, qs('#modulePollsBadge'), qs('#modulePollsCard'));
   setModuleBadge(suggestionsEnabled, qs('#moduleSuggestionsBadge'), qs('#moduleSuggestionsCard'));
   setModuleBadge(keywordAlertsEnabled, qs('#moduleKeywordAlertsBadge'), qs('#moduleKeywordAlertsCard'));
+  setModuleBadge(afkEnabled, qs('#moduleAFKBadge'), qs('#moduleAFKCard'));
   setModuleBadge(appealsEnabled, qs('#moduleAppealsBadge'), qs('#moduleAppealsCard'));
   setModuleBadge(customCommandsEnabled, qs('#moduleCustomCommandsBadge'), qs('#moduleCustomCommandsCard'));
 }
@@ -321,6 +324,8 @@ async function loadSettings() {
   qs('#settingsKeywordAlertsEnabled').value = String(!!flags[FEATURE_KEYWORD_ALERTS]);
   qs('#settingsKeywordAlertsChannel').value = cfg.keyword_alerts_channel_id || '';
   qs('#settingsKeywordAlertWords').value = (cfg.keyword_alert_words || []).join(',');
+  qs('#settingsAFKEnabled').value = String(!!flags[FEATURE_AFK]);
+  qs('#settingsAFKPhrase').value = cfg.afk_set_phrase || '!afk';
   qs('#settingsAppealsEnabled').value = String(!!flags[FEATURE_APPEALS]);
   qs('#settingsAppealsChannel').value = cfg.appeals_channel_id || '';
   qs('#settingsAppealsLogChannel').value = cfg.appeals_log_channel_id || '';
@@ -1181,6 +1186,36 @@ async function saveKeywordAlertsModule() {
   }
 }
 
+async function saveAFKModule() {
+  const restore = setBusy(qs('#afkSave'), 'Saving...');
+  const status = qs('#afkStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_AFK]: qs('#settingsAFKEnabled').value === 'true',
+      },
+      afk_set_phrase: qs('#settingsAFKPhrase').value.trim() || '!afk',
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('AFK module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`AFK save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
 async function loadGiveaways() {
   const table = qs('#giveawaysTable');
   if (!table || !state.guildId) return;
@@ -1659,6 +1694,7 @@ function wireEvents() {
   qs('#pollsSave').onclick = savePollsModule;
   qs('#suggestionsSave').onclick = saveSuggestionsModule;
   qs('#keywordAlertsSave').onclick = saveKeywordAlertsModule;
+  qs('#afkSave').onclick = saveAFKModule;
   qs('#customCommandsSave').onclick = saveCustomCommandsModule;
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = addReactionRoleRule;
@@ -1697,6 +1733,7 @@ function wireEvents() {
   qs('#settingsPollsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsSuggestionsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsKeywordAlertsEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsAFKEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAppealsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsCustomCommandsEnabled').addEventListener('change', syncModuleBadges);
   qs('#memberRefresh').onclick = loadMembers;

@@ -62,6 +62,7 @@ type GuildSettings struct {
 	SuggestionsLogChannelID string          `json:"suggestions_log_channel_id"`
 	KeywordAlertsChannelID  string          `json:"keyword_alerts_channel_id"`
 	KeywordAlertWords       []string        `json:"keyword_alert_words"`
+	AFKSetPhrase            string          `json:"afk_set_phrase"`
 	AppealsChannelID        string          `json:"appeals_channel_id"`
 	AppealsLogChannelID     string          `json:"appeals_log_channel_id"`
 	AppealsOpenPhrase       string          `json:"appeals_open_phrase"`
@@ -227,6 +228,13 @@ type SuggestionRow struct {
 	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
 }
 
+type AFKStatusRow struct {
+	GuildID   string    `json:"guild_id"`
+	UserID    string    `json:"user_id"`
+	Reason    string    `json:"reason"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type GuildInfo struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -251,6 +259,7 @@ const (
 	FeaturePolls           = "polls"
 	FeatureSuggestions     = "suggestions"
 	FeatureKeywordAlerts   = "keyword_alerts"
+	FeatureAFK             = "afk"
 	FeatureAppeals         = "appeals"
 	FeatureCustomCommands  = "custom_commands"
 )
@@ -289,6 +298,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeaturePolls:           false,
 			FeatureSuggestions:     false,
 			FeatureKeywordAlerts:   false,
+			FeatureAFK:             false,
 			FeatureAppeals:         false,
 			FeatureCustomCommands:  false,
 		},
@@ -329,6 +339,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		LevelingXPPerMessage:    10,
 		LevelingCooldownSeconds: 60,
 		GiveawaysReactionEmoji:  "🎉",
+		AFKSetPhrase:            "!afk",
 		AppealsOpenPhrase:       "!appeal",
 	}
 }

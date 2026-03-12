@@ -193,6 +193,13 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_suggestions_guild_status
 		ON suggestions(guild_id, status, created_at);`,
+		`CREATE TABLE IF NOT EXISTS afk_status (
+			guild_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			reason TEXT NOT NULL,
+			created_at TEXT NOT NULL,
+			PRIMARY KEY (guild_id, user_id)
+		);`,
 	}
 
 	for _, stmt := range stmts {

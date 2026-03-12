@@ -41,6 +41,7 @@ func (s *Service) OnMessageCreate(_ *discordgo.Session, m *discordgo.MessageCrea
 	s.handleVerificationMessage(m, settings)
 	s.handleLevelingMessage(ctx, m, settings)
 	s.handleKeywordAlerts(ctx, m, settings)
+	s.handleAFKMessage(ctx, m, settings)
 	handledCustomCommand := s.handleCustomCommandMessage(ctx, m, settings)
 	if !handledCustomCommand {
 		s.handleAutoMod(ctx, m, settings)

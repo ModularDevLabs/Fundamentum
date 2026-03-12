@@ -83,6 +83,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `polls=false`
 - `suggestions=false`
 - `keyword_alerts=false`
+- `afk=false`
 - `appeals=false`
 - `custom_commands=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
@@ -362,15 +363,20 @@ Each schedule contains:
 - Type: list of strings
 - Default: empty list
 
-58. `appeals_channel_id`
+58. `afk_set_phrase`
+- UI label: `AFK set phrase` (AFK module)
+- Type: string
+- Default: `!afk`
+
+59. `appeals_channel_id`
 - UI label: `Appeals channel ID` (Appeals module)
 - Type: Discord channel ID (string)
 
-59. `appeals_log_channel_id`
+60. `appeals_log_channel_id`
 - UI label: `Log channel ID (optional)` (Appeals module)
 - Type: Discord channel ID (string)
 
-60. `appeals_open_phrase`
+61. `appeals_open_phrase`
 - UI label: `Open phrase` (Appeals module)
 - Type: string
 - Default: `!appeal`

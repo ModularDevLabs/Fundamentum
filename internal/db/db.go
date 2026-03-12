@@ -50,6 +50,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Giveaways:      &GiveawaysRepo{db: db},
 		Polls:          &PollsRepo{db: db},
 		Suggestions:    &SuggestionsRepo{db: db},
+		AFK:            &AFKRepo{db: db},
 	}
 }
 
@@ -69,4 +70,5 @@ type Repositories struct {
 	Giveaways      *GiveawaysRepo
 	Polls          *PollsRepo
 	Suggestions    *SuggestionsRepo
+	AFK            *AFKRepo
 }

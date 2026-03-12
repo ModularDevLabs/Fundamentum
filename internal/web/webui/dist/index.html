@@ -43,6 +43,7 @@
         <button data-view="polls">Polls</button>
         <button data-view="suggestions">Suggestions</button>
         <button data-view="keywordalerts">Keyword Alerts</button>
+        <button data-view="afk">AFK</button>
         <button data-view="appeals">Appeals</button>
         <button data-view="customcommands">Custom Commands</button>
         <button data-view="settings">Settings</button>
@@ -1143,6 +1144,38 @@
           <div class="panel-actions">
             <button id="keywordAlertsSave" class="primary">Save keyword alerts module</button>
             <span id="keywordAlertsStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-afk" class="view">
+        <div class="panel">
+          <div class="panel-header">AFK Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleAFKCard">
+              <div class="module-head">
+                <div class="module-title">AFK Status</div>
+                <span class="module-badge off" id="moduleAFKBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Users can set AFK using a phrase. Mentions of AFK users notify the channel.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsAFKEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  AFK set phrase
+                  <input id="settingsAFKPhrase" placeholder="!afk" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="afkSave" class="primary">Save AFK module</button>
+            <span id="afkStatus" class="status-line"></span>
           </div>
         </div>
       </section>
