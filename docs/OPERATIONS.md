@@ -20,7 +20,7 @@ Stop: `Ctrl+C`
 - **Members**: Quarantined users are visually highlighted and labeled with a `Quarantined` badge.
 - **Events**: Shows raw process logs (INFO/DEBUG/ERROR) for troubleshooting actions and backfill.
 - **Settings**: Update inactivity days, backfill days, and quarantine behavior.
-- **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics / Starboard / Leveling / Giveaways / Polls / Appeals / Custom Commands**: Each module has its own menu and save action, and settings are per-guild.
+- **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics / Starboard / Leveling / Giveaways / Polls / Suggestions / Appeals / Custom Commands**: Each module has its own menu and save action, and settings are per-guild.
 - **Invite Tracker**: Includes a built-in permission check panel for `Manage Server` capability in the selected guild.
 - **AutoMod**: Supports ignored channels and ignored roles to exempt staff/private workflows.
 - **Reaction Roles**: Add rules mapping `(channel_id, message_id, emoji) -> role_id`; role can be removed on unreact.
@@ -36,6 +36,7 @@ Stop: `Ctrl+C`
 - **Leveling**: Awards XP for chat activity with cooldown control and exposes a leaderboard in the dashboard.
 - **Giveaways**: Starts giveaway posts and records entries from reaction emoji; draw winners from the dashboard.
 - **Polls**: Starts multi-option reaction polls and closes them with a final vote summary.
+- **Suggestions**: Converts messages in a suggestions channel into vote-ready cards and supports approve/reject from dashboard.
 - **Appeals**: Users submit appeals in one channel using a phrase (default `!appeal`); dashboard lists and resolves appeals.
 - **Custom Commands**: Responds to exact message triggers with configured text replies for the selected guild.
 - Full field-by-field settings reference: `docs/SETTINGS.md`.

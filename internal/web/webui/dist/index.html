@@ -41,6 +41,7 @@
         <button data-view="leveling">Leveling</button>
         <button data-view="giveaways">Giveaways</button>
         <button data-view="polls">Polls</button>
+        <button data-view="suggestions">Suggestions</button>
         <button data-view="appeals">Appeals</button>
         <button data-view="customcommands">Custom Commands</button>
         <button data-view="settings">Settings</button>
@@ -1046,6 +1047,65 @@
               <div>Action</div>
             </div>
             <div id="pollsTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-suggestions" class="view">
+        <div class="panel">
+          <div class="panel-header">Suggestions Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleSuggestionsCard">
+              <div class="module-head">
+                <div class="module-title">Suggestions</div>
+                <span class="module-badge off" id="moduleSuggestionsBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Collect community suggestions in one channel with automatic up/down vote reactions.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsSuggestionsEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Suggestions channel ID
+                  <input id="settingsSuggestionsChannel" />
+                </label>
+                <label>
+                  Decision log channel ID (optional)
+                  <input id="settingsSuggestionsLogChannel" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="suggestionsSave" class="primary">Save suggestions module</button>
+            <span id="suggestionsStatus" class="status-line"></span>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Suggestions Queue</div>
+          <div class="filters">
+            <select id="suggestionStatusFilter">
+              <option value="">All</option>
+              <option value="open">Open</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <div></div>
+            <button id="suggestionsRefresh" class="ghost">Refresh</button>
+          </div>
+          <div class="table">
+            <div class="table-row table-header suggestion-row">
+              <div>ID</div>
+              <div>Suggestion</div>
+              <div>Status</div>
+              <div>Created</div>
+              <div>Action</div>
+            </div>
+            <div id="suggestionsTable"></div>
           </div>
         </div>
       </section>

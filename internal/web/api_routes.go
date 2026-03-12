@@ -42,6 +42,8 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/modules/polls", s.handlePolls)
 	api.HandleFunc("/api/modules/polls/start", s.handlePollStart)
 	api.HandleFunc("/api/modules/polls/", s.handlePollDetail)
+	api.HandleFunc("/api/modules/suggestions", s.handleSuggestions)
+	api.HandleFunc("/api/modules/suggestions/", s.handleSuggestionDetail)
 
 	mux.Handle("/api/", s.authMiddleware(api))
 

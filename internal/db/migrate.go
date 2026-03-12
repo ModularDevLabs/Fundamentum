@@ -178,6 +178,21 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_polls_guild_status
 		ON polls(guild_id, status, created_at);`,
+		`CREATE TABLE IF NOT EXISTS suggestions (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			content TEXT NOT NULL,
+			message_id TEXT NOT NULL,
+			channel_id TEXT NOT NULL,
+			status TEXT NOT NULL,
+			decision_by TEXT,
+			decision_note TEXT,
+			created_at TEXT NOT NULL,
+			updated_at TEXT
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_suggestions_guild_status
+		ON suggestions(guild_id, status, created_at);`,
 	}
 
 	for _, stmt := range stmts {

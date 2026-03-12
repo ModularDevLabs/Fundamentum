@@ -26,6 +26,7 @@ const FEATURE_STARBOARD = 'starboard';
 const FEATURE_LEVELING = 'leveling';
 const FEATURE_GIVEAWAYS = 'giveaways';
 const FEATURE_POLLS = 'polls';
+const FEATURE_SUGGESTIONS = 'suggestions';
 const FEATURE_APPEALS = 'appeals';
 const FEATURE_CUSTOM_COMMANDS = 'custom_commands';
 
@@ -54,6 +55,7 @@ function syncModuleBadges() {
   const levelingEnabled = qs('#settingsLevelingEnabled').value === 'true';
   const giveawaysEnabled = qs('#settingsGiveawaysEnabled').value === 'true';
   const pollsEnabled = qs('#settingsPollsEnabled').value === 'true';
+  const suggestionsEnabled = qs('#settingsSuggestionsEnabled').value === 'true';
   const appealsEnabled = qs('#settingsAppealsEnabled').value === 'true';
   const customCommandsEnabled = qs('#settingsCustomCommandsEnabled').value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
@@ -72,6 +74,7 @@ function syncModuleBadges() {
   setModuleBadge(levelingEnabled, qs('#moduleLevelingBadge'), qs('#moduleLevelingCard'));
   setModuleBadge(giveawaysEnabled, qs('#moduleGiveawaysBadge'), qs('#moduleGiveawaysCard'));
   setModuleBadge(pollsEnabled, qs('#modulePollsBadge'), qs('#modulePollsCard'));
+  setModuleBadge(suggestionsEnabled, qs('#moduleSuggestionsBadge'), qs('#moduleSuggestionsCard'));
   setModuleBadge(appealsEnabled, qs('#moduleAppealsBadge'), qs('#moduleAppealsCard'));
   setModuleBadge(customCommandsEnabled, qs('#moduleCustomCommandsBadge'), qs('#moduleCustomCommandsCard'));
 }
@@ -309,6 +312,9 @@ async function loadSettings() {
   qs('#settingsGiveawaysEmoji').value = cfg.giveaways_reaction_emoji || '🎉';
   qs('#settingsPollsEnabled').value = String(!!flags[FEATURE_POLLS]);
   qs('#settingsPollsChannel').value = cfg.polls_channel_id || '';
+  qs('#settingsSuggestionsEnabled').value = String(!!flags[FEATURE_SUGGESTIONS]);
+  qs('#settingsSuggestionsChannel').value = cfg.suggestions_channel_id || '';
+  qs('#settingsSuggestionsLogChannel').value = cfg.suggestions_log_channel_id || '';
   qs('#settingsAppealsEnabled').value = String(!!flags[FEATURE_APPEALS]);
   qs('#settingsAppealsChannel').value = cfg.appeals_channel_id || '';
   qs('#settingsAppealsLogChannel').value = cfg.appeals_log_channel_id || '';
@@ -325,6 +331,7 @@ async function loadSettings() {
   await loadLeaderboard();
   await loadGiveaways();
   await loadPolls();
+  await loadSuggestions();
 }
 
 async function loadInvitePermissionStatus() {
@@ -1106,6 +1113,37 @@ async function savePollsModule() {
   }
 }
 
+async function saveSuggestionsModule() {
+  const restore = setBusy(qs('#suggestionsSave'), 'Saving...');
+  const status = qs('#suggestionsStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_SUGGESTIONS]: qs('#settingsSuggestionsEnabled').value === 'true',
+      },
+      suggestions_channel_id: qs('#settingsSuggestionsChannel').value.trim(),
+      suggestions_log_channel_id: qs('#settingsSuggestionsLogChannel').value.trim(),
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Suggestions module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Suggestions save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
 async function loadGiveaways() {
   const table = qs('#giveawaysTable');
   if (!table || !state.guildId) return;
@@ -1213,6 +1251,38 @@ async function startPoll() {
 async function closePoll(id) {
   if (!id) return;
   await apiFetch(`/api/modules/polls/${id}/close?guild_id=${state.guildId}`, { method: 'POST' });
+}
+
+async function loadSuggestions() {
+  const table = qs('#suggestionsTable');
+  if (!table || !state.guildId) return;
+  const status = qs('#suggestionStatusFilter')?.value || '';
+  const rows = (await apiFetch(`/api/modules/suggestions?guild_id=${state.guildId}&status=${encodeURIComponent(status)}`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row suggestion-row';
+    div.innerHTML = `
+      <div>${row.id}</div>
+      <div>${row.content}</div>
+      <div>${row.status}</div>
+      <div>${formatDate(row.created_at)}</div>
+      <div>
+        ${row.status === 'open' ? `<button class="ghost" data-suggestion-approve="${row.id}">Approve</button> <button class="ghost" data-suggestion-reject="${row.id}">Reject</button>` : ''}
+      </div>
+    `;
+    table.appendChild(div);
+  });
+}
+
+async function decideSuggestion(id, action) {
+  if (!id) return;
+  const note = prompt(`${action} note (optional):`) || '';
+  await apiFetch(`/api/modules/suggestions/${id}/${action}?guild_id=${state.guildId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note }),
+  });
 }
 
 async function loadLeaderboard() {
@@ -1550,6 +1620,7 @@ function wireEvents() {
   qs('#levelingSave').onclick = saveLevelingModule;
   qs('#giveawaysSave').onclick = saveGiveawaysModule;
   qs('#pollsSave').onclick = savePollsModule;
+  qs('#suggestionsSave').onclick = saveSuggestionsModule;
   qs('#customCommandsSave').onclick = saveCustomCommandsModule;
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = addReactionRoleRule;
@@ -1568,6 +1639,8 @@ function wireEvents() {
   qs('#giveawayStart').onclick = startGiveaway;
   qs('#pollsRefresh').onclick = () => loadPolls().catch((err) => showToast(`Polls load failed: ${err.message}`, 'error'));
   qs('#pollStart').onclick = startPoll;
+  qs('#suggestionsRefresh').onclick = () => loadSuggestions().catch((err) => showToast(`Suggestions load failed: ${err.message}`, 'error'));
+  qs('#suggestionStatusFilter').addEventListener('change', () => loadSuggestions().catch((err) => showToast(`Suggestions load failed: ${err.message}`, 'error')));
   qs('#settingsWelcomeEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsGoodbyeEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAuditEnabled').addEventListener('change', syncModuleBadges);
@@ -1584,6 +1657,7 @@ function wireEvents() {
   qs('#settingsLevelingEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsGiveawaysEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsPollsEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsSuggestionsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAppealsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsCustomCommandsEnabled').addEventListener('change', syncModuleBadges);
   qs('#memberRefresh').onclick = loadMembers;
@@ -1700,6 +1774,30 @@ function wireEvents() {
     }
   });
 
+  qs('#suggestionsTable').addEventListener('click', async (e) => {
+    const approveBtn = e.target.closest('button[data-suggestion-approve]');
+    if (approveBtn) {
+      try {
+        await decideSuggestion(approveBtn.getAttribute('data-suggestion-approve'), 'approve');
+        showToast('Suggestion approved.');
+        await loadSuggestions();
+      } catch (err) {
+        showToast(`Suggestion action failed: ${err.message}`, 'error');
+      }
+      return;
+    }
+    const rejectBtn = e.target.closest('button[data-suggestion-reject]');
+    if (rejectBtn) {
+      try {
+        await decideSuggestion(rejectBtn.getAttribute('data-suggestion-reject'), 'reject');
+        showToast('Suggestion rejected.');
+        await loadSuggestions();
+      } catch (err) {
+        showToast(`Suggestion action failed: ${err.message}`, 'error');
+      }
+    }
+  });
+
   qs('#membersTable').addEventListener('change', (e) => {
     const checkbox = e.target.closest('.member-select');
     if (!checkbox) return;
@@ -1766,6 +1864,7 @@ async function refreshAll() {
   await loadLeaderboard();
   await loadGiveaways();
   await loadPolls();
+  await loadSuggestions();
 }
 
 async function bootstrap() {

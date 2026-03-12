@@ -36,6 +36,7 @@ func (s *Service) OnMessageCreate(_ *discordgo.Session, m *discordgo.MessageCrea
 		settings = models.DefaultGuildSettings(m.GuildID)
 	}
 	s.handleAppealMessage(ctx, m, settings)
+	s.handleSuggestionMessage(ctx, m, settings)
 	s.handleTicketMessage(ctx, m, settings)
 	s.handleVerificationMessage(m, settings)
 	s.handleLevelingMessage(ctx, m, settings)

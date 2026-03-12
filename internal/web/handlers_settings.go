@@ -76,6 +76,8 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			GiveawaysChannelID      string          `json:"giveaways_channel_id"`
 			GiveawaysReactionEmoji  string          `json:"giveaways_reaction_emoji"`
 			PollsChannelID          string          `json:"polls_channel_id"`
+			SuggestionsChannelID    string          `json:"suggestions_channel_id"`
+			SuggestionsLogChannelID string          `json:"suggestions_log_channel_id"`
 			AppealsChannelID        string          `json:"appeals_channel_id"`
 			AppealsLogChannelID     string          `json:"appeals_log_channel_id"`
 			AppealsOpenPhrase       string          `json:"appeals_open_phrase"`
@@ -143,6 +145,8 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.GiveawaysChannelID = cfg.GiveawaysChannelID
 		current.GiveawaysReactionEmoji = cfg.GiveawaysReactionEmoji
 		current.PollsChannelID = cfg.PollsChannelID
+		current.SuggestionsChannelID = cfg.SuggestionsChannelID
+		current.SuggestionsLogChannelID = cfg.SuggestionsLogChannelID
 		current.AppealsChannelID = cfg.AppealsChannelID
 		current.AppealsLogChannelID = cfg.AppealsLogChannelID
 		current.AppealsOpenPhrase = cfg.AppealsOpenPhrase

@@ -58,6 +58,8 @@ type GuildSettings struct {
 	GiveawaysChannelID      string          `json:"giveaways_channel_id"`
 	GiveawaysReactionEmoji  string          `json:"giveaways_reaction_emoji"`
 	PollsChannelID          string          `json:"polls_channel_id"`
+	SuggestionsChannelID    string          `json:"suggestions_channel_id"`
+	SuggestionsLogChannelID string          `json:"suggestions_log_channel_id"`
 	AppealsChannelID        string          `json:"appeals_channel_id"`
 	AppealsLogChannelID     string          `json:"appeals_log_channel_id"`
 	AppealsOpenPhrase       string          `json:"appeals_open_phrase"`
@@ -209,6 +211,20 @@ type PollRow struct {
 	TotalVotes int        `json:"total_votes"`
 }
 
+type SuggestionRow struct {
+	ID           int64      `json:"id"`
+	GuildID      string     `json:"guild_id"`
+	UserID       string     `json:"user_id"`
+	Content      string     `json:"content"`
+	MessageID    string     `json:"message_id"`
+	ChannelID    string     `json:"channel_id"`
+	Status       string     `json:"status"`
+	DecisionBy   string     `json:"decision_by"`
+	DecisionNote string     `json:"decision_note"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
+}
+
 type GuildInfo struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -231,6 +247,7 @@ const (
 	FeatureLeveling        = "leveling"
 	FeatureGiveaways       = "giveaways"
 	FeaturePolls           = "polls"
+	FeatureSuggestions     = "suggestions"
 	FeatureAppeals         = "appeals"
 	FeatureCustomCommands  = "custom_commands"
 )
@@ -267,6 +284,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureLeveling:        false,
 			FeatureGiveaways:       false,
 			FeaturePolls:           false,
+			FeatureSuggestions:     false,
 			FeatureAppeals:         false,
 			FeatureCustomCommands:  false,
 		},
