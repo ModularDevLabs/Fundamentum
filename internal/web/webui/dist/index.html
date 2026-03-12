@@ -294,6 +294,29 @@
             <span id="settingsStatus" class="status-line"></span>
           </div>
         </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Exports</div>
+          <div class="filters">
+            <select id="exportType">
+              <option value="members">Members</option>
+              <option value="actions">Actions</option>
+              <option value="warnings">Warnings</option>
+              <option value="tickets">Tickets</option>
+              <option value="cases">Cases (requires user ID)</option>
+            </select>
+            <select id="exportFormat">
+              <option value="json">JSON</option>
+              <option value="csv">CSV</option>
+            </select>
+            <button id="exportDownload" class="ghost">Download</button>
+          </div>
+          <div class="filters">
+            <input id="exportCaseUserId" placeholder="Case export user ID (optional unless type=cases)" />
+            <div></div>
+            <div></div>
+          </div>
+          <div id="exportStatus" class="status-line"></div>
+        </div>
       </section>
 
       <section id="view-welcome" class="view">

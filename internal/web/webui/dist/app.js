@@ -784,6 +784,29 @@ async function applySettingsProfile() {
   }
 }
 
+function downloadExport() {
+  if (!state.guildId) return;
+  const type = (qs('#exportType').value || '').trim();
+  const format = (qs('#exportFormat').value || 'json').trim();
+  const userID = (qs('#exportCaseUserId').value || '').trim();
+  if (type === 'cases' && !userID) {
+    showToast('Case export requires user ID.', 'error');
+    return;
+  }
+  const params = new URLSearchParams({
+    guild_id: state.guildId,
+    type,
+    format,
+  });
+  if (userID) {
+    params.set('user_id', userID);
+  }
+  const url = `/api/export?${params.toString()}`;
+  const status = qs('#exportStatus');
+  status.textContent = `Downloading ${type}.${format}...`;
+  window.open(url, '_blank');
+}
+
 async function saveWelcome() {
   const restore = setBusy(qs('#welcomeSave'), 'Saving...');
   const status = qs('#welcomeStatus');
@@ -2404,6 +2427,7 @@ function wireEvents() {
   }
   qs('#settingsSave').onclick = saveSettings;
   qs('#settingsApplyProfile').onclick = applySettingsProfile;
+  qs('#exportDownload').onclick = downloadExport;
   qs('#welcomeSave').onclick = () => { if (requireModulePermissions(FEATURE_WELCOME, 'Save welcome module')) saveWelcome(); };
   qs('#goodbyeSave').onclick = () => { if (requireModulePermissions(FEATURE_GOODBYE, 'Save goodbye module')) saveGoodbye(); };
   qs('#auditSave').onclick = () => { if (requireModulePermissions(FEATURE_AUDIT, 'Save audit module')) saveAudit(); };
