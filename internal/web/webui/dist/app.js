@@ -758,6 +758,32 @@ async function saveSettings() {
   }
 }
 
+async function applySettingsProfile() {
+  const profile = (qs('#settingsProfilePreset').value || '').trim();
+  if (!profile) {
+    showToast('Select a profile preset first.', 'error');
+    return;
+  }
+  const restore = setBusy(qs('#settingsApplyProfile'), 'Applying...');
+  const status = qs('#settingsStatus');
+  status.textContent = 'Applying profile...';
+  try {
+    await apiFetch(`/api/settings/profile/apply?guild_id=${state.guildId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile }),
+    });
+    await loadSettings();
+    status.textContent = `Profile applied at ${new Date().toLocaleTimeString()}`;
+    showToast('Settings profile applied.');
+  } catch (err) {
+    status.textContent = 'Profile apply failed.';
+    showToast(`Apply profile failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
 async function saveWelcome() {
   const restore = setBusy(qs('#welcomeSave'), 'Saving...');
   const status = qs('#welcomeStatus');
@@ -2358,6 +2384,7 @@ function wireEvents() {
     themeSelect.onchange = () => applyTheme(themeSelect.value);
   }
   qs('#settingsSave').onclick = saveSettings;
+  qs('#settingsApplyProfile').onclick = applySettingsProfile;
   qs('#welcomeSave').onclick = () => { if (requireModulePermissions(FEATURE_WELCOME, 'Save welcome module')) saveWelcome(); };
   qs('#goodbyeSave').onclick = () => { if (requireModulePermissions(FEATURE_GOODBYE, 'Save goodbye module')) saveGoodbye(); };
   qs('#auditSave').onclick = () => { if (requireModulePermissions(FEATURE_AUDIT, 'Save audit module')) saveAudit(); };

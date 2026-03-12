@@ -20,6 +20,7 @@ Stop: `Ctrl+C`
 - **Members**: Quarantined users are visually highlighted and labeled with a `Quarantined` badge.
 - **Events**: Shows raw process logs (INFO/DEBUG/ERROR) for troubleshooting actions and backfill.
 - **Settings**: Update inactivity days, backfill days, and quarantine behavior.
+- **Settings profiles**: Apply profile presets (`Small Community`, `Gaming Server`, `Strict Moderation`) for quick baseline module configuration.
 - **Action safety controls**: Enable dry-run mode, confirm-token requirement, and optional two-person approval for destructive actions.
 - **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics / Starboard / Leveling / Giveaways / Polls / Suggestions / Keyword Alerts / AFK / Reminders / Account Age Guard / Member Notes / Appeals / Custom Commands**: Each module has its own menu and save action, and settings are per-guild.
 - **Module permission checks**: Each module card shows missing bot permissions and disables save/run actions until required permissions are granted.

@@ -15,6 +15,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/health", s.handleHealth)
 	api.HandleFunc("/api/guilds", s.handleGuilds)
 	api.HandleFunc("/api/settings", s.handleSettings)
+	api.HandleFunc("/api/settings/profile/apply", s.handleSettingsProfileApply)
 	api.HandleFunc("/api/backfill/start", s.handleBackfillStart)
 	api.HandleFunc("/api/backfill/status", s.handleBackfillStatus)
 	api.HandleFunc("/api/events", s.handleEvents)
