@@ -17,7 +17,7 @@ Enable these privileged intents for the bot:
 
 Also enable gateway intent:
 
-- `GUILD MESSAGE REACTIONS` (for Reaction Roles)
+- `GUILD MESSAGE REACTIONS` (for Reaction Roles, Starboard, Giveaways, Polls, Suggestions)
 
 ## 3) Required permissions
 
@@ -25,28 +25,29 @@ The bot needs the following minimum permissions for the current feature set:
 
 - View Channel
 - Read Message History
-- Send Messages (optional if you want the bot to post quarantine messages)
+- Send Messages
+- Add Reactions
 - Manage Roles
 - Manage Channels
 - Kick Members
 - Manage Server (required for Invite Tracker to resolve invite usage)
 - Manage Messages (required for AutoMod message deletion)
 
-These map to the following permission bit values in the Discord docs: `KICK_MEMBERS (1<<1)`, `MANAGE_CHANNELS (1<<4)`, `VIEW_CHANNEL (1<<10)`, `SEND_MESSAGES (1<<11)`, `READ_MESSAGE_HISTORY (1<<16)`, `MANAGE_ROLES (1<<28)`.
-Also used by modules: `MANAGE_GUILD (1<<5)` and `MANAGE_MESSAGES (1<<13)`.
+These map to the following permission bit values in the Discord docs:
+`KICK_MEMBERS (1<<1)`, `MANAGE_CHANNELS (1<<4)`, `MANAGE_GUILD (1<<5)`, `ADD_REACTIONS (1<<6)`, `VIEW_CHANNEL (1<<10)`, `SEND_MESSAGES (1<<11)`, `MANAGE_MESSAGES (1<<13)`, `READ_MESSAGE_HISTORY (1<<16)`, `MANAGE_ROLES (1<<28)`.
 
 ### Combined permissions integer
 
 With `SEND_MESSAGES` included:
 
 ```
-268512306
+268512370
 ```
 
 Without `SEND_MESSAGES`:
 
 ```
-268510258
+268510322
 ```
 
 ## 4) One-click invite
@@ -54,7 +55,7 @@ Without `SEND_MESSAGES`:
 Replace `CLIENT_ID` with your application client ID and open the URL:
 
 ```
-https://discord.com/oauth2/authorize?client_id=CLIENT_ID&scope=bot&permissions=268512306
+https://discord.com/oauth2/authorize?client_id=CLIENT_ID&scope=bot&permissions=268512370
 ```
 
 ## 5) Role hierarchy

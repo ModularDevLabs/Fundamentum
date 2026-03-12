@@ -410,6 +410,68 @@ Each schedule contains:
 - Type: string
 - Default: `!appeal`
 
+## Giveaways Records
+
+Configured in the `Giveaways` module UI and stored in `giveaways` / `giveaway_entries`.
+
+Each giveaway contains:
+
+1. `channel_id`
+2. `message_id`
+3. `prize`
+4. `winner_count`
+5. `ends_at`
+6. `status`
+7. `entry_count` (derived count)
+
+## Poll Records
+
+Configured in the `Polls` module UI and stored in `polls`.
+
+Each poll contains:
+
+1. `channel_id`
+2. `message_id`
+3. `question`
+4. `options` (2-5 choices)
+5. `status` (`open` or `closed`)
+
+## Suggestions Records
+
+Managed by the `Suggestions` module and stored in `suggestions`.
+
+Each suggestion contains:
+
+1. `user_id`
+2. `content`
+3. `message_id`
+4. `status` (`open`, `approved`, `rejected`)
+5. `decision_by`
+6. `decision_note`
+
+## Reminders Records
+
+Configured in the `Reminders` module UI and stored in `reminders`.
+
+Each reminder contains:
+
+1. `channel_id`
+2. `content`
+3. `run_at`
+4. `status` (`queued` or `sent`)
+
+## Member Notes Records
+
+Managed by the `Member Notes` module and stored in `member_notes`.
+
+Each note contains:
+
+1. `user_id`
+2. `author_id`
+3. `body`
+4. `created_at`
+5. `resolved_at`
+
 ## Custom Commands Rules
 
 Configured in the `Custom Commands` module UI and stored in `custom_commands`.
