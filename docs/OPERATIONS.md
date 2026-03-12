@@ -35,6 +35,7 @@ Stop: `Ctrl+C`
 - **Tickets**: Optional inactivity auto-close runs continuously based on `ticket_auto_close_minutes`.
 - **Anti-Raid**: Monitors join spikes and applies a temporary protection action (`verification_only` or `quarantine`) during cooldown.
 - **Analytics**: Periodic report worker posts moderation/activity summaries to configured channel.
+- **Analytics trends**: Dashboard analytics page includes daily warnings/actions/tickets trend view for the selected period.
 - **Starboard**: Reposts starred messages to a configured channel when reaction count reaches threshold.
 - **Leveling**: Awards XP for chat activity with cooldown control and exposes a leaderboard in the dashboard.
 - **Giveaways**: Starts giveaway posts and records entries from reaction emoji; draw winners from the dashboard.

@@ -1363,6 +1363,25 @@ async function saveAnalyticsModule() {
   }
 }
 
+async function loadAnalyticsTrends() {
+  const table = qs('#analyticsTrendsTable');
+  if (!table || !state.guildId) return;
+  const days = parseInt(qs('#analyticsTrendDays')?.value || '14', 10) || 14;
+  const rows = (await apiFetch(`/api/analytics/trends?guild_id=${state.guildId}&days=${days}`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row analytics-trend-row';
+    div.innerHTML = `
+      <div>${row.day}</div>
+      <div>${row.warnings}</div>
+      <div>${row.actions}</div>
+      <div>${row.tickets}</div>
+    `;
+    table.appendChild(div);
+  });
+}
+
 async function saveAppealsModule() {
   const restore = setBusy(qs('#appealsSave'), 'Saving...');
   const status = qs('#appealsStatus');
@@ -2397,6 +2416,8 @@ function wireEvents() {
   qs('#ticketsSave').onclick = () => { if (requireModulePermissions(FEATURE_TICKETS, 'Save tickets module')) saveTicketsModule(); };
   qs('#antiRaidSave').onclick = () => { if (requireModulePermissions(FEATURE_ANTI_RAID, 'Save anti-raid module')) saveAntiRaidModule(); };
   qs('#analyticsSave').onclick = () => { if (requireModulePermissions(FEATURE_ANALYTICS, 'Save analytics module')) saveAnalyticsModule(); };
+  qs('#analyticsTrendsRefresh').onclick = () => loadAnalyticsTrends().catch((err) => showToast(`Analytics trends failed: ${err.message}`, 'error'));
+  qs('#analyticsTrendDays').addEventListener('change', () => loadAnalyticsTrends().catch((err) => showToast(`Analytics trends failed: ${err.message}`, 'error')));
   qs('#appealsSave').onclick = () => { if (requireModulePermissions(FEATURE_APPEALS, 'Save appeals module')) saveAppealsModule(); };
   qs('#starboardSave').onclick = () => { if (requireModulePermissions(FEATURE_STARBOARD, 'Save starboard module')) saveStarboardModule(); };
   qs('#levelingSave').onclick = () => { if (requireModulePermissions(FEATURE_LEVELING, 'Save leveling module')) saveLevelingModule(); };
@@ -2665,6 +2686,7 @@ async function refreshAll() {
   await loadEvents();
   await loadSettings();
   await loadModulePermissions();
+  await loadAnalyticsTrends();
   await loadReactionRoleRules();
   await loadWarnings();
   await loadScheduledMessages();

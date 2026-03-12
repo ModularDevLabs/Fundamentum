@@ -920,6 +920,27 @@
             <span id="analyticsStatus" class="status-line"></span>
           </div>
         </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Trends</div>
+          <div class="filters">
+            <select id="analyticsTrendDays">
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+            </select>
+            <div></div>
+            <button id="analyticsTrendsRefresh" class="ghost">Refresh trends</button>
+          </div>
+          <div class="table">
+            <div class="table-row table-header analytics-trend-row">
+              <div>Day</div>
+              <div>Warnings</div>
+              <div>Actions</div>
+              <div>Tickets</div>
+            </div>
+            <div id="analyticsTrendsTable"></div>
+          </div>
+        </div>
       </section>
 
       <section id="view-starboard" class="view">
