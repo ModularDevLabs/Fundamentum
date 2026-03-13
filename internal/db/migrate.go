@@ -246,6 +246,16 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_audit_trail_guild_time
 		ON audit_trail_events(guild_id, recorded_at DESC);`,
+		`CREATE TABLE IF NOT EXISTS reputation_points (
+			guild_id TEXT NOT NULL,
+			from_user_id TEXT NOT NULL,
+			to_user_id TEXT NOT NULL,
+			score INTEGER NOT NULL DEFAULT 0,
+			last_given_at TEXT NOT NULL,
+			PRIMARY KEY (guild_id, from_user_id, to_user_id)
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_reputation_target
+		ON reputation_points(guild_id, to_user_id);`,
 	}
 
 	for _, stmt := range stmts {

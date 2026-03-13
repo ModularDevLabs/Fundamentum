@@ -742,6 +742,7 @@ async function loadSettings() {
   await loadCustomCommands();
   await loadLeaderboard();
   await loadGiveaways();
+  await loadReputationLeaderboard();
   await loadPolls();
   await loadSuggestions();
   await loadReminders();
@@ -2443,6 +2444,42 @@ async function loadReviewQueue() {
   status.textContent = `${rows.length} pending`;
 }
 
+async function loadReputationLeaderboard() {
+  if (!state.guildId) return;
+  const table = qs('#repTable');
+  const status = qs('#repStatus');
+  if (!table || !status) return;
+  const rows = (await apiFetch(`/api/modules/reputation/leaderboard?guild_id=${state.guildId}&limit=20`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row, idx) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `
+      <div>${idx + 1}</div>
+      <div>${row.user_id}</div>
+      <div>${row.score}</div>
+    `;
+    table.appendChild(div);
+  });
+  status.textContent = `Loaded ${rows.length} rows`;
+}
+
+async function giveReputation(delta) {
+  if (!state.guildId) return;
+  const from = (qs('#repFromUser')?.value || '').trim();
+  const to = (qs('#repToUser')?.value || '').trim();
+  if (!from || !to) {
+    showToast('Enter from/to user IDs.', 'error');
+    return;
+  }
+  await apiFetch(`/api/modules/reputation/give?guild_id=${state.guildId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from_user_id: from, to_user_id: to, delta }),
+  });
+  await loadReputationLeaderboard();
+}
+
 async function reviewQueueDecision(actionID, decision) {
   if (!actionID || !decision) return;
   let reason = '';
@@ -2868,6 +2905,9 @@ function wireEvents() {
   qs('#backfillBtn').onclick = runBackfill;
   qs('#refreshOverview').onclick = loadOverview;
   qs('#healthRefresh').onclick = () => loadHealthDashboard().catch((err) => showToast(`Health load failed: ${err.message}`, 'error'));
+  qs('#repRefresh').onclick = () => loadReputationLeaderboard().catch((err) => showToast(`Reputation load failed: ${err.message}`, 'error'));
+  qs('#repGivePlus').onclick = () => giveReputation(1).catch((err) => showToast(`Give rep failed: ${err.message}`, 'error'));
+  qs('#repGiveMinus').onclick = () => giveReputation(-1).catch((err) => showToast(`Give rep failed: ${err.message}`, 'error'));
 
   qs('#membersTable').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-action]');

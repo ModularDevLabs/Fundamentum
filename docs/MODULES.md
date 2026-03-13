@@ -137,6 +137,14 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - Reviewers approve (moves to `queued`) or reject (moves to `failed` with reason).
 - API: `GET/POST /api/review-queue?guild_id=...`.
 
+### Reputation System
+
+- Supports `+rep @user` and `-rep @user` chat commands.
+- Enforces per giver/target cooldown (12h) to reduce abuse.
+- Dashboard endpoints:
+- `POST /api/modules/reputation/give?guild_id=...`
+- `GET /api/modules/reputation/leaderboard?guild_id=...`
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.

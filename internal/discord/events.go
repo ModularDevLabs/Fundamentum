@@ -35,6 +35,7 @@ func (s *Service) OnMessageCreate(_ *discordgo.Session, m *discordgo.MessageCrea
 	if err != nil {
 		settings = models.DefaultGuildSettings(m.GuildID)
 	}
+	_ = s.handleReputationCommand(ctx, m)
 	if settings.FeatureAllowedInChannel(models.FeatureAppeals, m.ChannelID) {
 		s.handleAppealMessage(ctx, m, settings)
 	}

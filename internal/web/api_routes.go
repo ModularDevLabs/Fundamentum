@@ -60,6 +60,8 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/modules/reminders", s.handleReminders)
 	api.HandleFunc("/api/modules/member-notes", s.handleMemberNotes)
 	api.HandleFunc("/api/modules/member-notes/", s.handleMemberNoteDetail)
+	api.HandleFunc("/api/modules/reputation/give", s.handleReputationGive)
+	api.HandleFunc("/api/modules/reputation/leaderboard", s.handleReputationLeaderboard)
 	api.HandleFunc("/api/integrations/webhooks", s.handleWebhooks)
 	api.HandleFunc("/api/integrations/webhooks/", s.handleWebhookDetail)
 

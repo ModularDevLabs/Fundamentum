@@ -70,6 +70,7 @@
             <button type="button" class="nav-view-btn" data-view="goodbye">Goodbye</button>
             <button type="button" class="nav-view-btn" data-view="starboard">Starboard</button>
             <button type="button" class="nav-view-btn" data-view="leveling">Leveling</button>
+            <button type="button" class="nav-view-btn" data-view="reputation">Reputation</button>
             <button type="button" class="nav-view-btn" data-view="giveaways">Giveaways</button>
             <button type="button" class="nav-view-btn" data-view="polls">Polls</button>
             <button type="button" class="nav-view-btn" data-view="suggestions">Suggestions</button>
@@ -1281,6 +1282,34 @@
               <div>Last XP</div>
             </div>
             <div id="levelingTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-reputation" class="view">
+        <div class="panel">
+          <div class="panel-header">Reputation Module</div>
+          <div class="filters">
+            <input id="repFromUser" placeholder="From user ID" />
+            <input id="repToUser" placeholder="To user ID" />
+            <button id="repGivePlus" class="primary">+1 Rep</button>
+          </div>
+          <div class="filters">
+            <div></div>
+            <div></div>
+            <button id="repGiveMinus" class="ghost">-1 Rep</button>
+          </div>
+          <div class="panel-actions">
+            <button id="repRefresh" class="ghost">Refresh leaderboard</button>
+            <span id="repStatus" class="status-line"></span>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>Rank</div>
+              <div>User</div>
+              <div>Rep</div>
+            </div>
+            <div id="repTable"></div>
           </div>
         </div>
       </section>
