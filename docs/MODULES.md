@@ -188,6 +188,18 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - Supports on-demand generation endpoint:
 - `POST /api/mod-summary/generate?guild_id=...&hours=24`
 
+### Server Pulse Card
+
+- Purpose:
+- Fast operational snapshot in Overview without opening multiple module pages.
+- Data included:
+- Tracked members, active members (last 24h), inactive members.
+- Warnings and actions in the last 24h.
+- Current queued actions and open tickets.
+- Current top reputation and trivia users.
+- API:
+- `GET /api/pulse?guild_id=...`
+
 ### Auto Thread Helper
 
 - Watches a configured channel for keyword-matching questions.

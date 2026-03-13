@@ -2813,7 +2813,38 @@ async function loadOverview() {
     list.appendChild(div);
   });
   syncOverviewPolling(backfills);
+  await loadServerPulse();
   await loadHealthDashboard();
+}
+
+async function loadServerPulse() {
+  if (!state.guildId) return;
+  const status = qs('#pulseStatus');
+  const table = qs('#pulseTable');
+  if (!status || !table) return;
+  status.textContent = 'Loading...';
+  const res = await apiFetch(`/api/pulse?guild_id=${state.guildId}`);
+  const topRep = (res && res.top_reputation) || {};
+  const topTrivia = (res && res.top_trivia) || {};
+  const rows = [
+    ['Tracked members', res.tracked_members ?? 0],
+    ['Active members (24h)', res.active_members_24h ?? 0],
+    ['Inactive members', res.inactive_members ?? 0],
+    ['Warnings (24h)', res.warnings_24h ?? 0],
+    ['Actions (24h)', res.actions_24h ?? 0],
+    ['Queued actions', res.actions_queued ?? 0],
+    ['Open tickets', res.open_tickets ?? 0],
+    ['Top reputation', topRep.user_id ? `${topRep.user_id} (${topRep.score})` : 'none'],
+    ['Top trivia', topTrivia.user_id ? `${topTrivia.user_id} (${topTrivia.score})` : 'none'],
+  ];
+  table.innerHTML = '';
+  rows.forEach(([metric, value]) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `<div>${metric}</div><div>${value}</div>`;
+    table.appendChild(div);
+  });
+  status.textContent = `Updated at ${new Date().toLocaleTimeString()}`;
 }
 
 async function loadHealthDashboard() {
@@ -3147,6 +3178,7 @@ function wireEvents() {
   qs('#eventsRefresh').onclick = () => loadEvents().catch((err) => showToast(`Events load failed: ${err.message}`, 'error'));
   qs('#backfillBtn').onclick = runBackfill;
   qs('#refreshOverview').onclick = loadOverview;
+  qs('#pulseRefresh').onclick = () => loadServerPulse().catch((err) => showToast(`Pulse load failed: ${err.message}`, 'error'));
   qs('#healthRefresh').onclick = () => loadHealthDashboard().catch((err) => showToast(`Health load failed: ${err.message}`, 'error'));
   qs('#modSummaryGenerate').onclick = () => generateModSummary().catch((err) => showToast(`Mod summary failed: ${err.message}`, 'error'));
   qs('#repRefresh').onclick = () => loadReputationLeaderboard().catch((err) => showToast(`Reputation load failed: ${err.message}`, 'error'));

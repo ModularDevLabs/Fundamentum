@@ -128,6 +128,20 @@
             <div class="stat-value" id="statQueued">—</div>
           </div>
         </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Server Pulse</div>
+          <div class="panel-actions" style="margin-top: 0; margin-bottom: 10px;">
+            <button id="pulseRefresh" class="ghost">Refresh pulse</button>
+            <span id="pulseStatus" class="status-line"></span>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>Signal</div>
+              <div>Value</div>
+            </div>
+            <div id="pulseTable"></div>
+          </div>
+        </div>
         <div class="panel">
           <div class="panel-header">Backfill Jobs</div>
           <div id="overviewStatus" class="status-line"></div>
