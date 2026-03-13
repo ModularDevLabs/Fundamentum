@@ -133,38 +133,40 @@
             <div class="stat-value" id="statQueued">—</div>
           </div>
         </div>
-        <div class="panel" style="margin-top: 16px;">
-          <div class="panel-header">Server Pulse</div>
-          <div class="panel-actions" style="margin-top: 0; margin-bottom: 10px;">
-            <button id="pulseRefresh" class="ghost">Refresh pulse</button>
-            <span id="pulseStatus" class="status-line"></span>
-          </div>
-          <div class="table">
-            <div class="table-row table-header">
-              <div>Signal</div>
-              <div>Value</div>
+        <div class="overview-duo" style="margin-top: 16px;">
+          <div class="panel overview-duo-card">
+            <div class="panel-header">Server Pulse</div>
+            <div class="panel-actions" style="margin-top: 0; margin-bottom: 10px;">
+              <button id="pulseRefresh" class="ghost">Refresh pulse</button>
+              <span id="pulseStatus" class="status-line"></span>
             </div>
-            <div id="pulseTable"></div>
+            <div class="table">
+              <div class="table-row table-header">
+                <div>Signal</div>
+                <div>Value</div>
+              </div>
+              <div id="pulseTable"></div>
+            </div>
+          </div>
+          <div class="panel overview-duo-card">
+            <div class="panel-header">Health Dashboard</div>
+            <div class="panel-actions" style="margin-top: 0; margin-bottom: 10px;">
+              <button id="healthRefresh" class="ghost">Refresh health</button>
+              <span id="healthStatus" class="status-line"></span>
+            </div>
+            <div class="table">
+              <div class="table-row table-header">
+                <div>Metric</div>
+                <div>Value</div>
+              </div>
+              <div id="healthTable"></div>
+            </div>
           </div>
         </div>
         <div class="panel">
           <div class="panel-header">Backfill Jobs</div>
           <div id="overviewStatus" class="status-line"></div>
           <div id="backfillList" class="list"></div>
-        </div>
-        <div class="panel" style="margin-top: 16px;">
-          <div class="panel-header">Health Dashboard</div>
-          <div class="panel-actions" style="margin-top: 0; margin-bottom: 10px;">
-            <button id="healthRefresh" class="ghost">Refresh health</button>
-            <span id="healthStatus" class="status-line"></span>
-          </div>
-          <div class="table">
-            <div class="table-row table-header">
-              <div>Metric</div>
-              <div>Value</div>
-            </div>
-            <div id="healthTable"></div>
-          </div>
         </div>
         <div class="panel" style="margin-top: 16px;">
           <div class="panel-header">Mod Summary</div>
