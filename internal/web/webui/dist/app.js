@@ -41,6 +41,7 @@ const FEATURE_MEMBER_NOTES = 'member_notes';
 const FEATURE_APPEALS = 'appeals';
 const FEATURE_CUSTOM_COMMANDS = 'custom_commands';
 const FEATURE_BIRTHDAYS = 'birthdays';
+const FEATURE_STREAKS = 'streaks';
 const FEATURE_BY_VIEW = {
   welcome: FEATURE_WELCOME,
   goodbye: FEATURE_GOODBYE,
@@ -69,6 +70,7 @@ const FEATURE_BY_VIEW = {
   appeals: FEATURE_APPEALS,
   customcommands: FEATURE_CUSTOM_COMMANDS,
   birthdays: FEATURE_BIRTHDAYS,
+  streaks: FEATURE_STREAKS,
 };
 const NAV_GROUPS_STORAGE_KEY = 'modbot_nav_groups';
 const ACTIVE_VIEW_STORAGE_KEY = 'modbot_active_view';
@@ -101,6 +103,7 @@ const MODULE_GUIDES = {
   appeals: { title: 'How To Use', points: ['Set appeals intake channel + phrase.', 'Users submit appeals in that channel.', 'Resolve with clear outcome notes for future audits.'] },
   customcommands: { title: 'How To Use', points: ['Enable module and add trigger/response rules below.', 'Triggers are exact matches (case-insensitive).', 'Keep responses concise to avoid channel spam.'] },
   birthdays: { title: 'How To Use', points: ['Enable the module and set a birthday channel ID.', 'Store birthdays as MM-DD and optional timezone per user.', 'Worker posts birthday mentions automatically each day.'] },
+  streaks: { title: 'How To Use', points: ['Enable streak tracking and reward values.', 'Members advance once per UTC day when active.', 'Use leaderboard and user lookup to monitor engagement.'] },
 };
 
 function setModuleBadge(enabled, badgeEl, cardEl) {
@@ -139,6 +142,7 @@ function syncModuleBadges() {
   const appealsEnabled = qs('#settingsAppealsEnabled').value === 'true';
   const customCommandsEnabled = qs('#settingsCustomCommandsEnabled').value === 'true';
   const birthdaysEnabled = qs('#settingsBirthdaysEnabled')?.value === 'true';
+  const streaksEnabled = qs('#settingsStreaksEnabled')?.value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
   setModuleBadge(goodbyeEnabled, qs('#moduleGoodbyeBadge'), qs('#moduleGoodbyeCard'));
   setModuleBadge(auditEnabled, qs('#moduleAuditBadge'), qs('#moduleAuditCard'));
@@ -166,6 +170,7 @@ function syncModuleBadges() {
   setModuleBadge(appealsEnabled, qs('#moduleAppealsBadge'), qs('#moduleAppealsCard'));
   setModuleBadge(customCommandsEnabled, qs('#moduleCustomCommandsBadge'), qs('#moduleCustomCommandsCard'));
   setModuleBadge(birthdaysEnabled, qs('#moduleBirthdaysBadge'), qs('#moduleBirthdaysCard'));
+  setModuleBadge(streaksEnabled, qs('#moduleStreaksBadge'), qs('#moduleStreaksCard'));
 }
 
 const qs = (sel) => document.querySelector(sel);
@@ -380,6 +385,7 @@ function applyModulePermissionDisabling() {
     customCommandsSave: FEATURE_CUSTOM_COMMANDS,
     customCommandAdd: FEATURE_CUSTOM_COMMANDS,
     birthdaysSave: FEATURE_BIRTHDAYS,
+    streaksSave: FEATURE_STREAKS,
   };
   Object.entries(buttonFeatureMap).forEach(([id, feature]) => {
     const button = qs(`#${id}`);
@@ -671,6 +677,9 @@ async function loadSettings() {
   qs('#settingsConfessionsReview').value = String(cfg.confessions_require_review !== false);
   qs('#settingsBirthdaysEnabled').value = String(!!cfg.birthdays_enabled);
   qs('#settingsBirthdaysChannel').value = cfg.birthdays_channel_id || '';
+  qs('#settingsStreaksEnabled').value = String(!!cfg.streaks_enabled);
+  qs('#settingsStreakRewardCoins').value = cfg.streak_reward_coins || 5;
+  qs('#settingsStreakRewardXP').value = cfg.streak_reward_xp || 10;
   qs('#settingsRoleProgressionEnabled').value = String(!!cfg.auto_role_progression_enabled);
   const incidentEndsRaw = (cfg.incident_mode_ends_at || '').trim();
   let incidentDuration = 0;
@@ -774,6 +783,7 @@ async function loadSettings() {
   qs('#settingsAppealsPhrase').value = cfg.appeals_open_phrase || '!appeal';
   qs('#settingsCustomCommandsEnabled').value = String(!!flags[FEATURE_CUSTOM_COMMANDS]);
   qs('#settingsBirthdaysEnabled').value = String(!!flags[FEATURE_BIRTHDAYS]);
+  qs('#settingsStreaksEnabled').value = String(!!flags[FEATURE_STREAKS]);
   refreshIncidentBanner(cfg);
   syncModuleBadges();
   updateLevelingGuideExamples();
@@ -794,6 +804,7 @@ async function loadSettings() {
   await loadCalendarEvents();
   await loadConfessions();
   await loadBirthdays();
+  await loadStreaks();
   await loadPolls();
   await loadSuggestions();
   await loadReminders();
@@ -924,6 +935,9 @@ async function saveSettings() {
       join_screening_require_avatar: qs('#settingsJoinScreeningRequireAvatar').value === 'true',
       raid_panic_default_minutes: parseInt(qs('#panicDurationMinutes').value || '30', 10) || 30,
       raid_panic_slowmode_seconds: parseInt(qs('#panicSlowmodeSeconds').value || '10', 10) || 10,
+      streaks_enabled: qs('#settingsStreaksEnabled').value === 'true',
+      streak_reward_coins: parseInt(qs('#settingsStreakRewardCoins').value || '5', 10) || 5,
+      streak_reward_xp: parseInt(qs('#settingsStreakRewardXP').value || '10', 10) || 10,
     };
     await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
       method: 'PUT',
@@ -2998,6 +3012,68 @@ async function deleteBirthday(userID) {
   });
 }
 
+async function saveStreaksModule() {
+  const restore = setBusy(qs('#streaksSave'), 'Saving...');
+  const status = qs('#streaksStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_STREAKS]: qs('#settingsStreaksEnabled').value === 'true',
+      },
+      streaks_enabled: qs('#settingsStreaksEnabled').value === 'true',
+      streak_reward_coins: parseInt(qs('#settingsStreakRewardCoins').value || '5', 10) || 5,
+      streak_reward_xp: parseInt(qs('#settingsStreakRewardXP').value || '10', 10) || 10,
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Streaks module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Streaks save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
+async function loadStreaks() {
+  if (!state.guildId) return;
+  const table = qs('#streaksTable');
+  const status = qs('#streaksBoardStatus');
+  if (!table || !status) return;
+  const rows = (await apiFetch(`/api/modules/streaks/leaderboard?guild_id=${state.guildId}&limit=20`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row, idx) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `<div>${idx + 1}</div><div>${row.user_id}</div><div>${row.current_streak}</div><div>${row.best_streak}</div><div>${row.last_active_date || ''}</div>`;
+    table.appendChild(div);
+  });
+  status.textContent = `Loaded ${rows.length} rows`;
+}
+
+async function loadStreakUser() {
+  if (!state.guildId) return;
+  const userID = (qs('#streakUserId')?.value || '').trim();
+  if (!userID) {
+    showToast('Enter a user ID first.', 'error');
+    return;
+  }
+  const detail = qs('#streakUserDetail');
+  const row = await apiFetch(`/api/modules/streaks/user?guild_id=${state.guildId}&user_id=${encodeURIComponent(userID)}`);
+  if (detail) {
+    detail.textContent = JSON.stringify(row, null, 2);
+  }
+}
+
 async function reviewQueueDecision(actionID, decision) {
   if (!actionID || !decision) return;
   let reason = '';
@@ -3444,6 +3520,7 @@ function wireEvents() {
   qs('#memberNotesSave').onclick = () => { if (requireModulePermissions(FEATURE_MEMBER_NOTES, 'Save member notes module')) saveMemberNotesModule(); };
   qs('#customCommandsSave').onclick = () => { if (requireModulePermissions(FEATURE_CUSTOM_COMMANDS, 'Save custom commands module')) saveCustomCommandsModule(); };
   qs('#birthdaysSave').onclick = () => { if (requireModulePermissions(FEATURE_BIRTHDAYS, 'Save birthdays module')) saveBirthdaysModule(); };
+  qs('#streaksSave').onclick = () => { if (requireModulePermissions(FEATURE_STREAKS, 'Save streaks module')) saveStreaksModule(); };
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = () => { if (requireModulePermissions(FEATURE_REACTION_ROLES, 'Add reaction role rule')) addReactionRoleRule(); };
   qs('#warnRefresh').onclick = () => loadWarnings().catch((err) => showToast(`Warnings load failed: ${err.message}`, 'error'));
@@ -3499,6 +3576,7 @@ function wireEvents() {
   qs('#settingsAppealsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsCustomCommandsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsBirthdaysEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsStreaksEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsLevelingCurve').addEventListener('change', updateLevelingGuideExamples);
   qs('#settingsLevelingBase').addEventListener('input', updateLevelingGuideExamples);
   qs('#settingsLevelingXP').addEventListener('input', updateLevelingGuideExamples);
@@ -3534,6 +3612,8 @@ function wireEvents() {
   qs('#triviaRefresh').onclick = () => loadTrivia().catch((err) => showToast(`Trivia load failed: ${err.message}`, 'error'));
   qs('#birthdayAdd').onclick = () => addBirthday().catch((err) => showToast(`Birthday save failed: ${err.message}`, 'error'));
   qs('#birthdayRefresh').onclick = () => loadBirthdays().catch((err) => showToast(`Birthday list failed: ${err.message}`, 'error'));
+  qs('#streaksRefresh').onclick = () => loadStreaks().catch((err) => showToast(`Streaks load failed: ${err.message}`, 'error'));
+  qs('#streakUserLoad').onclick = () => loadStreakUser().catch((err) => showToast(`Streak user load failed: ${err.message}`, 'error'));
   qs('#calRefresh').onclick = () => loadCalendarEvents().catch((err) => showToast(`Calendar load failed: ${err.message}`, 'error'));
   qs('#calCreate').onclick = () => createCalendarEvent().catch((err) => showToast(`Create event failed: ${err.message}`, 'error'));
   qs('#confRefresh').onclick = () => loadConfessions().catch((err) => showToast(`Confessions load failed: ${err.message}`, 'error'));

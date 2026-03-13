@@ -63,6 +63,9 @@ type GuildSettings struct {
 	RaidPanicEnabled            bool                `json:"raid_panic_enabled"`
 	RaidPanicDefaultMinutes     int                 `json:"raid_panic_default_minutes"`
 	RaidPanicSlowmodeSeconds    int                 `json:"raid_panic_slowmode_seconds"`
+	StreaksEnabled              bool                `json:"streaks_enabled"`
+	StreakRewardCoins           int                 `json:"streak_reward_coins"`
+	StreakRewardXP              int                 `json:"streak_reward_xp"`
 	FeatureFlags                map[string]bool     `json:"feature_flags"`
 	WelcomeChannelID            string              `json:"welcome_channel_id"`
 	WelcomeMessage              string              `json:"welcome_message"`
@@ -338,6 +341,15 @@ type JoinScreeningRow struct {
 	ReviewedAt       *time.Time `json:"reviewed_at,omitempty"`
 }
 
+type StreakRow struct {
+	GuildID        string    `json:"guild_id"`
+	UserID         string    `json:"user_id"`
+	CurrentStreak  int       `json:"current_streak"`
+	BestStreak     int       `json:"best_streak"`
+	LastActiveDate string    `json:"last_active_date"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
 type MemberNoteRow struct {
 	ID         int64      `json:"id"`
 	GuildID    string     `json:"guild_id"`
@@ -404,6 +416,7 @@ const (
 	FeatureRoleProgression = "role_progression"
 	FeatureJoinScreening   = "join_screening"
 	FeatureRaidPanic       = "raid_panic"
+	FeatureStreaks         = "streaks"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -511,6 +524,9 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		RaidPanicEnabled:            false,
 		RaidPanicDefaultMinutes:     30,
 		RaidPanicSlowmodeSeconds:    10,
+		StreaksEnabled:              false,
+		StreakRewardCoins:           5,
+		StreakRewardXP:              10,
 		FeatureFlags: map[string]bool{
 			FeatureWelcomeMessages: false,
 			FeatureGoodbyeMessages: false,
@@ -540,6 +556,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureRoleProgression: false,
 			FeatureJoinScreening:   false,
 			FeatureRaidPanic:       false,
+			FeatureStreaks:         false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",

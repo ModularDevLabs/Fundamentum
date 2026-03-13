@@ -130,6 +130,14 @@ func (s *Server) handleDependencyCheck(w http.ResponseWriter, r *http.Request) {
 			add("raid_panic", "error", "Slowmode seconds must be greater than zero.")
 		}
 	}
+	if cfg.FeatureEnabled(models.FeatureStreaks) {
+		if !cfg.StreaksEnabled {
+			add("streaks", "warn", "Feature flag enabled but streaks toggle is off.")
+		}
+		if cfg.StreakRewardCoins <= 0 || cfg.StreakRewardXP <= 0 {
+			add("streaks", "warn", "Streak rewards should be positive for both coins and XP.")
+		}
+	}
 	if cfg.FeatureEnabled(models.FeatureAccountAgeGuard) {
 		if cfg.AccountAgeMinDays <= 0 {
 			add("account_age_guard", "error", "Enabled with invalid minimum account age.")

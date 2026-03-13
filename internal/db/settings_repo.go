@@ -246,5 +246,11 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.RaidPanicSlowmodeSeconds <= 0 {
 		cfg.RaidPanicSlowmodeSeconds = def.RaidPanicSlowmodeSeconds
 	}
+	if cfg.StreakRewardCoins <= 0 {
+		cfg.StreakRewardCoins = def.StreakRewardCoins
+	}
+	if cfg.StreakRewardXP <= 0 {
+		cfg.StreakRewardXP = def.StreakRewardXP
+	}
 	return cfg
 }

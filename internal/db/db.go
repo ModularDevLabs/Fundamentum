@@ -67,6 +67,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 		RoleProgression: &RoleProgressionRepo{db: db},
 		JoinScreening:   &JoinScreeningRepo{db: db},
 		RaidPanic:       &RaidPanicRepo{db: db},
+		Streaks:         &StreaksRepo{db: db},
 	}
 }
 
@@ -103,4 +104,5 @@ type Repositories struct {
 	RoleProgression *RoleProgressionRepo
 	JoinScreening   *JoinScreeningRepo
 	RaidPanic       *RaidPanicRepo
+	Streaks         *StreaksRepo
 }

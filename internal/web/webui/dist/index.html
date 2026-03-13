@@ -78,6 +78,7 @@
             <button type="button" class="nav-view-btn" data-view="achievements">Achievements</button>
             <button type="button" class="nav-view-btn" data-view="trivia">Trivia</button>
             <button type="button" class="nav-view-btn" data-view="birthdays">Birthdays</button>
+            <button type="button" class="nav-view-btn" data-view="streaks">Streaks</button>
             <button type="button" class="nav-view-btn" data-view="calendar">Calendar</button>
             <button type="button" class="nav-view-btn" data-view="giveaways">Giveaways</button>
             <button type="button" class="nav-view-btn" data-view="polls">Polls</button>
@@ -1660,6 +1661,58 @@
             </div>
             <div id="birthdaysTable"></div>
           </div>
+        </div>
+      </section>
+
+      <section id="view-streaks" class="view">
+        <div class="panel">
+          <div class="panel-header">Community Streaks</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleStreaksCard">
+              <div class="module-head">
+                <div class="module-title">Streaks</div>
+                <span class="module-badge off" id="moduleStreaksBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Reward consecutive daily activity with coins and XP bonuses.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsStreaksEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Reward coins per day
+                  <input id="settingsStreakRewardCoins" type="number" min="1" />
+                </label>
+                <label>
+                  Reward XP per day
+                  <input id="settingsStreakRewardXP" type="number" min="1" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="streaksSave" class="primary">Save streaks module</button>
+            <span id="streaksStatus" class="status-line"></span>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Streak Leaderboard</div>
+          <div class="panel-actions">
+            <button id="streaksRefresh" class="ghost">Refresh</button>
+            <input id="streakUserId" placeholder="Lookup user ID" />
+            <button id="streakUserLoad" class="ghost">Load user streak</button>
+            <span id="streaksBoardStatus" class="status-line"></span>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>Rank</div><div>User</div><div>Current</div><div>Best</div><div>Last Active</div>
+            </div>
+            <div id="streaksTable"></div>
+          </div>
+          <pre id="streakUserDetail" class="event-log" style="margin-top: 12px; min-height: 60px;"></pre>
         </div>
       </section>
 

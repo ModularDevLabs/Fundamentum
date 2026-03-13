@@ -187,6 +187,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `role_progression=false`
 - `join_screening=false`
 - `raid_panic=false`
+- `streaks=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -582,6 +583,22 @@ Each schedule contains:
 - Type: integer (`>=1`)
 - Default: `10`
 
+76. `streaks_enabled`
+- UI label: `Enabled` (Streaks module)
+- Type: boolean
+- Default: `false`
+- Mirrors `feature_flags.streaks`.
+
+77. `streak_reward_coins`
+- UI label: `Reward coins per day` (Streaks module)
+- Type: integer (`>=1`)
+- Default: `5`
+
+78. `streak_reward_xp`
+- UI label: `Reward XP per day` (Streaks module)
+- Type: integer (`>=1`)
+- Default: `10`
+
 ## Giveaways Records
 
 Configured in the `Giveaways` module UI and stored in `giveaways` / `giveaway_entries`.
@@ -695,6 +712,18 @@ Lockdown records contain:
 5. `ends_at`
 6. `ended_at`
 7. `end_reason`
+
+## Streak Records
+
+Managed by message activity and stored in `member_streaks`.
+
+Each streak row contains:
+
+1. `user_id`
+2. `current_streak`
+3. `best_streak`
+4. `last_active_date` (`YYYY-MM-DD`, UTC)
+5. `updated_at`
 
 ## Advanced Per-Guild Setting (API/DB)
 

@@ -242,6 +242,18 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `POST /api/raid/panic/deactivate?guild_id=...`
 - `GET /api/raid/panic/status?guild_id=...`
 
+### Community Streaks
+
+- Purpose:
+- Reward consecutive daily member activity to improve retention.
+- Behavior:
+- Tracks one streak increment per UTC day when a member sends any message.
+- Resets streak when a day is missed.
+- Awards configured coins and XP when a new day is recorded.
+- APIs:
+- `GET /api/modules/streaks/leaderboard?guild_id=...`
+- `GET /api/modules/streaks/user?guild_id=...&user_id=...`
+
 ### Mod Summaries
 
 - Generates periodic moderation digest messages (warnings/actions/tickets).

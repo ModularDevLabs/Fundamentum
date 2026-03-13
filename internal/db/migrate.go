@@ -391,6 +391,17 @@ func Migrate(db *sql.DB) error {
 			previous_slowmode_seconds INTEGER NOT NULL,
 			PRIMARY KEY(lockdown_id, channel_id)
 		);`,
+		`CREATE TABLE IF NOT EXISTS member_streaks (
+			guild_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			current_streak INTEGER NOT NULL,
+			best_streak INTEGER NOT NULL,
+			last_active_date TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			PRIMARY KEY(guild_id, user_id)
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_member_streaks_guild_best
+		ON member_streaks(guild_id, best_streak DESC, current_streak DESC);`,
 		`CREATE TABLE IF NOT EXISTS trivia_scores (
 			guild_id TEXT NOT NULL,
 			user_id TEXT NOT NULL,

@@ -69,6 +69,9 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			RaidPanicEnabled            bool                 `json:"raid_panic_enabled"`
 			RaidPanicDefaultMinutes     int                  `json:"raid_panic_default_minutes"`
 			RaidPanicSlowmodeSeconds    int                  `json:"raid_panic_slowmode_seconds"`
+			StreaksEnabled              bool                 `json:"streaks_enabled"`
+			StreakRewardCoins           int                  `json:"streak_reward_coins"`
+			StreakRewardXP              int                  `json:"streak_reward_xp"`
 			FeatureFlags                map[string]bool      `json:"feature_flags"`
 			WelcomeChannelID            string               `json:"welcome_channel_id"`
 			WelcomeMessage              string               `json:"welcome_message"`
@@ -185,6 +188,9 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.RaidPanicEnabled = cfg.RaidPanicEnabled
 		current.RaidPanicDefaultMinutes = cfg.RaidPanicDefaultMinutes
 		current.RaidPanicSlowmodeSeconds = cfg.RaidPanicSlowmodeSeconds
+		current.StreaksEnabled = cfg.StreaksEnabled
+		current.StreakRewardCoins = cfg.StreakRewardCoins
+		current.StreakRewardXP = cfg.StreakRewardXP
 		current.FeatureFlags = cfg.FeatureFlags
 		current.WelcomeChannelID = cfg.WelcomeChannelID
 		current.WelcomeMessage = cfg.WelcomeMessage

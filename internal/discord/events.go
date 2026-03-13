@@ -37,6 +37,7 @@ func (s *Service) OnMessageCreate(_ *discordgo.Session, m *discordgo.MessageCrea
 	}
 	s.handleAutoThreadHelper(m, settings)
 	s.handleEconomyEarn(ctx, m)
+	s.handleStreakMessage(ctx, m, settings)
 	_ = s.handleReputationCommand(ctx, m)
 	if settings.FeatureAllowedInChannel(models.FeatureAppeals, m.ChannelID) {
 		s.handleAppealMessage(ctx, m, settings)
