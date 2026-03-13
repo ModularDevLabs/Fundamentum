@@ -15,6 +15,9 @@ func (s *Service) handleStarboardReaction(ctx context.Context, evtGuildID, evtCh
 	if err != nil || !settings.FeatureEnabled(models.FeatureStarboard) {
 		return
 	}
+	if !settings.FeatureAllowedInChannel(models.FeatureStarboard, evtChannelID) {
+		return
+	}
 	if settings.StarboardChannelID == "" {
 		return
 	}

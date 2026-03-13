@@ -89,6 +89,14 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `{"actions":["moderator"],"tickets":["support","moderator"],"settings":["admin"]}`
 - Empty/missing policy for a key means unrestricted.
 
+8d2. `module_channel_scopes`
+- UI label: `Module channel scopes JSON`
+- Type: map of module feature key -> list of allowed channel IDs
+- Default: empty map
+- Empty/missing list for a module means no channel restriction.
+- Example:
+- `{"automod":["123456789012345678"],"suggestions":["234567890123456789"]}`
+
 8e. `retention_days`
 - UI label: `Message retention days (0=disabled)`
 - Type: integer (`>= 0`)

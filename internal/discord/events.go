@@ -35,15 +35,32 @@ func (s *Service) OnMessageCreate(_ *discordgo.Session, m *discordgo.MessageCrea
 	if err != nil {
 		settings = models.DefaultGuildSettings(m.GuildID)
 	}
-	s.handleAppealMessage(ctx, m, settings)
-	s.handleSuggestionMessage(ctx, m, settings)
-	s.handleTicketMessage(ctx, m, settings)
-	s.handleVerificationMessage(m, settings)
-	s.handleLevelingMessage(ctx, m, settings)
-	s.handleKeywordAlerts(ctx, m, settings)
-	s.handleAFKMessage(ctx, m, settings)
-	handledCustomCommand := s.handleCustomCommandMessage(ctx, m, settings)
-	if !handledCustomCommand {
+	if settings.FeatureAllowedInChannel(models.FeatureAppeals, m.ChannelID) {
+		s.handleAppealMessage(ctx, m, settings)
+	}
+	if settings.FeatureAllowedInChannel(models.FeatureSuggestions, m.ChannelID) {
+		s.handleSuggestionMessage(ctx, m, settings)
+	}
+	if settings.FeatureAllowedInChannel(models.FeatureTickets, m.ChannelID) {
+		s.handleTicketMessage(ctx, m, settings)
+	}
+	if settings.FeatureAllowedInChannel(models.FeatureVerification, m.ChannelID) {
+		s.handleVerificationMessage(m, settings)
+	}
+	if settings.FeatureAllowedInChannel(models.FeatureLeveling, m.ChannelID) {
+		s.handleLevelingMessage(ctx, m, settings)
+	}
+	if settings.FeatureAllowedInChannel(models.FeatureKeywordAlerts, m.ChannelID) {
+		s.handleKeywordAlerts(ctx, m, settings)
+	}
+	if settings.FeatureAllowedInChannel(models.FeatureAFK, m.ChannelID) {
+		s.handleAFKMessage(ctx, m, settings)
+	}
+	handledCustomCommand := false
+	if settings.FeatureAllowedInChannel(models.FeatureCustomCommands, m.ChannelID) {
+		handledCustomCommand = s.handleCustomCommandMessage(ctx, m, settings)
+	}
+	if !handledCustomCommand && settings.FeatureAllowedInChannel(models.FeatureAutoMod, m.ChannelID) {
 		s.handleAutoMod(ctx, m, settings)
 	}
 	cutoff := time.Now().AddDate(0, 0, -settings.InactiveDays)

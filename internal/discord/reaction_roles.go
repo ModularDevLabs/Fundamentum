@@ -43,6 +43,9 @@ func (s *Service) applyReactionRole(guildID, channelID, messageID, userID string
 	if err != nil || !settings.FeatureEnabled(models.FeatureReactionRoles) {
 		return
 	}
+	if !settings.FeatureAllowedInChannel(models.FeatureReactionRoles, channelID) {
+		return
+	}
 	rules, err := s.repos.ReactionRoles.ListByGuild(ctx, guildID)
 	if err != nil {
 		s.logger.Error("reaction rules list failed guild=%s: %v", guildID, err)

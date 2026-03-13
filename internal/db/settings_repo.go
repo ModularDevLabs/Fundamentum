@@ -96,6 +96,9 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.DashboardRolePolicies == nil {
 		cfg.DashboardRolePolicies = map[string][]string{}
 	}
+	if cfg.ModuleChannelScopes == nil {
+		cfg.ModuleChannelScopes = map[string][]string{}
+	}
 	for k, v := range def.FeatureFlags {
 		if _, ok := cfg.FeatureFlags[k]; !ok {
 			cfg.FeatureFlags[k] = v

@@ -13,6 +13,9 @@ func (s *Service) handleGiveawayReaction(ctx context.Context, guildID, channelID
 	if err != nil || !settings.FeatureEnabled(models.FeatureGiveaways) {
 		return
 	}
+	if !settings.FeatureAllowedInChannel(models.FeatureGiveaways, channelID) {
+		return
+	}
 	targetEmoji := strings.TrimSpace(settings.GiveawaysReactionEmoji)
 	if targetEmoji == "" {
 		targetEmoji = "🎉"

@@ -37,6 +37,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			ActionRequireConfirm        bool                 `json:"action_require_confirm"`
 			ActionTwoPersonApproval     bool                 `json:"action_two_person_approval"`
 			DashboardRolePolicies       map[string][]string  `json:"dashboard_role_policies"`
+			ModuleChannelScopes         map[string][]string  `json:"module_channel_scopes"`
 			RetentionDays               int                  `json:"retention_days"`
 			RetentionArchiveBeforePurge bool                 `json:"retention_archive_before_purge"`
 			IncidentModeEnabled         bool                 `json:"incident_mode_enabled"`
@@ -127,6 +128,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.ActionRequireConfirm = cfg.ActionRequireConfirm
 		current.ActionTwoPersonApproval = cfg.ActionTwoPersonApproval
 		current.DashboardRolePolicies = cfg.DashboardRolePolicies
+		current.ModuleChannelScopes = cfg.ModuleChannelScopes
 		current.RetentionDays = cfg.RetentionDays
 		current.RetentionArchiveBeforePurge = cfg.RetentionArchiveBeforePurge
 		current.IncidentModeEnabled = cfg.IncidentModeEnabled

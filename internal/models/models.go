@@ -27,6 +27,7 @@ type GuildSettings struct {
 	ActionRequireConfirm        bool                `json:"action_require_confirm"`
 	ActionTwoPersonApproval     bool                `json:"action_two_person_approval"`
 	DashboardRolePolicies       map[string][]string `json:"dashboard_role_policies"`
+	ModuleChannelScopes         map[string][]string `json:"module_channel_scopes"`
 	RetentionDays               int                 `json:"retention_days"`
 	RetentionArchiveBeforePurge bool                `json:"retention_archive_before_purge"`
 	IncidentModeEnabled         bool                `json:"incident_mode_enabled"`
@@ -344,6 +345,25 @@ func (s GuildSettings) FeatureEnabled(flag string) bool {
 	return s.FeatureFlags[flag]
 }
 
+func (s GuildSettings) FeatureAllowedInChannel(flag, channelID string) bool {
+	if channelID == "" {
+		return true
+	}
+	if s.ModuleChannelScopes == nil {
+		return true
+	}
+	scope := s.ModuleChannelScopes[flag]
+	if len(scope) == 0 {
+		return true
+	}
+	for _, channel := range scope {
+		if channel == channelID {
+			return true
+		}
+	}
+	return false
+}
+
 func DefaultGuildSettings(guildID string) GuildSettings {
 	return GuildSettings{
 		GuildID:                     guildID,
@@ -356,6 +376,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		ActionRequireConfirm:        true,
 		ActionTwoPersonApproval:     false,
 		DashboardRolePolicies:       map[string][]string{},
+		ModuleChannelScopes:         map[string][]string{},
 		RetentionDays:               0,
 		RetentionArchiveBeforePurge: true,
 		IncidentModeEnabled:         false,

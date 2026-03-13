@@ -9,6 +9,7 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - All feature modules are controlled by `feature_flags` in guild settings.
 - Every module defaults to `disabled` on a new guild.
 - Most modules no-op immediately when disabled.
+- Optional per-module channel scoping can be applied with `module_channel_scopes`.
 - Core tracking/action systems (activity tracking, backfill, action worker, quarantine provisioning) are always available because other modules depend on them.
 
 ## Core Systems

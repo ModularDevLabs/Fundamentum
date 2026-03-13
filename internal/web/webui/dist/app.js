@@ -625,6 +625,7 @@ async function loadSettings() {
   qs('#settingsActionRequireConfirm').value = String(cfg.action_require_confirm !== false);
   qs('#settingsActionTwoPerson').value = String(!!cfg.action_two_person_approval);
   qs('#settingsRolePolicies').value = JSON.stringify(cfg.dashboard_role_policies || {}, null, 2);
+  qs('#settingsModuleScopes').value = JSON.stringify(cfg.module_channel_scopes || {}, null, 2);
   qs('#settingsRetentionDays').value = Number.isFinite(cfg.retention_days) ? cfg.retention_days : 0;
   qs('#settingsRetentionArchive').value = String(cfg.retention_archive_before_purge !== false);
   qs('#settingsIncidentModeEnabled').value = String(!!cfg.incident_mode_enabled);
@@ -802,6 +803,15 @@ async function saveSettings() {
       }
       rolePolicies = parsed;
     }
+    let moduleScopes = {};
+    const moduleScopesRaw = qs('#settingsModuleScopes').value.trim();
+    if (moduleScopesRaw) {
+      const parsed = JSON.parse(moduleScopesRaw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('Module channel scopes JSON must be an object.');
+      }
+      moduleScopes = parsed;
+    }
     const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
     const incidentModeEnabled = qs('#settingsIncidentModeEnabled').value === 'true';
     const incidentDurationMin = parseInt(qs('#settingsIncidentModeDuration').value, 10) || 0;
@@ -826,6 +836,7 @@ async function saveSettings() {
       action_require_confirm: qs('#settingsActionRequireConfirm').value === 'true',
       action_two_person_approval: qs('#settingsActionTwoPerson').value === 'true',
       dashboard_role_policies: rolePolicies,
+      module_channel_scopes: moduleScopes,
       retention_days: parseInt(qs('#settingsRetentionDays').value, 10) || 0,
       retention_archive_before_purge: qs('#settingsRetentionArchive').value === 'true',
       incident_mode_enabled: incidentModeEnabled,
