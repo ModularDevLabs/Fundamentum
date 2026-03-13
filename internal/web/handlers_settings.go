@@ -42,6 +42,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			IncidentModeEnabled         bool                 `json:"incident_mode_enabled"`
 			IncidentModeReason          string               `json:"incident_mode_reason"`
 			IncidentModeEndsAt          string               `json:"incident_mode_ends_at"`
+			ImmutableAuditTrail         bool                 `json:"immutable_audit_trail"`
 			FeatureFlags                map[string]bool      `json:"feature_flags"`
 			WelcomeChannelID            string               `json:"welcome_channel_id"`
 			WelcomeMessage              string               `json:"welcome_message"`
@@ -131,6 +132,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.IncidentModeEnabled = cfg.IncidentModeEnabled
 		current.IncidentModeReason = cfg.IncidentModeReason
 		current.IncidentModeEndsAt = cfg.IncidentModeEndsAt
+		current.ImmutableAuditTrail = cfg.ImmutableAuditTrail
 		current.FeatureFlags = cfg.FeatureFlags
 		current.WelcomeChannelID = cfg.WelcomeChannelID
 		current.WelcomeMessage = cfg.WelcomeMessage

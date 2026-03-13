@@ -234,6 +234,18 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_webhooks_guild_enabled
 		ON webhook_integrations(guild_id, enabled);`,
+		`CREATE TABLE IF NOT EXISTS audit_trail_events (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			event_type TEXT NOT NULL,
+			message TEXT NOT NULL,
+			payload_json TEXT NOT NULL,
+			prev_hash TEXT NOT NULL,
+			event_hash TEXT NOT NULL,
+			recorded_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_audit_trail_guild_time
+		ON audit_trail_events(guild_id, recorded_at DESC);`,
 	}
 
 	for _, stmt := range stmts {

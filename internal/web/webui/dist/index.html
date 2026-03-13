@@ -360,6 +360,13 @@
               Incident auto-disable (minutes, 0=manual)
               <input id="settingsIncidentModeDuration" type="number" min="0" />
             </label>
+            <label>
+              Immutable audit trail
+              <select id="settingsImmutableAuditTrail">
+                <option value="false">Disabled</option>
+                <option value="true">Enabled</option>
+              </select>
+            </label>
           </div>
           <div class="panel-actions">
             <select id="settingsProfilePreset">
@@ -569,6 +576,22 @@
           <div class="panel-actions">
             <button id="auditSave" class="primary">Save audit module</button>
             <span id="auditStatus" class="status-line"></span>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Immutable Audit Trail</div>
+          <div class="panel-actions" style="margin-top: 0; margin-bottom: 10px;">
+            <button id="auditTrailRefresh" class="ghost">Refresh trail</button>
+            <span id="auditTrailStatus" class="status-line"></span>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>Time</div>
+              <div>Type</div>
+              <div>Message</div>
+              <div>Hash</div>
+            </div>
+            <div id="auditTrailTable"></div>
           </div>
         </div>
       </section>

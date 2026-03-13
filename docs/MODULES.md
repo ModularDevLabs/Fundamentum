@@ -112,6 +112,14 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `POST /api/integrations/webhooks?guild_id=...`
 - `DELETE /api/integrations/webhooks/{id}?guild_id=...`
 
+### Immutable Audit Trail Option
+
+- Trigger: `immutable_audit_trail=true`.
+- Behavior:
+- Appends emitted events into `audit_trail_events` with hash chaining (`prev_hash` -> `event_hash`).
+- Provides tamper-evident chronological records separate from normal action/event tables.
+- API: `GET /api/audit-trail?guild_id=...&limit=...`.
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.

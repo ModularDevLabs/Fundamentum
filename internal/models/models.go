@@ -32,6 +32,7 @@ type GuildSettings struct {
 	IncidentModeEnabled         bool                `json:"incident_mode_enabled"`
 	IncidentModeReason          string              `json:"incident_mode_reason"`
 	IncidentModeEndsAt          string              `json:"incident_mode_ends_at"`
+	ImmutableAuditTrail         bool                `json:"immutable_audit_trail"`
 	FeatureFlags                map[string]bool     `json:"feature_flags"`
 	WelcomeChannelID            string              `json:"welcome_channel_id"`
 	WelcomeMessage              string              `json:"welcome_message"`
@@ -298,6 +299,17 @@ type WebhookIntegrationRow struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type AuditTrailRow struct {
+	ID         int64     `json:"id"`
+	GuildID    string    `json:"guild_id"`
+	EventType  string    `json:"event_type"`
+	Message    string    `json:"message"`
+	Payload    string    `json:"payload"`
+	PrevHash   string    `json:"prev_hash"`
+	EventHash  string    `json:"event_hash"`
+	RecordedAt time.Time `json:"recorded_at"`
+}
+
 const (
 	FeatureWelcomeMessages = "welcome_messages"
 	FeatureGoodbyeMessages = "goodbye_messages"
@@ -349,6 +361,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		IncidentModeEnabled:         false,
 		IncidentModeReason:          "",
 		IncidentModeEndsAt:          "",
+		ImmutableAuditTrail:         false,
 		FeatureFlags: map[string]bool{
 			FeatureWelcomeMessages: false,
 			FeatureGoodbyeMessages: false,

@@ -119,6 +119,12 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - Default: empty
 - When set, incident mode auto-deactivates after this timestamp.
 
+8j. `immutable_audit_trail`
+- UI label: `Immutable audit trail`
+- Type: boolean
+- Default: `false`
+- When enabled, every emitted audit/action event is appended to a hash-linked audit trail record.
+
 9. `feature_flags`
 - Type: object/map of booleans
 - Default:

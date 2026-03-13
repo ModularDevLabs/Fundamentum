@@ -24,6 +24,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/backup/export", s.handleBackupExport)
 	api.HandleFunc("/api/backup/import", s.handleBackupImport)
 	api.HandleFunc("/api/events", s.handleEvents)
+	api.HandleFunc("/api/audit-trail", s.handleAuditTrail)
 	api.HandleFunc("/api/members", s.handleMembers)
 	api.HandleFunc("/api/members/", s.handleMemberDetail)
 	api.HandleFunc("/api/cases", s.handleCases)

@@ -629,6 +629,7 @@ async function loadSettings() {
   qs('#settingsRetentionArchive').value = String(cfg.retention_archive_before_purge !== false);
   qs('#settingsIncidentModeEnabled').value = String(!!cfg.incident_mode_enabled);
   qs('#settingsIncidentModeReason').value = cfg.incident_mode_reason || '';
+  qs('#settingsImmutableAuditTrail').value = String(!!cfg.immutable_audit_trail);
   const incidentEndsRaw = (cfg.incident_mode_ends_at || '').trim();
   let incidentDuration = 0;
   if (incidentEndsRaw) {
@@ -727,6 +728,7 @@ async function loadSettings() {
   syncModuleBadges();
   updateLevelingGuideExamples();
   await loadInvitePermissionStatus();
+  await loadAuditTrail();
   await loadReactionRoleRules();
   await loadWarnings();
   await loadScheduledMessages();
@@ -761,6 +763,29 @@ async function loadInvitePermissionStatus() {
     note.classList.add('warn');
     note.textContent = `Invite permission check failed: ${err.message}`;
   }
+}
+
+async function loadAuditTrail() {
+  if (!state.guildId) return;
+  const table = qs('#auditTrailTable');
+  const status = qs('#auditTrailStatus');
+  if (!table || !status) return;
+  status.textContent = 'Loading...';
+  const rows = (await apiFetch(`/api/audit-trail?guild_id=${state.guildId}&limit=100`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const hash = (row.event_hash || '').slice(0, 12);
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `
+      <div>${formatDate(row.recorded_at)}</div>
+      <div>${row.event_type || ''}</div>
+      <div>${row.message || ''}</div>
+      <div title="${row.event_hash || ''}">${hash}</div>
+    `;
+    table.appendChild(div);
+  });
+  status.textContent = `Loaded ${rows.length} entries`;
 }
 
 async function saveSettings() {
@@ -806,6 +831,7 @@ async function saveSettings() {
       incident_mode_enabled: incidentModeEnabled,
       incident_mode_reason: qs('#settingsIncidentModeReason').value.trim(),
       incident_mode_ends_at: incidentEndsAt,
+      immutable_audit_trail: qs('#settingsImmutableAuditTrail').value === 'true',
     };
     await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
       method: 'PUT',
@@ -2693,6 +2719,7 @@ function wireEvents() {
   qs('#welcomeSave').onclick = () => { if (requireModulePermissions(FEATURE_WELCOME, 'Save welcome module')) saveWelcome(); };
   qs('#goodbyeSave').onclick = () => { if (requireModulePermissions(FEATURE_GOODBYE, 'Save goodbye module')) saveGoodbye(); };
   qs('#auditSave').onclick = () => { if (requireModulePermissions(FEATURE_AUDIT, 'Save audit module')) saveAudit(); };
+  qs('#auditTrailRefresh').onclick = () => loadAuditTrail().catch((err) => showToast(`Audit trail load failed: ${err.message}`, 'error'));
   qs('#inviteSave').onclick = () => { if (requireModulePermissions(FEATURE_INVITE, 'Save invite tracker module')) saveInviteTracker(); };
   qs('#automodSave').onclick = () => { if (requireModulePermissions(FEATURE_AUTOMOD, 'Save automod module')) saveAutoMod(); };
   qs('#reactionRolesSave').onclick = () => { if (requireModulePermissions(FEATURE_REACTION_ROLES, 'Save reaction roles module')) saveReactionRoles(); };

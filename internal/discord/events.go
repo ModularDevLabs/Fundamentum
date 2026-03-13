@@ -202,6 +202,17 @@ func (s *Service) emitAuditEvent(guildID, eventType, message string) {
 		return
 	}
 	s.emitWebhookEvent(guildID, eventType, message)
+	if settings.ImmutableAuditTrail {
+		payload := map[string]any{
+			"guild_id":   guildID,
+			"event_type": eventType,
+			"message":    message,
+			"timestamp":  time.Now().UTC().Format(time.RFC3339),
+		}
+		if err := s.repos.AuditTrail.Append(ctx, guildID, eventType, message, payload); err != nil {
+			s.logger.Error("immutable audit append failed guild=%s type=%s err=%v", guildID, eventType, err)
+		}
+	}
 	if !settings.FeatureEnabled(models.FeatureAuditLogStream) || settings.AuditLogChannelID == "" {
 		return
 	}
