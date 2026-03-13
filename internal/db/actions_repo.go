@@ -111,3 +111,12 @@ func (r *ActionsRepo) CountSince(ctx context.Context, guildID string, since time
 	}
 	return n, nil
 }
+
+func (r *ActionsRepo) CountByStatus(ctx context.Context, guildID, status string) (int, error) {
+	row := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM actions WHERE guild_id = ? AND status = ?`, guildID, status)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}

@@ -2404,6 +2404,36 @@ async function loadOverview() {
     list.appendChild(div);
   });
   syncOverviewPolling(backfills);
+  await loadHealthDashboard();
+}
+
+async function loadHealthDashboard() {
+  if (!state.guildId) return;
+  const status = qs('#healthStatus');
+  const table = qs('#healthTable');
+  if (!status || !table) return;
+  status.textContent = 'Loading...';
+  const data = await apiFetch(`/api/health/dashboard?guild_id=${state.guildId}`);
+  const rows = [
+    ['Actions queued', data.actions_queued],
+    ['Actions running', data.actions_running],
+    ['Actions failed (24h)', data.actions_failed_24h],
+    ['Warnings (24h)', data.warnings_24h],
+    ['Tickets created (24h)', data.tickets_created_24h],
+    ['Backfills active', data.backfills_active],
+    ['Incident mode', data.incident_mode_active ? 'on' : 'off'],
+    ['Retention', data.retention_enabled ? `${data.retention_days} days` : 'disabled'],
+    ['Action dry-run', data.action_dry_run ? 'on' : 'off'],
+    ['Two-person approval', data.action_two_person_approval ? 'on' : 'off'],
+  ];
+  table.innerHTML = '';
+  rows.forEach(([metric, value]) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `<div>${metric}</div><div>${value}</div>`;
+    table.appendChild(div);
+  });
+  status.textContent = `Updated at ${new Date().toLocaleTimeString()}`;
 }
 
 async function loadEvents() {
@@ -2693,6 +2723,7 @@ function wireEvents() {
   qs('#eventsRefresh').onclick = () => loadEvents().catch((err) => showToast(`Events load failed: ${err.message}`, 'error'));
   qs('#backfillBtn').onclick = runBackfill;
   qs('#refreshOverview').onclick = loadOverview;
+  qs('#healthRefresh').onclick = () => loadHealthDashboard().catch((err) => showToast(`Health load failed: ${err.message}`, 'error'));
 
   qs('#membersTable').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-action]');

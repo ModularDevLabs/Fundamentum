@@ -92,6 +92,14 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - Returns `error`, `warn`, or `ok` checks with clear remediation messages.
 - API: `GET /api/dependencies/check?guild_id=...`.
 
+### Health Dashboard (dashboard tool)
+
+- Trigger: Overview view auto-refresh and manual `Refresh health`.
+- Behavior:
+- Surfaces queue depth, running actions, failed actions (24h), warnings/tickets (24h), and active backfills.
+- Shows current safety posture (`incident_mode`, `action_dry_run`, two-person approval) and retention state.
+- API: `GET /api/health/dashboard?guild_id=...`.
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.

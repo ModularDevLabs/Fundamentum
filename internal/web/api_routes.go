@@ -13,6 +13,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 
 	api := http.NewServeMux()
 	api.HandleFunc("/api/health", s.handleHealth)
+	api.HandleFunc("/api/health/dashboard", s.handleHealthDashboard)
 	api.HandleFunc("/api/guilds", s.handleGuilds)
 	api.HandleFunc("/api/settings", s.handleSettings)
 	api.HandleFunc("/api/settings/profile/apply", s.handleSettingsProfileApply)

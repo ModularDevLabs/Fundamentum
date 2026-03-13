@@ -127,6 +127,20 @@
           <div id="overviewStatus" class="status-line"></div>
           <div id="backfillList" class="list"></div>
         </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Health Dashboard</div>
+          <div class="panel-actions" style="margin-top: 0; margin-bottom: 10px;">
+            <button id="healthRefresh" class="ghost">Refresh health</button>
+            <span id="healthStatus" class="status-line"></span>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>Metric</div>
+              <div>Value</div>
+            </div>
+            <div id="healthTable"></div>
+          </div>
+        </div>
       </section>
 
       <section id="view-members" class="view">
