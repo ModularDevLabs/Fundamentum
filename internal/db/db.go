@@ -59,6 +59,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Reputation:     &ReputationRepo{db: db},
 		Economy:        &EconomyRepo{db: db},
 		Achievements:   &AchievementsRepo{db: db},
+		Calendar:       &CalendarRepo{db: db},
 	}
 }
 
@@ -87,4 +88,5 @@ type Repositories struct {
 	Reputation     *ReputationRepo
 	Economy        *EconomyRepo
 	Achievements   *AchievementsRepo
+	Calendar       *CalendarRepo
 }

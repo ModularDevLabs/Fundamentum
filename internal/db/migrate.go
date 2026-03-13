@@ -288,6 +288,24 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_achievements_user
 		ON achievements(guild_id, user_id, awarded_at DESC);`,
+		`CREATE TABLE IF NOT EXISTS calendar_events (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			title TEXT NOT NULL,
+			details TEXT,
+			start_at TEXT NOT NULL,
+			created_by TEXT NOT NULL,
+			created_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_calendar_events_guild_start
+		ON calendar_events(guild_id, start_at);`,
+		`CREATE TABLE IF NOT EXISTS calendar_event_rsvps (
+			event_id INTEGER NOT NULL,
+			user_id TEXT NOT NULL,
+			status TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			PRIMARY KEY (event_id, user_id)
+		);`,
 	}
 
 	for _, stmt := range stmts {

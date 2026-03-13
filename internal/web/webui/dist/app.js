@@ -752,6 +752,7 @@ async function loadSettings() {
   await loadGiveaways();
   await loadReputationLeaderboard();
   await loadEconomy();
+  await loadCalendarEvents();
   await loadPolls();
   await loadSuggestions();
   await loadReminders();
@@ -2574,6 +2575,56 @@ async function loadAchievements() {
   });
 }
 
+async function loadCalendarEvents() {
+  if (!state.guildId) return;
+  const table = qs('#calTable');
+  const status = qs('#calStatus');
+  if (!table || !status) return;
+  const rows = (await apiFetch(`/api/modules/calendar/events?guild_id=${state.guildId}`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `
+      <div>${row.id}</div>
+      <div>${row.title || ''}</div>
+      <div>${formatDate(row.start_at)}</div>
+      <div>
+        <button class="ghost" data-cal-rsvp="${row.id}" data-cal-status="yes">Yes</button>
+        <button class="ghost" data-cal-rsvp="${row.id}" data-cal-status="maybe">Maybe</button>
+        <button class="ghost" data-cal-rsvp="${row.id}" data-cal-status="no">No</button>
+      </div>
+      <div><button class="ghost" data-cal-view-rsvps="${row.id}">View RSVPs</button></div>
+    `;
+    table.appendChild(div);
+  });
+  status.textContent = `Loaded ${rows.length} events`;
+}
+
+async function createCalendarEvent() {
+  if (!state.guildId) return;
+  const payload = {
+    title: (qs('#calTitle').value || '').trim(),
+    start_at: (qs('#calStart').value || '').trim(),
+    created_by: (qs('#calCreatedBy').value || '').trim(),
+    details: (qs('#calDetails').value || '').trim(),
+  };
+  await apiFetch(`/api/modules/calendar/events?guild_id=${state.guildId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  await loadCalendarEvents();
+}
+
+async function setCalendarRSVP(eventID, userID, status) {
+  await apiFetch(`/api/modules/calendar/rsvp?guild_id=${state.guildId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event_id: Number(eventID), user_id: userID, status }),
+  });
+}
+
 async function reviewQueueDecision(actionID, decision) {
   if (!actionID || !decision) return;
   let reason = '';
@@ -3018,6 +3069,8 @@ function wireEvents() {
   qs('#ecoAddItem').onclick = () => addEconomyItem().catch((err) => showToast(`Add item failed: ${err.message}`, 'error'));
   qs('#ecoPurchase').onclick = () => purchaseEconomyItem().catch((err) => showToast(`Purchase failed: ${err.message}`, 'error'));
   qs('#achLoad').onclick = () => loadAchievements().catch((err) => showToast(`Achievements load failed: ${err.message}`, 'error'));
+  qs('#calRefresh').onclick = () => loadCalendarEvents().catch((err) => showToast(`Calendar load failed: ${err.message}`, 'error'));
+  qs('#calCreate').onclick = () => createCalendarEvent().catch((err) => showToast(`Create event failed: ${err.message}`, 'error'));
 
   qs('#membersTable').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-action]');
@@ -3066,6 +3119,36 @@ function wireEvents() {
       await loadActions();
     } catch (err) {
       showToast(`Review decision failed: ${err.message}`, 'error');
+    }
+  });
+
+  qs('#calTable').addEventListener('click', async (e) => {
+    const rsvpBtn = e.target.closest('button[data-cal-rsvp]');
+    if (rsvpBtn) {
+      const eventID = rsvpBtn.getAttribute('data-cal-rsvp');
+      const status = rsvpBtn.getAttribute('data-cal-status');
+      const userID = (qs('#calCreatedBy').value || '').trim();
+      if (!userID) {
+        showToast('Use "Created by user ID" field as acting user for RSVP.', 'error');
+        return;
+      }
+      try {
+        await setCalendarRSVP(eventID, userID, status);
+        showToast(`RSVP set: ${status}`);
+      } catch (err) {
+        showToast(`RSVP failed: ${err.message}`, 'error');
+      }
+      return;
+    }
+    const viewBtn = e.target.closest('button[data-cal-view-rsvps]');
+    if (viewBtn) {
+      const eventID = viewBtn.getAttribute('data-cal-view-rsvps');
+      try {
+        const rows = (await apiFetch(`/api/modules/calendar/rsvps?event_id=${encodeURIComponent(eventID)}`)) || [];
+        showToast(`RSVPs: ${rows.map((row) => `${row.user_id}:${row.status}`).join(', ') || 'none'}`);
+      } catch (err) {
+        showToast(`Load RSVPs failed: ${err.message}`, 'error');
+      }
     }
   });
 

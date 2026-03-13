@@ -184,6 +184,15 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `voice_reward_coins_per_minute`
 - `voice_reward_xp_per_minute`
 
+### Event Calendar + RSVP
+
+- Dashboard event scheduling with title/details/start time.
+- Per-event RSVP tracking (`yes`, `maybe`, `no`).
+- APIs:
+- `GET/POST /api/modules/calendar/events?guild_id=...`
+- `POST /api/modules/calendar/rsvp?guild_id=...`
+- `GET /api/modules/calendar/rsvps?event_id=...`
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.

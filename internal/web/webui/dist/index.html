@@ -73,6 +73,7 @@
             <button type="button" class="nav-view-btn" data-view="reputation">Reputation</button>
             <button type="button" class="nav-view-btn" data-view="economy">Economy</button>
             <button type="button" class="nav-view-btn" data-view="achievements">Achievements</button>
+            <button type="button" class="nav-view-btn" data-view="calendar">Calendar</button>
             <button type="button" class="nav-view-btn" data-view="giveaways">Giveaways</button>
             <button type="button" class="nav-view-btn" data-view="polls">Polls</button>
             <button type="button" class="nav-view-btn" data-view="suggestions">Suggestions</button>
@@ -1418,6 +1419,29 @@
               <div>Awarded</div>
             </div>
             <div id="achTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-calendar" class="view">
+        <div class="panel">
+          <div class="panel-header">Event Calendar + RSVP</div>
+          <div class="form-grid">
+            <label>Title<input id="calTitle" /></label>
+            <label>Start (ISO timestamp)<input id="calStart" placeholder="2026-03-15T20:00:00Z" /></label>
+            <label>Created by user ID<input id="calCreatedBy" /></label>
+            <label>Details<input id="calDetails" /></label>
+          </div>
+          <div class="panel-actions">
+            <button id="calCreate" class="primary">Create event</button>
+            <button id="calRefresh" class="ghost">Refresh</button>
+            <span id="calStatus" class="status-line"></span>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>ID</div><div>Title</div><div>Start</div><div>RSVP</div><div>Action</div>
+            </div>
+            <div id="calTable"></div>
           </div>
         </div>
       </section>
