@@ -61,3 +61,12 @@ func (r *ReputationRepo) Leaderboard(ctx context.Context, guildID string, limit 
 	}
 	return out, rows.Err()
 }
+
+func (r *ReputationRepo) TotalForUser(ctx context.Context, guildID, userID string) (int, error) {
+	row := r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(score), 0) FROM reputation_points WHERE guild_id = ? AND to_user_id = ?`, guildID, userID)
+	var total int
+	if err := row.Scan(&total); err != nil {
+		return 0, err
+	}
+	return total, nil
+}

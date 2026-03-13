@@ -156,6 +156,12 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `GET/POST /api/modules/economy/shop?guild_id=...`
 - `POST /api/modules/economy/purchase?guild_id=...`
 
+### Achievement Engine
+
+- Persists earned badges per user.
+- Awards badges from milestone checks (level, reputation, economy balance).
+- API: `GET /api/modules/achievements?guild_id=...&user_id=...`.
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.

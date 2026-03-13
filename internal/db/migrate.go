@@ -277,6 +277,17 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_shop_items_guild
 		ON shop_items(guild_id, enabled, cost);`,
+		`CREATE TABLE IF NOT EXISTS achievements (
+			guild_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			badge_key TEXT NOT NULL,
+			badge_name TEXT NOT NULL,
+			awarded_at TEXT NOT NULL,
+			meta_json TEXT NOT NULL,
+			PRIMARY KEY (guild_id, user_id, badge_key)
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_achievements_user
+		ON achievements(guild_id, user_id, awarded_at DESC);`,
 	}
 
 	for _, stmt := range stmts {

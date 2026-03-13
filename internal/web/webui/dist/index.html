@@ -72,6 +72,7 @@
             <button type="button" class="nav-view-btn" data-view="leveling">Leveling</button>
             <button type="button" class="nav-view-btn" data-view="reputation">Reputation</button>
             <button type="button" class="nav-view-btn" data-view="economy">Economy</button>
+            <button type="button" class="nav-view-btn" data-view="achievements">Achievements</button>
             <button type="button" class="nav-view-btn" data-view="giveaways">Giveaways</button>
             <button type="button" class="nav-view-btn" data-view="polls">Polls</button>
             <button type="button" class="nav-view-btn" data-view="suggestions">Suggestions</button>
@@ -1352,6 +1353,25 @@
           </div>
           <div class="panel-actions">
             <button id="ecoAddItem" class="ghost">Add shop item</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-achievements" class="view">
+        <div class="panel">
+          <div class="panel-header">Achievement Engine</div>
+          <div class="filters">
+            <input id="achUserId" placeholder="User ID" />
+            <div></div>
+            <button id="achLoad" class="ghost">Load achievements</button>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>Badge</div>
+              <div>Name</div>
+              <div>Awarded</div>
+            </div>
+            <div id="achTable"></div>
           </div>
         </div>
       </section>

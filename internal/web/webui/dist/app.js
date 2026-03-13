@@ -2539,6 +2539,25 @@ async function purchaseEconomyItem() {
   await loadEconomy();
 }
 
+async function loadAchievements() {
+  if (!state.guildId) return;
+  const userID = (qs('#achUserId')?.value || '').trim();
+  if (!userID) {
+    showToast('Enter a user ID first.', 'error');
+    return;
+  }
+  const table = qs('#achTable');
+  if (!table) return;
+  const rows = (await apiFetch(`/api/modules/achievements?guild_id=${state.guildId}&user_id=${encodeURIComponent(userID)}`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `<div>${row.badge_key || ''}</div><div>${row.badge_name || ''}</div><div>${formatDate(row.awarded_at)}</div>`;
+    table.appendChild(div);
+  });
+}
+
 async function reviewQueueDecision(actionID, decision) {
   if (!actionID || !decision) return;
   let reason = '';
@@ -2970,6 +2989,7 @@ function wireEvents() {
   qs('#ecoRefresh').onclick = () => loadEconomy().catch((err) => showToast(`Economy load failed: ${err.message}`, 'error'));
   qs('#ecoAddItem').onclick = () => addEconomyItem().catch((err) => showToast(`Add item failed: ${err.message}`, 'error'));
   qs('#ecoPurchase').onclick = () => purchaseEconomyItem().catch((err) => showToast(`Purchase failed: ${err.message}`, 'error'));
+  qs('#achLoad').onclick = () => loadAchievements().catch((err) => showToast(`Achievements load failed: ${err.message}`, 'error'));
 
   qs('#membersTable').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-action]');
