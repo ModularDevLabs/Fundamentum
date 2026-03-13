@@ -22,10 +22,16 @@ Stop: `Ctrl+C`
 - **Settings**: Update inactivity days, backfill days, and quarantine behavior.
 - **Settings profiles**: Apply profile presets (`Small Community`, `Gaming Server`, `Strict Moderation`) for quick baseline module configuration.
 - **Action safety controls**: Enable dry-run mode, confirm-token requirement, and optional two-person approval for destructive actions.
+- **Incident mode**: Toggle incident mode in Settings to raise operator visibility and add extra safeguards during active incidents.
+- **Retention + maintenance**: Configure retention purges and maintenance windows in Settings.
 - **Dashboard RBAC**: Use `dashboard_role_policies` with `X-Dashboard-Role` context to restrict which dashboard roles can call module/action/settings APIs.
 - **Exports**: Use Settings -> Exports to download JSON/CSV for members, actions, warnings, tickets, and per-user case timelines.
 - **Backup / Restore**: Use Settings -> Backup / Restore to download a guild snapshot and restore settings + reaction roles + scheduled messages + custom commands.
-- **Welcome / Goodbye / Audit Log / Invite Tracker / AutoMod / Reaction Roles / Warnings / Scheduled / Verification / Tickets / Anti-Raid / Analytics / Starboard / Leveling / Giveaways / Polls / Suggestions / Keyword Alerts / AFK / Reminders / Account Age Guard / Member Notes / Appeals / Custom Commands**: Each module has its own menu and save action, and settings are per-guild.
+- **Module pages**: Every module page has its own enable/disable control, save action, and quick how-to panel.
+- **Modules (moderation/safety)**: Welcome, Goodbye, Audit Log, Invite Tracker, AutoMod, Warnings, Verification, Tickets, Anti-Raid, Account Age Guard, Join Screening, Member Notes, Appeals, Custom Commands, Raid Panic.
+- **Modules (engagement/community)**: Reaction Roles, Scheduled Messages, Analytics, Starboard, Leveling, Role Progression, Giveaways, Polls, Suggestions, Keyword Alerts, AFK, Reminders, Birthdays, Streaks.
+- **Modules (progression/economy)**: Reputation, Economy, Achievements, Trivia.
+- **Modules (utility)**: Calendar, Confessions, Season Resets.
 - **Module permission checks**: Each module card shows missing bot permissions and disables save/run actions until required permissions are granted.
 - **Invite Tracker**: Includes a built-in permission check panel for `Manage Server` capability in the selected guild.
 - **AutoMod**: Supports ignored channels and ignored roles to exempt staff/private workflows.
@@ -51,6 +57,18 @@ Stop: `Ctrl+C`
 - **Member Notes**: Add moderator notes for members, filter by user, and resolve old notes.
 - **Appeals**: Users submit appeals in one channel using a phrase (default `!appeal`); dashboard lists and resolves appeals.
 - **Custom Commands**: Responds to exact message triggers with configured text replies for the selected guild.
+- **Birthdays**: Store user birthdays in MM-DD format and post birthday greetings daily in a configured channel.
+- **Role Progression**: Define metric thresholds (`leveling`, `reputation`, `economy`) to auto-assign progression roles.
+- **Join Screening**: Queue suspicious joins for moderator review/approval/rejection workflows.
+- **Raid Panic**: Activate temporary lockdown controls (slowmode + posting restrictions) and auto-expire based on configured duration.
+- **Streaks**: Track daily activity streaks and grant configurable coin/XP rewards.
+- **Season Resets**: Reset progression modules (`leveling`, `economy`, `trivia`) on schedule or manually from dashboard.
+- **Reputation**: Give or remove rep and view leaderboard.
+- **Economy**: Manage shop items, balances, and purchases.
+- **Achievements**: Evaluate earned badges from progression milestones.
+- **Trivia**: Run question/answer rounds and maintain trivia leaderboard.
+- **Calendar**: Create events and collect RSVP responses.
+- **Confessions**: Intake anonymous-style confessions and optionally require moderator review before posting.
 - Full field-by-field settings reference: `docs/SETTINGS.md`.
 - Module behavior/configuration guide: `docs/MODULES.md`.
 

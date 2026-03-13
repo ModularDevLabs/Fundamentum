@@ -1,10 +1,10 @@
 # Fundamentum
 
-Multi-guild Discord moderation bot with a built-in dashboard to track inactivity, quarantine users, and manage actions.
+Fundamentum is a multi-guild Discord operations bot with a built-in web dashboard for moderation, safety automation, engagement systems, and incident response.
 
 ## Quickstart
 
-1. Build
+1. Build local binary
 
 ```bash
 go build -o modbot ./cmd/modbot
@@ -22,7 +22,7 @@ Or use the helper script:
 MODBOT_TOKEN=your_token MODBOT_ADMIN_PASS=your_pass ./run.sh
 ```
 
-3. Open the dashboard
+3. Open dashboard
 
 Visit `http://127.0.0.1:8080` and enter the admin password.
 
@@ -46,21 +46,29 @@ Flags override env vars:
 
 If token/password are not provided, startup prompts for them and saves them to local file `.modbot.config.json` (permissions `0600`) for future runs.
 
-For a complete settings catalog (dashboard fields, enums, defaults, and advanced/API-only settings), see `docs/SETTINGS.md`.
-For module-by-module behavior and configuration walkthroughs, see `docs/MODULES.md`.
+## Capabilities
 
-## Notes
+All feature modules are disabled by default on a new guild and enabled per-guild from the module page.
 
-- Inactivity tracking is day-based via `InactiveDays`.
-- Members without any recorded messages are shown as `inactive`.
-- Backfill automatically scans at least the inactivity window.
-- Backfill is primarily for initial seeding and reconciliation after downtime.
-- After seeding, real-time message events keep last-seen current while the bot is online.
-- If the bot misses time offline, run backfill again to catch missed activity.
-- Members view highlights quarantined users and shows a `Quarantined` badge.
-- Actions view shows target usernames/display names and preserves names even after the user leaves (for queued/history rows).
-- Events view exposes recent raw logs to help troubleshoot failed actions/backfills.
-- Quarantine uses a `Quarantined` role and `quarantine-readme` channel (auto-created on startup and when the bot joins a new guild, if missing).
-- Feature modules are configured per guild via dedicated dashboard menus (Welcome, Goodbye, Audit Log, Invite Tracker, AutoMod, Reaction Roles, Warnings, Scheduled, Verification, Tickets, Anti-Raid, Analytics, Starboard, Leveling, Giveaways, Polls, Suggestions, Keyword Alerts, AFK, Reminders, Account Age Guard, Member Notes, Appeals, Custom Commands) backed by per-guild `feature_flags`.
-- Tickets include transcript viewing/export in the dashboard and optional inactivity auto-close.
-- AutoMod supports ignored channels/roles to exempt moderation or staff workflows.
+- Moderation + safety:
+- Welcome, Goodbye, Audit Log, Invite Tracker, AutoMod, Warnings, Verification, Tickets, Anti-Raid, Account Age Guard, Member Notes, Appeals, Custom Commands.
+- Engagement + community:
+- Reaction Roles, Starboard, Leveling, Role Progression, Giveaways, Polls, Suggestions, AFK, Reminders, Birthdays, Streaks.
+- Economy + progression:
+- Reputation, Economy shop, Achievements, Trivia.
+- Operations + incident tooling:
+- Backfill jobs, module permission checks, dependency checker, policy simulator, review queue, immutable audit trail option, retention worker, maintenance windows, raid panic controls, season resets, server pulse, health dashboard, webhook integrations, exports, backup/restore.
+- Additional utilities:
+- Calendar + RSVP, Confessions workflow, auto-thread helper, mod summaries, voice activity rewards.
+
+## Docs Index
+
+- Setup and invite guide: `docs/SETUP.md`
+- Operations and day-2 workflows: `docs/OPERATIONS.md`
+- Full settings catalog (fields, defaults, enums): `docs/SETTINGS.md`
+- Module behavior and configuration guide: `docs/MODULES.md`
+
+## Build Outputs
+
+- Local build: `./modbot`
+- Cross-platform build script output: `dist/`

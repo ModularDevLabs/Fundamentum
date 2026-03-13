@@ -26,28 +26,30 @@ The bot needs the following minimum permissions for the current feature set:
 - View Channel
 - Read Message History
 - Send Messages
+- Send Messages in Threads
 - Add Reactions
 - Manage Roles
 - Manage Channels
 - Kick Members
 - Manage Server (required for Invite Tracker to resolve invite usage)
 - Manage Messages (required for AutoMod message deletion)
+- Embed Links (recommended for rich module posts such as giveaways/polls/summaries)
 
 These map to the following permission bit values in the Discord docs:
-`KICK_MEMBERS (1<<1)`, `MANAGE_CHANNELS (1<<4)`, `MANAGE_GUILD (1<<5)`, `ADD_REACTIONS (1<<6)`, `VIEW_CHANNEL (1<<10)`, `SEND_MESSAGES (1<<11)`, `MANAGE_MESSAGES (1<<13)`, `READ_MESSAGE_HISTORY (1<<16)`, `MANAGE_ROLES (1<<28)`.
+`KICK_MEMBERS (1<<1)`, `MANAGE_CHANNELS (1<<4)`, `MANAGE_GUILD (1<<5)`, `ADD_REACTIONS (1<<6)`, `VIEW_CHANNEL (1<<10)`, `SEND_MESSAGES (1<<11)`, `MANAGE_MESSAGES (1<<13)`, `EMBED_LINKS (1<<14)`, `READ_MESSAGE_HISTORY (1<<16)`, `SEND_MESSAGES_IN_THREADS (1<<38)`, `MANAGE_ROLES (1<<28)`.
 
 ### Combined permissions integer
 
-With `SEND_MESSAGES` included:
+With `SEND_MESSAGES`, `EMBED_LINKS`, and `SEND_MESSAGES_IN_THREADS` included:
 
 ```
-268512370
+275146435698
 ```
 
 Without `SEND_MESSAGES`:
 
 ```
-268510322
+275146433650
 ```
 
 ## 4) One-click invite

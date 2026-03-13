@@ -188,6 +188,13 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `join_screening=false`
 - `raid_panic=false`
 - `streaks=false`
+- `season_resets=false`
+- `reputation=false`
+- `economy=false`
+- `achievements=false`
+- `trivia=false`
+- `calendar=false`
+- `confessions=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -573,53 +580,105 @@ Each schedule contains:
 - Type: boolean
 - Default: `false`
 
-74. `raid_panic_default_minutes`
+74. `raid_panic_enabled`
+- UI label: `Enabled` (Raid Panic controls)
+- Type: boolean
+- Default: `false`
+- Mirrors `feature_flags.raid_panic`.
+
+75. `raid_panic_default_minutes`
 - UI label: `Duration minutes` (Raid Panic controls)
 - Type: integer (`>=1`)
 - Default: `30`
 
-75. `raid_panic_slowmode_seconds`
+76. `raid_panic_slowmode_seconds`
 - UI label: `Slowmode seconds` (Raid Panic controls)
 - Type: integer (`>=1`)
 - Default: `10`
 
-76. `streaks_enabled`
+77. `streaks_enabled`
 - UI label: `Enabled` (Streaks module)
 - Type: boolean
 - Default: `false`
 - Mirrors `feature_flags.streaks`.
 
-77. `streak_reward_coins`
+78. `streak_reward_coins`
 - UI label: `Reward coins per day` (Streaks module)
 - Type: integer (`>=1`)
 - Default: `5`
 
-78. `streak_reward_xp`
+79. `streak_reward_xp`
 - UI label: `Reward XP per day` (Streaks module)
 - Type: integer (`>=1`)
 - Default: `10`
 
-79. `season_resets_enabled`
+80. `season_resets_enabled`
 - UI label: `Enabled` (Season Resets module)
 - Type: boolean
 - Default: `false`
 - Mirrors `feature_flags.season_resets`.
 
-80. `season_reset_cadence`
+81. `season_reset_cadence`
 - UI label: `Cadence` (Season Resets module)
 - Type: enum (`monthly`, `quarterly`)
 - Default: `monthly`
 
-81. `season_reset_next_run_at`
+82. `season_reset_next_run_at`
 - UI label: `Next run (UTC ISO)` (Season Resets module)
 - Type: RFC3339 timestamp string
 - Default: empty (auto-initialized by worker when enabled)
 
-82. `season_reset_modules`
+83. `season_reset_modules`
 - UI label: `Modules (comma-separated)` (Season Resets module)
 - Type: list of module keys
 - Supported values: `leveling`, `economy`, `trivia`
 - Default: `["leveling","economy","trivia"]`
+
+84. `feature_flags.reputation`
+- UI label: `Enabled` (Reputation module)
+- Type: boolean
+- Default: `false`
+- Notes: no additional scalar settings; runtime data stored in `reputation_points`.
+
+85. `feature_flags.economy`
+- UI label: `Enabled` (Economy module)
+- Type: boolean
+- Default: `false`
+- Notes: no additional scalar settings; runtime data stored in `economy_balances` and `economy_shop_items`.
+
+86. `feature_flags.achievements`
+- UI label: `Enabled` (Achievements module)
+- Type: boolean
+- Default: `false`
+- Notes: no additional scalar settings; awards derived from activity in other modules.
+
+87. `feature_flags.trivia`
+- UI label: `Enabled` (Trivia module)
+- Type: boolean
+- Default: `false`
+- Notes: no additional scalar settings; runtime data stored in `trivia_scores`.
+
+88. `feature_flags.calendar`
+- UI label: `Enabled` (Calendar module)
+- Type: boolean
+- Default: `false`
+- Notes: no additional scalar settings; runtime data stored in `calendar_events` and `calendar_event_rsvps`.
+
+89. `confessions_enabled`
+- UI label: `Enabled` (Confessions module)
+- Type: boolean
+- Default: `false`
+- Mirrors `feature_flags.confessions`.
+
+90. `confessions_channel_id`
+- UI label: `Confessions channel ID` (Confessions module)
+- Type: Discord channel ID (string)
+- Default: empty
+
+91. `confessions_require_review`
+- UI label: `Require moderator review` (Confessions module)
+- Type: boolean
+- Default: `true`
 
 ## Giveaways Records
 
@@ -659,6 +718,95 @@ Each suggestion contains:
 4. `status` (`open`, `approved`, `rejected`)
 5. `decision_by`
 6. `decision_note`
+
+## Reputation Records
+
+Managed by the `Reputation` module and stored in `reputation_points`.
+
+Each row contains:
+
+1. `from_user_id`
+2. `to_user_id`
+3. `score`
+4. `last_given_at`
+
+## Economy Records
+
+Managed by the `Economy` module and stored in:
+- `economy_balances`
+- `economy_shop_items`
+
+Balance rows contain:
+
+1. `user_id`
+2. `balance`
+3. `updated_at`
+
+Shop item rows contain:
+
+1. `name`
+2. `cost`
+3. `role_id` (optional)
+4. `enabled`
+5. `created_by`
+6. `created_at`
+7. `updated_at`
+
+## Achievement Records
+
+Managed by the `Achievements` module and stored in `achievements`.
+
+Each row contains:
+
+1. `user_id`
+2. `badge_key`
+3. `badge_name`
+4. `awarded_at`
+5. `meta_json`
+
+## Trivia Records
+
+Managed by the `Trivia` module and stored in `trivia_scores`.
+
+Each row contains:
+
+1. `user_id`
+2. `score`
+3. `updated_at`
+
+## Calendar Records
+
+Managed by the `Calendar` module and stored in:
+- `calendar_events`
+- `calendar_event_rsvps`
+
+Event rows contain:
+
+1. `title`
+2. `details`
+3. `start_at`
+4. `created_by`
+5. `created_at`
+
+RSVP rows contain:
+
+1. `event_id`
+2. `user_id`
+3. `status` (`yes`, `no`, `maybe`)
+4. `updated_at`
+
+## Confession Records
+
+Managed by the `Confessions` module and stored in `confessions`.
+
+Each row contains:
+
+1. `user_id`
+2. `content`
+3. `status` (`pending`, `approved`, `rejected`)
+4. `posted_message_id`
+5. `created_at`
+6. `reviewed_at`
 
 ## Reminders Records
 
