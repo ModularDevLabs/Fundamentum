@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -109,4 +110,16 @@ func (r *EconomyRepo) GetShopItem(ctx context.Context, guildID string, itemID in
 		return ShopItemRow{}, false, err
 	}
 	return out, true, nil
+}
+
+func (r *EconomyRepo) ResetBalances(ctx context.Context, guildID string) (int64, error) {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM economy_balances WHERE guild_id = ?`, guildID)
+	if err != nil {
+		return 0, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("economy reset rows affected: %w", err)
+	}
+	return n, nil
 }

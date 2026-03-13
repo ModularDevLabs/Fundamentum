@@ -138,6 +138,17 @@ func (s *Server) handleDependencyCheck(w http.ResponseWriter, r *http.Request) {
 			add("streaks", "warn", "Streak rewards should be positive for both coins and XP.")
 		}
 	}
+	if cfg.FeatureEnabled(models.FeatureSeasonResets) {
+		if !cfg.SeasonResetsEnabled {
+			add("season_resets", "warn", "Feature flag enabled but season reset toggle is off.")
+		}
+		if cfg.SeasonResetCadence != "monthly" && cfg.SeasonResetCadence != "quarterly" {
+			add("season_resets", "error", "Cadence must be monthly or quarterly.")
+		}
+		if len(cfg.SeasonResetModules) == 0 {
+			add("season_resets", "warn", "No modules selected; defaults will be applied.")
+		}
+	}
 	if cfg.FeatureEnabled(models.FeatureAccountAgeGuard) {
 		if cfg.AccountAgeMinDays <= 0 {
 			add("account_age_guard", "error", "Enabled with invalid minimum account age.")

@@ -254,6 +254,20 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `GET /api/modules/streaks/leaderboard?guild_id=...`
 - `GET /api/modules/streaks/user?guild_id=...&user_id=...`
 
+### Season Resets
+
+- Purpose:
+- Periodically reset progression modules for leaderboard "seasons".
+- Behavior:
+- Supports scheduled monthly or quarterly resets.
+- Supports manual run-now resets from the dashboard.
+- Resets selected modules: `leveling`, `economy`, `trivia`.
+- Stores run history with module list, rows affected, status, and any error.
+- APIs:
+- `GET /api/modules/season-resets/status?guild_id=...`
+- `POST /api/modules/season-resets/run?guild_id=...`
+- `GET /api/modules/season-resets/history?guild_id=...&limit=20`
+
 ### Mod Summaries
 
 - Generates periodic moderation digest messages (warnings/actions/tickets).

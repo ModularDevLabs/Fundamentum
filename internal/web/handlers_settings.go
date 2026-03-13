@@ -72,6 +72,10 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			StreaksEnabled              bool                 `json:"streaks_enabled"`
 			StreakRewardCoins           int                  `json:"streak_reward_coins"`
 			StreakRewardXP              int                  `json:"streak_reward_xp"`
+			SeasonResetsEnabled         bool                 `json:"season_resets_enabled"`
+			SeasonResetCadence          string               `json:"season_reset_cadence"`
+			SeasonResetNextRunAt        string               `json:"season_reset_next_run_at"`
+			SeasonResetModules          []string             `json:"season_reset_modules"`
 			FeatureFlags                map[string]bool      `json:"feature_flags"`
 			WelcomeChannelID            string               `json:"welcome_channel_id"`
 			WelcomeMessage              string               `json:"welcome_message"`
@@ -191,6 +195,10 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.StreaksEnabled = cfg.StreaksEnabled
 		current.StreakRewardCoins = cfg.StreakRewardCoins
 		current.StreakRewardXP = cfg.StreakRewardXP
+		current.SeasonResetsEnabled = cfg.SeasonResetsEnabled
+		current.SeasonResetCadence = cfg.SeasonResetCadence
+		current.SeasonResetNextRunAt = cfg.SeasonResetNextRunAt
+		current.SeasonResetModules = cfg.SeasonResetModules
 		current.FeatureFlags = cfg.FeatureFlags
 		current.WelcomeChannelID = cfg.WelcomeChannelID
 		current.WelcomeMessage = cfg.WelcomeMessage

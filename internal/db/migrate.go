@@ -411,6 +411,19 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_trivia_scores_guild
 		ON trivia_scores(guild_id, score DESC);`,
+		`CREATE TABLE IF NOT EXISTS season_reset_runs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			triggered_by TEXT NOT NULL,
+			modules_json TEXT NOT NULL,
+			affected_rows_json TEXT NOT NULL,
+			status TEXT NOT NULL,
+			error TEXT,
+			started_at TEXT NOT NULL,
+			completed_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_season_reset_runs_guild
+		ON season_reset_runs(guild_id, started_at DESC);`,
 	}
 
 	for _, stmt := range stmts {

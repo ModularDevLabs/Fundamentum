@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -42,4 +43,16 @@ func (r *TriviaRepo) Leaderboard(ctx context.Context, guildID string, limit int)
 		out = append(out, row)
 	}
 	return out, rows.Err()
+}
+
+func (r *TriviaRepo) ResetScores(ctx context.Context, guildID string) (int64, error) {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM trivia_scores WHERE guild_id = ?`, guildID)
+	if err != nil {
+		return 0, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("trivia reset rows affected: %w", err)
+	}
+	return n, nil
 }

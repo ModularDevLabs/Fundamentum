@@ -66,6 +66,10 @@ type GuildSettings struct {
 	StreaksEnabled              bool                `json:"streaks_enabled"`
 	StreakRewardCoins           int                 `json:"streak_reward_coins"`
 	StreakRewardXP              int                 `json:"streak_reward_xp"`
+	SeasonResetsEnabled         bool                `json:"season_resets_enabled"`
+	SeasonResetCadence          string              `json:"season_reset_cadence"`
+	SeasonResetNextRunAt        string              `json:"season_reset_next_run_at"`
+	SeasonResetModules          []string            `json:"season_reset_modules"`
 	FeatureFlags                map[string]bool     `json:"feature_flags"`
 	WelcomeChannelID            string              `json:"welcome_channel_id"`
 	WelcomeMessage              string              `json:"welcome_message"`
@@ -350,6 +354,18 @@ type StreakRow struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+type SeasonResetRunRow struct {
+	ID           int64            `json:"id"`
+	GuildID      string           `json:"guild_id"`
+	TriggeredBy  string           `json:"triggered_by"`
+	Modules      []string         `json:"modules"`
+	AffectedRows map[string]int64 `json:"affected_rows"`
+	Status       string           `json:"status"`
+	Error        string           `json:"error"`
+	StartedAt    time.Time        `json:"started_at"`
+	CompletedAt  time.Time        `json:"completed_at"`
+}
+
 type MemberNoteRow struct {
 	ID         int64      `json:"id"`
 	GuildID    string     `json:"guild_id"`
@@ -417,6 +433,7 @@ const (
 	FeatureJoinScreening   = "join_screening"
 	FeatureRaidPanic       = "raid_panic"
 	FeatureStreaks         = "streaks"
+	FeatureSeasonResets    = "season_resets"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -527,6 +544,10 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		StreaksEnabled:              false,
 		StreakRewardCoins:           5,
 		StreakRewardXP:              10,
+		SeasonResetsEnabled:         false,
+		SeasonResetCadence:          "monthly",
+		SeasonResetNextRunAt:        "",
+		SeasonResetModules:          []string{"leveling", "economy", "trivia"},
 		FeatureFlags: map[string]bool{
 			FeatureWelcomeMessages: false,
 			FeatureGoodbyeMessages: false,
@@ -557,6 +578,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureJoinScreening:   false,
 			FeatureRaidPanic:       false,
 			FeatureStreaks:         false,
+			FeatureSeasonResets:    false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",

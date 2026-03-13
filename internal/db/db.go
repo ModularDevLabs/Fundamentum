@@ -68,6 +68,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 		JoinScreening:   &JoinScreeningRepo{db: db},
 		RaidPanic:       &RaidPanicRepo{db: db},
 		Streaks:         &StreaksRepo{db: db},
+		SeasonResets:    &SeasonResetsRepo{db: db},
 	}
 }
 
@@ -105,4 +106,5 @@ type Repositories struct {
 	JoinScreening   *JoinScreeningRepo
 	RaidPanic       *RaidPanicRepo
 	Streaks         *StreaksRepo
+	SeasonResets    *SeasonResetsRepo
 }

@@ -88,6 +88,9 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/modules/trivia/leaderboard", s.handleTriviaLeaderboard)
 	api.HandleFunc("/api/modules/streaks/leaderboard", s.handleStreaksLeaderboard)
 	api.HandleFunc("/api/modules/streaks/user", s.handleStreaksUser)
+	api.HandleFunc("/api/modules/season-resets/status", s.handleSeasonResetStatus)
+	api.HandleFunc("/api/modules/season-resets/run", s.handleSeasonResetRun)
+	api.HandleFunc("/api/modules/season-resets/history", s.handleSeasonResetHistory)
 	api.HandleFunc("/api/integrations/webhooks", s.handleWebhooks)
 	api.HandleFunc("/api/integrations/webhooks/", s.handleWebhookDetail)
 

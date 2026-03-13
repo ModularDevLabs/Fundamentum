@@ -42,6 +42,7 @@ const FEATURE_APPEALS = 'appeals';
 const FEATURE_CUSTOM_COMMANDS = 'custom_commands';
 const FEATURE_BIRTHDAYS = 'birthdays';
 const FEATURE_STREAKS = 'streaks';
+const FEATURE_SEASON_RESETS = 'season_resets';
 const FEATURE_BY_VIEW = {
   welcome: FEATURE_WELCOME,
   goodbye: FEATURE_GOODBYE,
@@ -71,6 +72,7 @@ const FEATURE_BY_VIEW = {
   customcommands: FEATURE_CUSTOM_COMMANDS,
   birthdays: FEATURE_BIRTHDAYS,
   streaks: FEATURE_STREAKS,
+  seasonresets: FEATURE_SEASON_RESETS,
 };
 const NAV_GROUPS_STORAGE_KEY = 'modbot_nav_groups';
 const ACTIVE_VIEW_STORAGE_KEY = 'modbot_active_view';
@@ -104,6 +106,7 @@ const MODULE_GUIDES = {
   customcommands: { title: 'How To Use', points: ['Enable module and add trigger/response rules below.', 'Triggers are exact matches (case-insensitive).', 'Keep responses concise to avoid channel spam.'] },
   birthdays: { title: 'How To Use', points: ['Enable the module and set a birthday channel ID.', 'Store birthdays as MM-DD and optional timezone per user.', 'Worker posts birthday mentions automatically each day.'] },
   streaks: { title: 'How To Use', points: ['Enable streak tracking and reward values.', 'Members advance once per UTC day when active.', 'Use leaderboard and user lookup to monitor engagement.'] },
+  seasonresets: { title: 'How To Use', points: ['Enable season resets and choose monthly or quarterly cadence.', 'Select modules to reset (leveling, economy, trivia).', 'Use Run now for manual resets and verify results in history.'] },
 };
 
 function setModuleBadge(enabled, badgeEl, cardEl) {
@@ -143,6 +146,7 @@ function syncModuleBadges() {
   const customCommandsEnabled = qs('#settingsCustomCommandsEnabled').value === 'true';
   const birthdaysEnabled = qs('#settingsBirthdaysEnabled')?.value === 'true';
   const streaksEnabled = qs('#settingsStreaksEnabled')?.value === 'true';
+  const seasonResetsEnabled = qs('#settingsSeasonResetsEnabled')?.value === 'true';
   setModuleBadge(welcomeEnabled, qs('#moduleWelcomeBadge'), qs('#moduleWelcomeCard'));
   setModuleBadge(goodbyeEnabled, qs('#moduleGoodbyeBadge'), qs('#moduleGoodbyeCard'));
   setModuleBadge(auditEnabled, qs('#moduleAuditBadge'), qs('#moduleAuditCard'));
@@ -171,6 +175,7 @@ function syncModuleBadges() {
   setModuleBadge(customCommandsEnabled, qs('#moduleCustomCommandsBadge'), qs('#moduleCustomCommandsCard'));
   setModuleBadge(birthdaysEnabled, qs('#moduleBirthdaysBadge'), qs('#moduleBirthdaysCard'));
   setModuleBadge(streaksEnabled, qs('#moduleStreaksBadge'), qs('#moduleStreaksCard'));
+  setModuleBadge(seasonResetsEnabled, qs('#moduleSeasonResetsBadge'), qs('#moduleSeasonResetsCard'));
 }
 
 const qs = (sel) => document.querySelector(sel);
@@ -386,6 +391,8 @@ function applyModulePermissionDisabling() {
     customCommandAdd: FEATURE_CUSTOM_COMMANDS,
     birthdaysSave: FEATURE_BIRTHDAYS,
     streaksSave: FEATURE_STREAKS,
+    seasonResetsSave: FEATURE_SEASON_RESETS,
+    seasonResetsRunNow: FEATURE_SEASON_RESETS,
   };
   Object.entries(buttonFeatureMap).forEach(([id, feature]) => {
     const button = qs(`#${id}`);
@@ -680,6 +687,10 @@ async function loadSettings() {
   qs('#settingsStreaksEnabled').value = String(!!cfg.streaks_enabled);
   qs('#settingsStreakRewardCoins').value = cfg.streak_reward_coins || 5;
   qs('#settingsStreakRewardXP').value = cfg.streak_reward_xp || 10;
+  qs('#settingsSeasonResetsEnabled').value = String(!!cfg.season_resets_enabled);
+  qs('#settingsSeasonResetCadence').value = cfg.season_reset_cadence || 'monthly';
+  qs('#settingsSeasonResetNextRunAt').value = cfg.season_reset_next_run_at || '';
+  qs('#settingsSeasonResetModules').value = (cfg.season_reset_modules || ['leveling', 'economy', 'trivia']).join(',');
   qs('#settingsRoleProgressionEnabled').value = String(!!cfg.auto_role_progression_enabled);
   const incidentEndsRaw = (cfg.incident_mode_ends_at || '').trim();
   let incidentDuration = 0;
@@ -784,6 +795,7 @@ async function loadSettings() {
   qs('#settingsCustomCommandsEnabled').value = String(!!flags[FEATURE_CUSTOM_COMMANDS]);
   qs('#settingsBirthdaysEnabled').value = String(!!flags[FEATURE_BIRTHDAYS]);
   qs('#settingsStreaksEnabled').value = String(!!flags[FEATURE_STREAKS]);
+  qs('#settingsSeasonResetsEnabled').value = String(!!flags[FEATURE_SEASON_RESETS]);
   refreshIncidentBanner(cfg);
   syncModuleBadges();
   updateLevelingGuideExamples();
@@ -805,6 +817,7 @@ async function loadSettings() {
   await loadConfessions();
   await loadBirthdays();
   await loadStreaks();
+  await loadSeasonResets();
   await loadPolls();
   await loadSuggestions();
   await loadReminders();
@@ -938,6 +951,10 @@ async function saveSettings() {
       streaks_enabled: qs('#settingsStreaksEnabled').value === 'true',
       streak_reward_coins: parseInt(qs('#settingsStreakRewardCoins').value || '5', 10) || 5,
       streak_reward_xp: parseInt(qs('#settingsStreakRewardXP').value || '10', 10) || 10,
+      season_resets_enabled: qs('#settingsSeasonResetsEnabled').value === 'true',
+      season_reset_cadence: qs('#settingsSeasonResetCadence').value || 'monthly',
+      season_reset_next_run_at: (qs('#settingsSeasonResetNextRunAt').value || '').trim(),
+      season_reset_modules: (qs('#settingsSeasonResetModules').value || '').split(',').map((v) => v.trim().toLowerCase()).filter(Boolean),
     };
     await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
       method: 'PUT',
@@ -3074,6 +3091,84 @@ async function loadStreakUser() {
   }
 }
 
+async function saveSeasonResetsModule() {
+  const restore = setBusy(qs('#seasonResetsSave'), 'Saving...');
+  const status = qs('#seasonResetsStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_SEASON_RESETS]: qs('#settingsSeasonResetsEnabled').value === 'true',
+      },
+      season_resets_enabled: qs('#settingsSeasonResetsEnabled').value === 'true',
+      season_reset_cadence: qs('#settingsSeasonResetCadence').value || 'monthly',
+      season_reset_next_run_at: (qs('#settingsSeasonResetNextRunAt').value || '').trim(),
+      season_reset_modules: (qs('#settingsSeasonResetModules').value || '').split(',').map((v) => v.trim().toLowerCase()).filter(Boolean),
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Season resets module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Season resets save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
+async function loadSeasonResets() {
+  if (!state.guildId) return;
+  const table = qs('#seasonResetsTable');
+  const status = qs('#seasonResetsStatus');
+  if (!table || !status) return;
+  const history = (await apiFetch(`/api/modules/season-resets/history?guild_id=${state.guildId}&limit=20`)) || [];
+  table.innerHTML = '';
+  history.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `
+      <div>${formatDate(row.started_at)}</div>
+      <div>${row.triggered_by || ''}</div>
+      <div>${row.status || ''}</div>
+      <div>${(row.modules || []).join(', ')}</div>
+      <div>${JSON.stringify(row.affected_rows || {})}</div>
+      <div>${row.error || ''}</div>
+    `;
+    table.appendChild(div);
+  });
+  status.textContent = `Loaded ${history.length} runs`;
+}
+
+async function runSeasonResetNow() {
+  const restore = setBusy(qs('#seasonResetsRunNow'), 'Running...');
+  const status = qs('#seasonResetsStatus');
+  status.textContent = 'Running now...';
+  try {
+    const actor = (qs('#seasonResetActor').value || '').trim();
+    await apiFetch(`/api/modules/season-resets/run?guild_id=${state.guildId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actor }),
+    });
+    await loadSettings();
+    await loadSeasonResets();
+    showToast('Season reset completed.');
+  } catch (err) {
+    status.textContent = 'Run failed.';
+    showToast(`Season reset failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
 async function reviewQueueDecision(actionID, decision) {
   if (!actionID || !decision) return;
   let reason = '';
@@ -3521,6 +3616,9 @@ function wireEvents() {
   qs('#customCommandsSave').onclick = () => { if (requireModulePermissions(FEATURE_CUSTOM_COMMANDS, 'Save custom commands module')) saveCustomCommandsModule(); };
   qs('#birthdaysSave').onclick = () => { if (requireModulePermissions(FEATURE_BIRTHDAYS, 'Save birthdays module')) saveBirthdaysModule(); };
   qs('#streaksSave').onclick = () => { if (requireModulePermissions(FEATURE_STREAKS, 'Save streaks module')) saveStreaksModule(); };
+  qs('#seasonResetsSave').onclick = () => { if (requireModulePermissions(FEATURE_SEASON_RESETS, 'Save season resets module')) saveSeasonResetsModule(); };
+  qs('#seasonResetsRunNow').onclick = () => { if (requireModulePermissions(FEATURE_SEASON_RESETS, 'Run season reset')) runSeasonResetNow(); };
+  qs('#seasonResetsRefresh').onclick = () => loadSeasonResets().catch((err) => showToast(`Season reset history load failed: ${err.message}`, 'error'));
   qs('#rrRefresh').onclick = () => loadReactionRoleRules().catch((err) => showToast(`Rule load failed: ${err.message}`, 'error'));
   qs('#rrAddRule').onclick = () => { if (requireModulePermissions(FEATURE_REACTION_ROLES, 'Add reaction role rule')) addReactionRoleRule(); };
   qs('#warnRefresh').onclick = () => loadWarnings().catch((err) => showToast(`Warnings load failed: ${err.message}`, 'error'));
@@ -3577,6 +3675,7 @@ function wireEvents() {
   qs('#settingsCustomCommandsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsBirthdaysEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsStreaksEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsSeasonResetsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsLevelingCurve').addEventListener('change', updateLevelingGuideExamples);
   qs('#settingsLevelingBase').addEventListener('input', updateLevelingGuideExamples);
   qs('#settingsLevelingXP').addEventListener('input', updateLevelingGuideExamples);

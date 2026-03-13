@@ -79,6 +79,7 @@
             <button type="button" class="nav-view-btn" data-view="trivia">Trivia</button>
             <button type="button" class="nav-view-btn" data-view="birthdays">Birthdays</button>
             <button type="button" class="nav-view-btn" data-view="streaks">Streaks</button>
+            <button type="button" class="nav-view-btn" data-view="seasonresets">Season Resets</button>
             <button type="button" class="nav-view-btn" data-view="calendar">Calendar</button>
             <button type="button" class="nav-view-btn" data-view="giveaways">Giveaways</button>
             <button type="button" class="nav-view-btn" data-view="polls">Polls</button>
@@ -1713,6 +1714,61 @@
             <div id="streaksTable"></div>
           </div>
           <pre id="streakUserDetail" class="event-log" style="margin-top: 12px; min-height: 60px;"></pre>
+        </div>
+      </section>
+
+      <section id="view-seasonresets" class="view">
+        <div class="panel">
+          <div class="panel-header">Season Resets</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleSeasonResetsCard">
+              <div class="module-head">
+                <div class="module-title">Season Resets</div>
+                <span class="module-badge off" id="moduleSeasonResetsBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Reset selected progression modules on a monthly or quarterly cadence.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsSeasonResetsEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Cadence
+                  <select id="settingsSeasonResetCadence">
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                  </select>
+                </label>
+                <label>
+                  Next run (UTC ISO)
+                  <input id="settingsSeasonResetNextRunAt" placeholder="2026-04-01T00:00:00Z" />
+                </label>
+                <label>
+                  Modules (comma-separated)
+                  <input id="settingsSeasonResetModules" placeholder="leveling,economy,trivia" />
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <input id="seasonResetActor" placeholder="Actor/user id for manual run (optional)" />
+            <button id="seasonResetsSave" class="primary">Save season resets module</button>
+            <button id="seasonResetsRunNow" class="ghost">Run now</button>
+            <button id="seasonResetsRefresh" class="ghost">Refresh history</button>
+            <span id="seasonResetsStatus" class="status-line"></span>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Run History</div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>Started</div><div>Triggered By</div><div>Status</div><div>Modules</div><div>Affected Rows</div><div>Error</div>
+            </div>
+            <div id="seasonResetsTable"></div>
+          </div>
         </div>
       </section>
 

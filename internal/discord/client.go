@@ -40,6 +40,8 @@ type Service struct {
 	progressionMu   sync.Mutex
 	progressionLast map[string]time.Time
 	raidPanicMu     sync.Mutex
+	seasonResetMu   sync.Mutex
+	seasonResetRuns map[string]bool
 }
 
 func NewService(token string, repos *db.Repositories, logger Logger) (*Service, error) {
@@ -62,6 +64,7 @@ func NewService(token string, repos *db.Repositories, logger Logger) (*Service, 
 		economyLast:     make(map[string]time.Time),
 		voiceJoined:     make(map[string]time.Time),
 		progressionLast: make(map[string]time.Time),
+		seasonResetRuns: make(map[string]bool),
 	}
 
 	s.AddHandler(svc.onReady)
@@ -122,6 +125,7 @@ func (s *Service) StartWorkers(ctx context.Context) {
 	go s.runRoleRentalsWorker(ctx)
 	go s.runBirthdayWorker(ctx)
 	go s.runRaidPanicWorker(ctx)
+	go s.runSeasonResetWorker(ctx)
 }
 
 func (s *Service) ListGuilds(ctx context.Context) ([]models.GuildInfo, error) {

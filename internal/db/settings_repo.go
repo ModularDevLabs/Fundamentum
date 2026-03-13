@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/ModularDevLabs/GoBot/internal/models"
@@ -251,6 +252,27 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	}
 	if cfg.StreakRewardXP <= 0 {
 		cfg.StreakRewardXP = def.StreakRewardXP
+	}
+	if cfg.SeasonResetCadence != "monthly" && cfg.SeasonResetCadence != "quarterly" {
+		cfg.SeasonResetCadence = def.SeasonResetCadence
+	}
+	filteredSeasonModules := make([]string, 0, len(cfg.SeasonResetModules))
+	seenSeasonModules := map[string]struct{}{}
+	for _, raw := range cfg.SeasonResetModules {
+		module := strings.ToLower(strings.TrimSpace(raw))
+		if module != "leveling" && module != "economy" && module != "trivia" {
+			continue
+		}
+		if _, ok := seenSeasonModules[module]; ok {
+			continue
+		}
+		seenSeasonModules[module] = struct{}{}
+		filteredSeasonModules = append(filteredSeasonModules, module)
+	}
+	if len(filteredSeasonModules) == 0 {
+		cfg.SeasonResetModules = append([]string{}, def.SeasonResetModules...)
+	} else {
+		cfg.SeasonResetModules = filteredSeasonModules
 	}
 	return cfg
 }

@@ -599,6 +599,28 @@ Each schedule contains:
 - Type: integer (`>=1`)
 - Default: `10`
 
+79. `season_resets_enabled`
+- UI label: `Enabled` (Season Resets module)
+- Type: boolean
+- Default: `false`
+- Mirrors `feature_flags.season_resets`.
+
+80. `season_reset_cadence`
+- UI label: `Cadence` (Season Resets module)
+- Type: enum (`monthly`, `quarterly`)
+- Default: `monthly`
+
+81. `season_reset_next_run_at`
+- UI label: `Next run (UTC ISO)` (Season Resets module)
+- Type: RFC3339 timestamp string
+- Default: empty (auto-initialized by worker when enabled)
+
+82. `season_reset_modules`
+- UI label: `Modules (comma-separated)` (Season Resets module)
+- Type: list of module keys
+- Supported values: `leveling`, `economy`, `trivia`
+- Default: `["leveling","economy","trivia"]`
+
 ## Giveaways Records
 
 Configured in the `Giveaways` module UI and stored in `giveaways` / `giveaway_entries`.
@@ -724,6 +746,20 @@ Each streak row contains:
 3. `best_streak`
 4. `last_active_date` (`YYYY-MM-DD`, UTC)
 5. `updated_at`
+
+## Season Reset Runs
+
+Managed by the `Season Resets` module and stored in `season_reset_runs`.
+
+Each run row contains:
+
+1. `triggered_by` (for example `scheduler`, `manual`, or actor id)
+2. `modules_json` (selected modules reset for this run)
+3. `affected_rows_json` (per-module rows deleted)
+4. `status` (`success` or `failed`)
+5. `error`
+6. `started_at`
+7. `completed_at`
 
 ## Advanced Per-Guild Setting (API/DB)
 

@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/ModularDevLabs/GoBot/internal/models"
@@ -122,4 +123,16 @@ func (r *LevelingRepo) TopByGuild(ctx context.Context, guildID string, limit int
 		out = append(out, row)
 	}
 	return out, rows.Err()
+}
+
+func (r *LevelingRepo) ResetGuild(ctx context.Context, guildID string) (int64, error) {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM member_levels WHERE guild_id = ?`, guildID)
+	if err != nil {
+		return 0, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("leveling reset rows affected: %w", err)
+	}
+	return n, nil
 }
