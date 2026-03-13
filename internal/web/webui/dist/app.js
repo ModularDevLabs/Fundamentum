@@ -3532,7 +3532,7 @@ async function loadServerPulse() {
   table.innerHTML = '';
   rows.forEach(([metric, value]) => {
     const div = document.createElement('div');
-    div.className = 'table-row';
+    div.className = 'table-row pulse-row';
     div.innerHTML = `<div>${metric}</div><div>${value}</div>`;
     table.appendChild(div);
   });
@@ -3561,7 +3561,7 @@ async function loadHealthDashboard() {
   table.innerHTML = '';
   rows.forEach(([metric, value]) => {
     const div = document.createElement('div');
-    div.className = 'table-row';
+    div.className = 'table-row health-row';
     div.innerHTML = `<div>${metric}</div><div>${value}</div>`;
     table.appendChild(div);
   });
