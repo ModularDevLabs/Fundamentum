@@ -45,6 +45,8 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/modules/role-progression/sync", s.handleRoleProgressionSync)
 	api.HandleFunc("/api/modules/warnings", s.handleWarnings)
 	api.HandleFunc("/api/modules/warnings/issue", s.handleWarningIssue)
+	api.HandleFunc("/api/modules/join-screening", s.handleJoinScreening)
+	api.HandleFunc("/api/modules/join-screening/review", s.handleJoinScreeningReview)
 	api.HandleFunc("/api/modules/scheduled/messages", s.handleScheduledMessages)
 	api.HandleFunc("/api/modules/scheduled/messages/", s.handleScheduledMessageDetail)
 	api.HandleFunc("/api/modules/tickets", s.handleTickets)

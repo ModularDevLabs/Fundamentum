@@ -87,6 +87,7 @@ func (s *Service) OnGuildMemberAdd(_ *discordgo.Session, m *discordgo.GuildMembe
 	}
 	s.handleAccountAgeGuardOnJoin(ctx, m, settings)
 	s.handleAntiRaidOnJoin(ctx, m.GuildID, m.User.ID, settings)
+	s.handleJoinScreeningOnJoin(ctx, m, settings)
 
 	if settings.FeatureEnabled(models.FeatureWelcomeMessages) && settings.WelcomeChannelID != "" {
 		content := renderMessageTemplate(settings.WelcomeMessage, m.User.Mention(), s.guildName(m.GuildID))

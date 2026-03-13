@@ -185,6 +185,7 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `custom_commands=false`
 - `birthdays=false`
 - `role_progression=false`
+- `join_screening=false`
 - Controls per-guild module enablement (features are off unless enabled for that server).
 
 10. `welcome_channel_id`
@@ -549,6 +550,27 @@ Each schedule contains:
 - Default: `false`
 - Mirrors `feature_flags.role_progression`.
 
+70. `join_screening_enabled`
+- UI label: `Enabled` (Join Screening module)
+- Type: boolean
+- Default: `false`
+- Mirrors `feature_flags.join_screening`.
+
+71. `join_screening_log_channel_id`
+- UI label: `Log channel ID` (Join Screening module)
+- Type: Discord channel ID (string)
+- Default: empty
+
+72. `join_screening_account_age_days`
+- UI label: `Minimum account age days` (Join Screening module)
+- Type: integer (`>=1`)
+- Default: `7`
+
+73. `join_screening_require_avatar`
+- UI label: `Require avatar` (Join Screening module)
+- Type: boolean
+- Default: `false`
+
 ## Giveaways Records
 
 Configured in the `Giveaways` module UI and stored in `giveaways` / `giveaway_entries`.
@@ -631,6 +653,21 @@ Each birthday record contains:
 3. `timezone` (string label, default `UTC`)
 4. `created_at`
 5. `updated_at`
+
+## Join Screening Records
+
+Managed by the `Join Screening` module and stored in `join_screening_queue`.
+
+Each queue record contains:
+
+1. `user_id`
+2. `username`
+3. `account_created_at`
+4. `reason`
+5. `status` (`pending`, `approved`, `rejected`)
+6. `reviewed_by`
+7. `created_at`
+8. `reviewed_at`
 
 ## Advanced Per-Guild Setting (API/DB)
 

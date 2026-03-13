@@ -35,6 +35,7 @@ const FEATURE_KEYWORD_ALERTS = 'keyword_alerts';
 const FEATURE_AFK = 'afk';
 const FEATURE_REMINDERS = 'reminders';
 const FEATURE_ACCOUNT_AGE_GUARD = 'account_age_guard';
+const FEATURE_JOIN_SCREENING = 'join_screening';
 const FEATURE_MEMBER_NOTES = 'member_notes';
 const FEATURE_APPEALS = 'appeals';
 const FEATURE_CUSTOM_COMMANDS = 'custom_commands';
@@ -62,6 +63,7 @@ const FEATURE_BY_VIEW = {
   afk: FEATURE_AFK,
   reminders: FEATURE_REMINDERS,
   accountageguard: FEATURE_ACCOUNT_AGE_GUARD,
+  joinscreening: FEATURE_JOIN_SCREENING,
   membernotes: FEATURE_MEMBER_NOTES,
   appeals: FEATURE_APPEALS,
   customcommands: FEATURE_CUSTOM_COMMANDS,
@@ -93,6 +95,7 @@ const MODULE_GUIDES = {
   afk: { title: 'How To Use', points: ['Set the AFK phrase (default !afk).', 'Users set AFK with optional reason.', 'Bot auto-clears AFK when users send a new message.'] },
   reminders: { title: 'How To Use', points: ['Set default reminder channel (optional).', 'Create one-time reminders with exact run time below.', 'Worker sends due reminders and marks them sent.'] },
   accountageguard: { title: 'How To Use', points: ['Set minimum account age in days.', 'Start with log_only to observe impact.', 'Escalate to quarantine/kick once thresholds are validated.'] },
+  joinscreening: { title: 'How To Use', points: ['Enable module and set risk thresholds.', 'Review pending queue and approve/reject each join.', 'Reject queues a kick action for the reviewed user.'] },
   membernotes: { title: 'How To Use', points: ['Enable and optionally set notes log channel.', 'Add moderation notes per user from the panel below.', 'Resolve notes when issues are closed out.'] },
   appeals: { title: 'How To Use', points: ['Set appeals intake channel + phrase.', 'Users submit appeals in that channel.', 'Resolve with clear outcome notes for future audits.'] },
   customcommands: { title: 'How To Use', points: ['Enable module and add trigger/response rules below.', 'Triggers are exact matches (case-insensitive).', 'Keep responses concise to avoid channel spam.'] },
@@ -130,6 +133,7 @@ function syncModuleBadges() {
   const afkEnabled = qs('#settingsAFKEnabled').value === 'true';
   const remindersEnabled = qs('#settingsRemindersEnabled').value === 'true';
   const accountAgeGuardEnabled = qs('#settingsAccountAgeGuardEnabled').value === 'true';
+  const joinScreeningEnabled = qs('#settingsJoinScreeningEnabled')?.value === 'true';
   const memberNotesEnabled = qs('#settingsMemberNotesEnabled').value === 'true';
   const appealsEnabled = qs('#settingsAppealsEnabled').value === 'true';
   const customCommandsEnabled = qs('#settingsCustomCommandsEnabled').value === 'true';
@@ -156,6 +160,7 @@ function syncModuleBadges() {
   setModuleBadge(afkEnabled, qs('#moduleAFKBadge'), qs('#moduleAFKCard'));
   setModuleBadge(remindersEnabled, qs('#moduleRemindersBadge'), qs('#moduleRemindersCard'));
   setModuleBadge(accountAgeGuardEnabled, qs('#moduleAccountAgeGuardBadge'), qs('#moduleAccountAgeGuardCard'));
+  setModuleBadge(joinScreeningEnabled, qs('#moduleJoinScreeningBadge'), qs('#moduleJoinScreeningCard'));
   setModuleBadge(memberNotesEnabled, qs('#moduleMemberNotesBadge'), qs('#moduleMemberNotesCard'));
   setModuleBadge(appealsEnabled, qs('#moduleAppealsBadge'), qs('#moduleAppealsCard'));
   setModuleBadge(customCommandsEnabled, qs('#moduleCustomCommandsBadge'), qs('#moduleCustomCommandsCard'));
@@ -365,6 +370,7 @@ function applyModulePermissionDisabling() {
     remindersSave: FEATURE_REMINDERS,
     reminderAdd: FEATURE_REMINDERS,
     accountAgeGuardSave: FEATURE_ACCOUNT_AGE_GUARD,
+    joinScreeningSave: FEATURE_JOIN_SCREENING,
     memberNotesSave: FEATURE_MEMBER_NOTES,
     memberNoteAdd: FEATURE_MEMBER_NOTES,
     appealsSave: FEATURE_APPEALS,
@@ -751,6 +757,10 @@ async function loadSettings() {
   qs('#settingsAccountAgeMinDays').value = cfg.account_age_min_days || 7;
   qs('#settingsAccountAgeAction').value = cfg.account_age_action || 'log_only';
   qs('#settingsAccountAgeLogChannel').value = cfg.account_age_log_channel_id || '';
+  qs('#settingsJoinScreeningEnabled').value = String(!!flags[FEATURE_JOIN_SCREENING]);
+  qs('#settingsJoinScreeningLogChannel').value = cfg.join_screening_log_channel_id || '';
+  qs('#settingsJoinScreeningAgeDays').value = cfg.join_screening_account_age_days || 7;
+  qs('#settingsJoinScreeningRequireAvatar').value = String(!!cfg.join_screening_require_avatar);
   qs('#settingsMemberNotesEnabled').value = String(!!flags[FEATURE_MEMBER_NOTES]);
   qs('#settingsNotesLogChannel').value = cfg.notes_log_channel_id || '';
   qs('#settingsAppealsEnabled').value = String(!!flags[FEATURE_APPEALS]);
@@ -782,6 +792,7 @@ async function loadSettings() {
   await loadPolls();
   await loadSuggestions();
   await loadReminders();
+  await loadJoinScreeningQueue();
   await loadMemberNotes();
   await loadDependencyChecks();
   await loadWebhooks();
@@ -902,6 +913,10 @@ async function saveSettings() {
       birthdays_enabled: qs('#settingsBirthdaysEnabled').value === 'true',
       birthdays_channel_id: (qs('#settingsBirthdaysChannel').value || '').trim(),
       auto_role_progression_enabled: qs('#settingsRoleProgressionEnabled').value === 'true',
+      join_screening_enabled: qs('#settingsJoinScreeningEnabled').value === 'true',
+      join_screening_log_channel_id: (qs('#settingsJoinScreeningLogChannel').value || '').trim(),
+      join_screening_account_age_days: parseInt(qs('#settingsJoinScreeningAgeDays').value || '7', 10) || 7,
+      join_screening_require_avatar: qs('#settingsJoinScreeningRequireAvatar').value === 'true',
     };
     await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
       method: 'PUT',
@@ -2078,6 +2093,74 @@ async function saveAccountAgeGuardModule() {
   } finally {
     restore();
   }
+}
+
+async function saveJoinScreeningModule() {
+  const restore = setBusy(qs('#joinScreeningSave'), 'Saving...');
+  const status = qs('#joinScreeningStatus');
+  status.textContent = 'Saving...';
+  try {
+    const current = await apiFetch(`/api/settings?guild_id=${state.guildId}`);
+    const payload = {
+      ...current,
+      feature_flags: {
+        ...(current.feature_flags || {}),
+        [FEATURE_JOIN_SCREENING]: qs('#settingsJoinScreeningEnabled').value === 'true',
+      },
+      join_screening_enabled: qs('#settingsJoinScreeningEnabled').value === 'true',
+      join_screening_log_channel_id: (qs('#settingsJoinScreeningLogChannel').value || '').trim(),
+      join_screening_account_age_days: parseInt(qs('#settingsJoinScreeningAgeDays').value || '7', 10) || 7,
+      join_screening_require_avatar: qs('#settingsJoinScreeningRequireAvatar').value === 'true',
+    };
+    await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await loadSettings();
+    status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+    showToast('Join screening module saved.');
+  } catch (err) {
+    status.textContent = 'Save failed.';
+    showToast(`Join screening save failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
+async function loadJoinScreeningQueue() {
+  if (!state.guildId) return;
+  const table = qs('#joinScreeningTable');
+  const status = qs('#joinScreeningQueueStatus');
+  if (!table || !status) return;
+  const rows = (await apiFetch(`/api/modules/join-screening?guild_id=${state.guildId}&status=pending`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `
+      <div>${row.id}</div>
+      <div>${row.user_id}</div>
+      <div>${row.reason || ''}</div>
+      <div>${formatDate(row.created_at)}</div>
+      <div>
+        <button class="ghost" data-js-approve="${row.id}">Approve</button>
+        <button class="ghost" data-js-reject="${row.id}">Reject</button>
+      </div>
+    `;
+    table.appendChild(div);
+  });
+  status.textContent = `${rows.length} pending`;
+}
+
+async function reviewJoinScreening(id, decision) {
+  if (!state.guildId || !id) return;
+  const reviewedBy = (qs('#joinScreeningReviewer')?.value || '').trim();
+  await apiFetch(`/api/modules/join-screening/review?guild_id=${state.guildId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: Number(id), decision, reviewed_by: reviewedBy }),
+  });
 }
 
 async function saveMemberNotesModule() {
@@ -3302,6 +3385,7 @@ function wireEvents() {
   qs('#afkSave').onclick = () => { if (requireModulePermissions(FEATURE_AFK, 'Save AFK module')) saveAFKModule(); };
   qs('#remindersSave').onclick = () => { if (requireModulePermissions(FEATURE_REMINDERS, 'Save reminders module')) saveRemindersModule(); };
   qs('#accountAgeGuardSave').onclick = () => { if (requireModulePermissions(FEATURE_ACCOUNT_AGE_GUARD, 'Save account age guard module')) saveAccountAgeGuardModule(); };
+  qs('#joinScreeningSave').onclick = () => { if (requireModulePermissions(FEATURE_JOIN_SCREENING, 'Save join screening module')) saveJoinScreeningModule(); };
   qs('#memberNotesSave').onclick = () => { if (requireModulePermissions(FEATURE_MEMBER_NOTES, 'Save member notes module')) saveMemberNotesModule(); };
   qs('#customCommandsSave').onclick = () => { if (requireModulePermissions(FEATURE_CUSTOM_COMMANDS, 'Save custom commands module')) saveCustomCommandsModule(); };
   qs('#birthdaysSave').onclick = () => { if (requireModulePermissions(FEATURE_BIRTHDAYS, 'Save birthdays module')) saveBirthdaysModule(); };
@@ -3328,6 +3412,7 @@ function wireEvents() {
   qs('#suggestionsRefresh').onclick = () => loadSuggestions().catch((err) => showToast(`Suggestions load failed: ${err.message}`, 'error'));
   qs('#suggestionStatusFilter').addEventListener('change', () => loadSuggestions().catch((err) => showToast(`Suggestions load failed: ${err.message}`, 'error')));
   qs('#remindersRefresh').onclick = () => loadReminders().catch((err) => showToast(`Reminders load failed: ${err.message}`, 'error'));
+  qs('#joinScreeningRefresh').onclick = () => loadJoinScreeningQueue().catch((err) => showToast(`Join screening load failed: ${err.message}`, 'error'));
   qs('#reminderAdd').onclick = () => { if (requireModulePermissions(FEATURE_REMINDERS, 'Add reminder')) addReminder(); };
   qs('#memberNotesRefresh').onclick = () => loadMemberNotes().catch((err) => showToast(`Member notes load failed: ${err.message}`, 'error'));
   qs('#memberNoteAdd').onclick = () => { if (requireModulePermissions(FEATURE_MEMBER_NOTES, 'Add member note')) addMemberNote(); };
@@ -3354,6 +3439,7 @@ function wireEvents() {
   qs('#settingsAFKEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsRemindersEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAccountAgeGuardEnabled').addEventListener('change', syncModuleBadges);
+  qs('#settingsJoinScreeningEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsMemberNotesEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsAppealsEnabled').addEventListener('change', syncModuleBadges);
   qs('#settingsCustomCommandsEnabled').addEventListener('change', syncModuleBadges);
@@ -3437,6 +3523,21 @@ function wireEvents() {
       await loadRoleProgressionRules();
     } catch (err) {
       showToast(`Delete role progression rule failed: ${err.message}`, 'error');
+    }
+  });
+
+  qs('#joinScreeningTable').addEventListener('click', async (e) => {
+    const approve = e.target.closest('button[data-js-approve]');
+    const reject = e.target.closest('button[data-js-reject]');
+    if (!approve && !reject) return;
+    const id = approve ? approve.getAttribute('data-js-approve') : reject.getAttribute('data-js-reject');
+    const decision = approve ? 'approved' : 'rejected';
+    try {
+      await reviewJoinScreening(id, decision);
+      showToast(`Join screening ${decision}.`);
+      await loadJoinScreeningQueue();
+    } catch (err) {
+      showToast(`Join screening review failed: ${err.message}`, 'error');
     }
   });
 

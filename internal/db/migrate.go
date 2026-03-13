@@ -351,6 +351,20 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_role_progression_rules_guild
 		ON role_progression_rules(guild_id, metric, threshold);`,
+		`CREATE TABLE IF NOT EXISTS join_screening_queue (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			username TEXT NOT NULL,
+			account_created_at TEXT,
+			reason TEXT NOT NULL,
+			status TEXT NOT NULL,
+			reviewed_by TEXT,
+			created_at TEXT NOT NULL,
+			reviewed_at TEXT
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_join_screening_guild_status
+		ON join_screening_queue(guild_id, status, created_at DESC);`,
 		`CREATE TABLE IF NOT EXISTS trivia_scores (
 			guild_id TEXT NOT NULL,
 			user_id TEXT NOT NULL,

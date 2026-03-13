@@ -213,6 +213,22 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `DELETE /api/modules/role-progression/rules/{id}?guild_id=...`
 - `POST /api/modules/role-progression/sync?guild_id=...` with `user_id`
 
+### Join Screening Queue
+
+- Purpose:
+- Flag potentially risky new joins for moderator review.
+- Triggers:
+- Account age below configured threshold.
+- Missing avatar when `join_screening_require_avatar=true`.
+- Behavior:
+- Creates queue entries with `pending` status.
+- Review actions:
+- `approved`: marks entry reviewed.
+- `rejected`: marks entry reviewed and queues a kick action.
+- APIs:
+- `GET /api/modules/join-screening?guild_id=...&status=pending`
+- `POST /api/modules/join-screening/review?guild_id=...`
+
 ### Mod Summaries
 
 - Generates periodic moderation digest messages (warnings/actions/tickets).

@@ -237,5 +237,8 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.VoiceRewardXPPerMinute <= 0 {
 		cfg.VoiceRewardXPPerMinute = def.VoiceRewardXPPerMinute
 	}
+	if cfg.JoinScreeningAccountAgeDays <= 0 {
+		cfg.JoinScreeningAccountAgeDays = def.JoinScreeningAccountAgeDays
+	}
 	return cfg
 }

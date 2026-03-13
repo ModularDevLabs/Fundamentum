@@ -56,6 +56,10 @@ type GuildSettings struct {
 	BirthdaysEnabled            bool                `json:"birthdays_enabled"`
 	BirthdaysChannelID          string              `json:"birthdays_channel_id"`
 	AutoRoleProgressionEnabled  bool                `json:"auto_role_progression_enabled"`
+	JoinScreeningEnabled        bool                `json:"join_screening_enabled"`
+	JoinScreeningLogChannelID   string              `json:"join_screening_log_channel_id"`
+	JoinScreeningAccountAgeDays int                 `json:"join_screening_account_age_days"`
+	JoinScreeningRequireAvatar  bool                `json:"join_screening_require_avatar"`
 	FeatureFlags                map[string]bool     `json:"feature_flags"`
 	WelcomeChannelID            string              `json:"welcome_channel_id"`
 	WelcomeMessage              string              `json:"welcome_message"`
@@ -315,6 +319,19 @@ type RoleProgressionRuleRow struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type JoinScreeningRow struct {
+	ID               int64      `json:"id"`
+	GuildID          string     `json:"guild_id"`
+	UserID           string     `json:"user_id"`
+	Username         string     `json:"username"`
+	AccountCreatedAt *time.Time `json:"account_created_at,omitempty"`
+	Reason           string     `json:"reason"`
+	Status           string     `json:"status"`
+	ReviewedBy       string     `json:"reviewed_by"`
+	CreatedAt        time.Time  `json:"created_at"`
+	ReviewedAt       *time.Time `json:"reviewed_at,omitempty"`
+}
+
 type MemberNoteRow struct {
 	ID         int64      `json:"id"`
 	GuildID    string     `json:"guild_id"`
@@ -379,6 +396,7 @@ const (
 	FeatureCustomCommands  = "custom_commands"
 	FeatureBirthdays       = "birthdays"
 	FeatureRoleProgression = "role_progression"
+	FeatureJoinScreening   = "join_screening"
 )
 
 func (s GuildSettings) FeatureEnabled(flag string) bool {
@@ -479,6 +497,10 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		BirthdaysEnabled:            false,
 		BirthdaysChannelID:          "",
 		AutoRoleProgressionEnabled:  false,
+		JoinScreeningEnabled:        false,
+		JoinScreeningLogChannelID:   "",
+		JoinScreeningAccountAgeDays: 7,
+		JoinScreeningRequireAvatar:  false,
 		FeatureFlags: map[string]bool{
 			FeatureWelcomeMessages: false,
 			FeatureGoodbyeMessages: false,
@@ -506,6 +528,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 			FeatureCustomCommands:  false,
 			FeatureBirthdays:       false,
 			FeatureRoleProgression: false,
+			FeatureJoinScreening:   false,
 		},
 		WelcomeMessage: "Welcome {user} to {server}.",
 		GoodbyeMessage: "Goodbye {user}.",

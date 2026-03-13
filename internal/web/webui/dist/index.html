@@ -59,6 +59,7 @@
             <button type="button" class="nav-view-btn" data-view="tickets">Tickets</button>
             <button type="button" class="nav-view-btn" data-view="antiraid">Anti-Raid</button>
             <button type="button" class="nav-view-btn" data-view="accountageguard">Account Age Guard</button>
+            <button type="button" class="nav-view-btn" data-view="joinscreening">Join Screening</button>
             <button type="button" class="nav-view-btn" data-view="membernotes">Member Notes</button>
             <button type="button" class="nav-view-btn" data-view="appeals">Appeals</button>
             <button type="button" class="nav-view-btn" data-view="confessions">Confessions</button>
@@ -2003,6 +2004,63 @@
           <div class="panel-actions">
             <button id="accountAgeGuardSave" class="primary">Save account age guard module</button>
             <span id="accountAgeGuardStatus" class="status-line"></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-joinscreening" class="view">
+        <div class="panel">
+          <div class="panel-header">Join Screening Module</div>
+          <div class="modules-grid">
+            <article class="module-card" id="moduleJoinScreeningCard">
+              <div class="module-head">
+                <div class="module-title">Join Screening</div>
+                <span class="module-badge off" id="moduleJoinScreeningBadge">Disabled</span>
+              </div>
+              <p class="module-desc">Queue suspicious joins for moderator approval before trust is granted.</p>
+              <div class="form-grid module-form">
+                <label>
+                  Enabled
+                  <select id="settingsJoinScreeningEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Log channel ID (optional)
+                  <input id="settingsJoinScreeningLogChannel" />
+                </label>
+                <label>
+                  Minimum account age days
+                  <input id="settingsJoinScreeningAgeDays" type="number" min="1" />
+                </label>
+                <label>
+                  Require avatar
+                  <select id="settingsJoinScreeningRequireAvatar">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </label>
+              </div>
+            </article>
+          </div>
+          <div class="panel-actions">
+            <button id="joinScreeningSave" class="primary">Save join screening module</button>
+            <span id="joinScreeningStatus" class="status-line"></span>
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Pending Queue</div>
+          <div class="panel-actions" style="margin-top:0; margin-bottom:10px;">
+            <button id="joinScreeningRefresh" class="ghost">Refresh pending</button>
+            <input id="joinScreeningReviewer" placeholder="Reviewer user ID" />
+            <span id="joinScreeningQueueStatus" class="status-line"></span>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>ID</div><div>User</div><div>Reason</div><div>Created</div><div>Action</div>
+            </div>
+            <div id="joinScreeningTable"></div>
           </div>
         </div>
       </section>

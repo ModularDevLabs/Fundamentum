@@ -114,6 +114,14 @@ func (s *Server) handleDependencyCheck(w http.ResponseWriter, r *http.Request) {
 	if cfg.FeatureEnabled(models.FeatureRoleProgression) && !cfg.AutoRoleProgressionEnabled {
 		add("role_progression", "warn", "Feature flag enabled but auto role progression toggle is off.")
 	}
+	if cfg.FeatureEnabled(models.FeatureJoinScreening) {
+		if !cfg.JoinScreeningEnabled {
+			add("join_screening", "warn", "Feature flag enabled but join screening toggle is off.")
+		}
+		if cfg.JoinScreeningAccountAgeDays <= 0 {
+			add("join_screening", "error", "Join screening account age days must be greater than zero.")
+		}
+	}
 	if cfg.FeatureEnabled(models.FeatureAccountAgeGuard) {
 		if cfg.AccountAgeMinDays <= 0 {
 			add("account_age_guard", "error", "Enabled with invalid minimum account age.")

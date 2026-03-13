@@ -62,6 +62,10 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			BirthdaysEnabled            bool                 `json:"birthdays_enabled"`
 			BirthdaysChannelID          string               `json:"birthdays_channel_id"`
 			AutoRoleProgressionEnabled  bool                 `json:"auto_role_progression_enabled"`
+			JoinScreeningEnabled        bool                 `json:"join_screening_enabled"`
+			JoinScreeningLogChannelID   string               `json:"join_screening_log_channel_id"`
+			JoinScreeningAccountAgeDays int                  `json:"join_screening_account_age_days"`
+			JoinScreeningRequireAvatar  bool                 `json:"join_screening_require_avatar"`
 			FeatureFlags                map[string]bool      `json:"feature_flags"`
 			WelcomeChannelID            string               `json:"welcome_channel_id"`
 			WelcomeMessage              string               `json:"welcome_message"`
@@ -171,6 +175,10 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.BirthdaysEnabled = cfg.BirthdaysEnabled
 		current.BirthdaysChannelID = cfg.BirthdaysChannelID
 		current.AutoRoleProgressionEnabled = cfg.AutoRoleProgressionEnabled
+		current.JoinScreeningEnabled = cfg.JoinScreeningEnabled
+		current.JoinScreeningLogChannelID = cfg.JoinScreeningLogChannelID
+		current.JoinScreeningAccountAgeDays = cfg.JoinScreeningAccountAgeDays
+		current.JoinScreeningRequireAvatar = cfg.JoinScreeningRequireAvatar
 		current.FeatureFlags = cfg.FeatureFlags
 		current.WelcomeChannelID = cfg.WelcomeChannelID
 		current.WelcomeMessage = cfg.WelcomeMessage
