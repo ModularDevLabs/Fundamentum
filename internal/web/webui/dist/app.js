@@ -631,6 +631,9 @@ async function loadSettings() {
   qs('#settingsIncidentModeEnabled').value = String(!!cfg.incident_mode_enabled);
   qs('#settingsIncidentModeReason').value = cfg.incident_mode_reason || '';
   qs('#settingsImmutableAuditTrail').value = String(!!cfg.immutable_audit_trail);
+  qs('#settingsMaintenanceEnabled').value = String(!!cfg.maintenance_window_enabled);
+  qs('#settingsMaintenanceStart').value = cfg.maintenance_window_start || '02:00';
+  qs('#settingsMaintenanceEnd').value = cfg.maintenance_window_end || '03:00';
   const incidentEndsRaw = (cfg.incident_mode_ends_at || '').trim();
   let incidentDuration = 0;
   if (incidentEndsRaw) {
@@ -843,6 +846,9 @@ async function saveSettings() {
       incident_mode_reason: qs('#settingsIncidentModeReason').value.trim(),
       incident_mode_ends_at: incidentEndsAt,
       immutable_audit_trail: qs('#settingsImmutableAuditTrail').value === 'true',
+      maintenance_window_enabled: qs('#settingsMaintenanceEnabled').value === 'true',
+      maintenance_window_start: (qs('#settingsMaintenanceStart').value || '').trim(),
+      maintenance_window_end: (qs('#settingsMaintenanceEnd').value || '').trim(),
     };
     await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
       method: 'PUT',

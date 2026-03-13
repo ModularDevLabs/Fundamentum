@@ -29,6 +29,9 @@ func (s *Service) runRemindersWorker(ctx context.Context) {
 			if err != nil || !settings.FeatureEnabled(models.FeatureReminders) {
 				continue
 			}
+			if settings.InMaintenanceWindow(time.Now().UTC()) {
+				continue
+			}
 			channelID := strings.TrimSpace(item.ChannelID)
 			if channelID == "" {
 				channelID = strings.TrimSpace(settings.RemindersChannelID)

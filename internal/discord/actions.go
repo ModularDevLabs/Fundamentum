@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ModularDevLabs/GoBot/internal/models"
 	"github.com/bwmarrin/discordgo"
@@ -21,6 +22,10 @@ func (s *Service) runActionWorker(ctx context.Context) {
 				break
 			}
 			if !ok {
+				break
+			}
+			settings, settingsErr := s.repos.Settings.Get(ctx, row.GuildID)
+			if settingsErr == nil && settings.InMaintenanceWindow(time.Now().UTC()) {
 				break
 			}
 			processedAny = true

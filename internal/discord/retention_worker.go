@@ -40,6 +40,9 @@ func (s *Service) runRetentionPass(ctx context.Context) {
 		if cfg.RetentionDays <= 0 {
 			continue
 		}
+		if cfg.InMaintenanceWindow(now) {
+			continue
+		}
 		cutoff := now.Add(-time.Duration(cfg.RetentionDays) * 24 * time.Hour)
 		preview, err := s.repos.Retention.CountGuildBefore(ctx, guildID, cutoff)
 		if err != nil {

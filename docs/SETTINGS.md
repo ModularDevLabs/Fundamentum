@@ -133,6 +133,23 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - Default: `false`
 - When enabled, every emitted audit/action event is appended to a hash-linked audit trail record.
 
+8k. `maintenance_window_enabled`
+- UI label: `Maintenance window`
+- Type: boolean
+- Default: `false`
+- Pauses destructive automation/actions while the configured window is active.
+
+8l. `maintenance_window_start`
+- UI label: `Maintenance start (UTC HH:MM)`
+- Type: string (`HH:MM`, 24-hour UTC)
+- Default: `02:00`
+
+8m. `maintenance_window_end`
+- UI label: `Maintenance end (UTC HH:MM)`
+- Type: string (`HH:MM`, 24-hour UTC)
+- Default: `03:00`
+- Supports overnight windows (`23:00` -> `01:00`).
+
 9. `feature_flags`
 - Type: object/map of booleans
 - Default:

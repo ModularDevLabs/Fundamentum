@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"strconv"
+	"strings"
+	"time"
+)
 
 type AutoModRule struct {
 	ID        string `json:"id"`
@@ -34,6 +38,9 @@ type GuildSettings struct {
 	IncidentModeReason          string              `json:"incident_mode_reason"`
 	IncidentModeEndsAt          string              `json:"incident_mode_ends_at"`
 	ImmutableAuditTrail         bool                `json:"immutable_audit_trail"`
+	MaintenanceWindowEnabled    bool                `json:"maintenance_window_enabled"`
+	MaintenanceWindowStart      string              `json:"maintenance_window_start"`
+	MaintenanceWindowEnd        string              `json:"maintenance_window_end"`
 	FeatureFlags                map[string]bool     `json:"feature_flags"`
 	WelcomeChannelID            string              `json:"welcome_channel_id"`
 	WelcomeMessage              string              `json:"welcome_message"`
@@ -364,6 +371,41 @@ func (s GuildSettings) FeatureAllowedInChannel(flag, channelID string) bool {
 	return false
 }
 
+func (s GuildSettings) InMaintenanceWindow(now time.Time) bool {
+	if !s.MaintenanceWindowEnabled {
+		return false
+	}
+	startMin, okStart := parseHHMM(s.MaintenanceWindowStart)
+	endMin, okEnd := parseHHMM(s.MaintenanceWindowEnd)
+	if !okStart || !okEnd {
+		return false
+	}
+	currentMin := now.UTC().Hour()*60 + now.UTC().Minute()
+	if startMin == endMin {
+		return true
+	}
+	if startMin < endMin {
+		return currentMin >= startMin && currentMin < endMin
+	}
+	return currentMin >= startMin || currentMin < endMin
+}
+
+func parseHHMM(raw string) (int, bool) {
+	parts := strings.Split(strings.TrimSpace(raw), ":")
+	if len(parts) != 2 {
+		return 0, false
+	}
+	hh, err := strconv.Atoi(parts[0])
+	if err != nil || hh < 0 || hh > 23 {
+		return 0, false
+	}
+	mm, err := strconv.Atoi(parts[1])
+	if err != nil || mm < 0 || mm > 59 {
+		return 0, false
+	}
+	return hh*60 + mm, true
+}
+
 func DefaultGuildSettings(guildID string) GuildSettings {
 	return GuildSettings{
 		GuildID:                     guildID,
@@ -383,6 +425,9 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		IncidentModeReason:          "",
 		IncidentModeEndsAt:          "",
 		ImmutableAuditTrail:         false,
+		MaintenanceWindowEnabled:    false,
+		MaintenanceWindowStart:      "02:00",
+		MaintenanceWindowEnd:        "03:00",
 		FeatureFlags: map[string]bool{
 			FeatureWelcomeMessages: false,
 			FeatureGoodbyeMessages: false,

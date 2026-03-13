@@ -219,5 +219,11 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 			cfg.IncidentModeEnabled = false
 		}
 	}
+	if cfg.MaintenanceWindowStart == "" {
+		cfg.MaintenanceWindowStart = def.MaintenanceWindowStart
+	}
+	if cfg.MaintenanceWindowEnd == "" {
+		cfg.MaintenanceWindowEnd = def.MaintenanceWindowEnd
+	}
 	return cfg
 }

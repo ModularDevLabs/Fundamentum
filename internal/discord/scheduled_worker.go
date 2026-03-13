@@ -33,6 +33,9 @@ func (s *Service) runScheduledTick(ctx context.Context) {
 		if err != nil || !settings.FeatureEnabled(models.FeatureScheduled) {
 			continue
 		}
+		if settings.InMaintenanceWindow(time.Now().UTC()) {
+			continue
+		}
 		content := strings.TrimSpace(row.Content)
 		if content != "" {
 			if _, err := s.session.ChannelMessageSend(row.ChannelID, content); err != nil {

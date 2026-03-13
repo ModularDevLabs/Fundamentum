@@ -160,6 +160,11 @@ func (s *Server) handleActionCreate(w http.ResponseWriter, r *http.Request) {
 
 	actionType := strings.ReplaceAll(path, "-", "_")
 	isDestructive := actionType == "kick" || actionType == "quarantine" || actionType == "remove_roles"
+	if settings.InMaintenanceWindow(time.Now().UTC()) && isDestructive {
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write([]byte("maintenance window active; destructive actions are paused"))
+		return
+	}
 	incidentActive := settings.IncidentModeEnabled
 	if incidentActive && settings.IncidentModeEndsAt != "" {
 		if t, err := time.Parse(time.RFC3339, settings.IncidentModeEndsAt); err == nil && time.Now().UTC().After(t) {

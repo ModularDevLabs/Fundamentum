@@ -28,6 +28,9 @@ func (s *Service) runAnalyticsWorker(ctx context.Context) {
 				if err != nil || !settings.FeatureEnabled(models.FeatureAnalytics) || settings.AnalyticsChannelID == "" {
 					continue
 				}
+				if settings.InMaintenanceWindow(now) {
+					continue
+				}
 				interval := time.Duration(settings.AnalyticsIntervalDays) * 24 * time.Hour
 				if interval <= 0 {
 					interval = 7 * 24 * time.Hour
@@ -83,4 +86,3 @@ func (s *Service) sendAnalyticsSummary(ctx context.Context, guildID string, sett
 	_, err = s.session.ChannelMessageSend(settings.AnalyticsChannelID, msg)
 	return err
 }
-

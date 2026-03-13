@@ -121,6 +121,14 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - Provides tamper-evident chronological records separate from normal action/event tables.
 - API: `GET /api/audit-trail?guild_id=...&limit=...`.
 
+### Maintenance Windows (settings-driven)
+
+- Trigger: `maintenance_window_enabled=true` and current UTC time inside configured window.
+- Behavior:
+- Blocks new destructive dashboard actions.
+- Pauses scheduled messages, reminders, ticket auto-close, analytics posting, and retention purge passes.
+- Configuration: `maintenance_window_start` and `maintenance_window_end` (`HH:MM` UTC).
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.
