@@ -62,6 +62,10 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	api.HandleFunc("/api/modules/member-notes/", s.handleMemberNoteDetail)
 	api.HandleFunc("/api/modules/reputation/give", s.handleReputationGive)
 	api.HandleFunc("/api/modules/reputation/leaderboard", s.handleReputationLeaderboard)
+	api.HandleFunc("/api/modules/economy/balance", s.handleEconomyBalance)
+	api.HandleFunc("/api/modules/economy/leaderboard", s.handleEconomyLeaderboard)
+	api.HandleFunc("/api/modules/economy/shop", s.handleEconomyShop)
+	api.HandleFunc("/api/modules/economy/purchase", s.handleEconomyPurchase)
 	api.HandleFunc("/api/integrations/webhooks", s.handleWebhooks)
 	api.HandleFunc("/api/integrations/webhooks/", s.handleWebhookDetail)
 

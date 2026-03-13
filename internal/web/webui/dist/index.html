@@ -71,6 +71,7 @@
             <button type="button" class="nav-view-btn" data-view="starboard">Starboard</button>
             <button type="button" class="nav-view-btn" data-view="leveling">Leveling</button>
             <button type="button" class="nav-view-btn" data-view="reputation">Reputation</button>
+            <button type="button" class="nav-view-btn" data-view="economy">Economy</button>
             <button type="button" class="nav-view-btn" data-view="giveaways">Giveaways</button>
             <button type="button" class="nav-view-btn" data-view="polls">Polls</button>
             <button type="button" class="nav-view-btn" data-view="suggestions">Suggestions</button>
@@ -1310,6 +1311,47 @@
               <div>Rep</div>
             </div>
             <div id="repTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-economy" class="view">
+        <div class="panel">
+          <div class="panel-header">Economy + Shop</div>
+          <div class="filters">
+            <input id="ecoUserId" placeholder="User ID for balance/purchase" />
+            <input id="ecoItemId" placeholder="Item ID for purchase" />
+            <button id="ecoPurchase" class="primary">Purchase</button>
+          </div>
+          <div class="panel-actions">
+            <button id="ecoRefresh" class="ghost">Refresh balances/shop</button>
+            <span id="ecoStatus" class="status-line"></span>
+          </div>
+          <div class="table">
+            <div class="table-row table-header">
+              <div>Rank</div>
+              <div>User</div>
+              <div>Coins</div>
+            </div>
+            <div id="ecoLeaderboardTable"></div>
+          </div>
+          <div class="table" style="margin-top:12px;">
+            <div class="table-row table-header">
+              <div>ID</div>
+              <div>Name</div>
+              <div>Cost</div>
+              <div>Role</div>
+              <div>Enabled</div>
+            </div>
+            <div id="ecoShopTable"></div>
+          </div>
+          <div class="form-grid" style="margin-top:12px;">
+            <label>Item name<input id="ecoNewItemName" /></label>
+            <label>Cost<input id="ecoNewItemCost" type="number" min="1" /></label>
+            <label>Role ID (optional)<input id="ecoNewItemRole" /></label>
+          </div>
+          <div class="panel-actions">
+            <button id="ecoAddItem" class="ghost">Add shop item</button>
           </div>
         </div>
       </section>

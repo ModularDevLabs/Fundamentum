@@ -743,6 +743,7 @@ async function loadSettings() {
   await loadLeaderboard();
   await loadGiveaways();
   await loadReputationLeaderboard();
+  await loadEconomy();
   await loadPolls();
   await loadSuggestions();
   await loadReminders();
@@ -2480,6 +2481,64 @@ async function giveReputation(delta) {
   await loadReputationLeaderboard();
 }
 
+async function loadEconomy() {
+  if (!state.guildId) return;
+  const status = qs('#ecoStatus');
+  const board = qs('#ecoLeaderboardTable');
+  const shop = qs('#ecoShopTable');
+  if (!status || !board || !shop) return;
+  const leaderboard = (await apiFetch(`/api/modules/economy/leaderboard?guild_id=${state.guildId}&limit=20`)) || [];
+  const items = (await apiFetch(`/api/modules/economy/shop?guild_id=${state.guildId}`)) || [];
+  board.innerHTML = '';
+  leaderboard.forEach((row, idx) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `<div>${idx + 1}</div><div>${row.user_id}</div><div>${row.balance}</div>`;
+    board.appendChild(div);
+  });
+  shop.innerHTML = '';
+  items.forEach((item) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `<div>${item.id}</div><div>${item.name}</div><div>${item.cost}</div><div>${item.role_id || ''}</div><div>${item.enabled ? 'yes' : 'no'}</div>`;
+    shop.appendChild(div);
+  });
+  status.textContent = `Loaded leaderboard (${leaderboard.length}) and shop (${items.length})`;
+}
+
+async function addEconomyItem() {
+  if (!state.guildId) return;
+  const name = (qs('#ecoNewItemName').value || '').trim();
+  const cost = parseInt(qs('#ecoNewItemCost').value || '0', 10);
+  const roleID = (qs('#ecoNewItemRole').value || '').trim();
+  if (!name || cost <= 0) {
+    showToast('Item name and cost are required.', 'error');
+    return;
+  }
+  await apiFetch(`/api/modules/economy/shop?guild_id=${state.guildId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, cost, role_id: roleID, enabled: true }),
+  });
+  await loadEconomy();
+}
+
+async function purchaseEconomyItem() {
+  if (!state.guildId) return;
+  const userID = (qs('#ecoUserId').value || '').trim();
+  const itemID = parseInt(qs('#ecoItemId').value || '0', 10);
+  if (!userID || itemID <= 0) {
+    showToast('User ID and item ID are required.', 'error');
+    return;
+  }
+  await apiFetch(`/api/modules/economy/purchase?guild_id=${state.guildId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userID, item_id: itemID }),
+  });
+  await loadEconomy();
+}
+
 async function reviewQueueDecision(actionID, decision) {
   if (!actionID || !decision) return;
   let reason = '';
@@ -2908,6 +2967,9 @@ function wireEvents() {
   qs('#repRefresh').onclick = () => loadReputationLeaderboard().catch((err) => showToast(`Reputation load failed: ${err.message}`, 'error'));
   qs('#repGivePlus').onclick = () => giveReputation(1).catch((err) => showToast(`Give rep failed: ${err.message}`, 'error'));
   qs('#repGiveMinus').onclick = () => giveReputation(-1).catch((err) => showToast(`Give rep failed: ${err.message}`, 'error'));
+  qs('#ecoRefresh').onclick = () => loadEconomy().catch((err) => showToast(`Economy load failed: ${err.message}`, 'error'));
+  qs('#ecoAddItem').onclick = () => addEconomyItem().catch((err) => showToast(`Add item failed: ${err.message}`, 'error'));
+  qs('#ecoPurchase').onclick = () => purchaseEconomyItem().catch((err) => showToast(`Purchase failed: ${err.message}`, 'error'));
 
   qs('#membersTable').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-action]');

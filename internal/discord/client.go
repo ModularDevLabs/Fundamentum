@@ -33,6 +33,8 @@ type Service struct {
 	raidMu       sync.Mutex
 	raidJoins    map[string][]time.Time
 	raidUntil    map[string]time.Time
+	economyMu    sync.Mutex
+	economyLast  map[string]time.Time
 }
 
 func NewService(token string, repos *db.Repositories, logger Logger) (*Service, error) {
@@ -52,6 +54,7 @@ func NewService(token string, repos *db.Repositories, logger Logger) (*Service, 
 		automodSeen:  make(map[string][]time.Time),
 		raidJoins:    make(map[string][]time.Time),
 		raidUntil:    make(map[string]time.Time),
+		economyLast:  make(map[string]time.Time),
 	}
 
 	s.AddHandler(svc.onReady)

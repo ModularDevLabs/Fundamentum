@@ -145,6 +145,17 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `POST /api/modules/reputation/give?guild_id=...`
 - `GET /api/modules/reputation/leaderboard?guild_id=...`
 
+### Economy + Shop
+
+- Members earn coins from chat activity (1 coin, 60s per-user cooldown).
+- Tracks balances and leaderboard per guild.
+- Supports shop items with optional role grants on purchase.
+- APIs:
+- `GET /api/modules/economy/balance?guild_id=...&user_id=...`
+- `GET /api/modules/economy/leaderboard?guild_id=...`
+- `GET/POST /api/modules/economy/shop?guild_id=...`
+- `POST /api/modules/economy/purchase?guild_id=...`
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.

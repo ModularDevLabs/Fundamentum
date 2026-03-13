@@ -256,6 +256,27 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_reputation_target
 		ON reputation_points(guild_id, to_user_id);`,
+		`CREATE TABLE IF NOT EXISTS economy_balances (
+			guild_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			balance INTEGER NOT NULL DEFAULT 0,
+			updated_at TEXT NOT NULL,
+			PRIMARY KEY (guild_id, user_id)
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_economy_guild_balance
+		ON economy_balances(guild_id, balance DESC);`,
+		`CREATE TABLE IF NOT EXISTS shop_items (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			name TEXT NOT NULL,
+			cost INTEGER NOT NULL,
+			role_id TEXT,
+			duration_minutes INTEGER NOT NULL DEFAULT 0,
+			enabled INTEGER NOT NULL DEFAULT 1,
+			created_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_shop_items_guild
+		ON shop_items(guild_id, enabled, cost);`,
 	}
 
 	for _, stmt := range stmts {
