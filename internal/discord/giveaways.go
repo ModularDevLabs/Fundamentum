@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Service) handleGiveawayReaction(ctx context.Context, guildID, channelID, messageID, userID, emoji string) {

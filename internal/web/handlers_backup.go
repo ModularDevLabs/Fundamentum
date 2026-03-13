@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 type guildBackupSnapshot struct {
@@ -56,7 +56,7 @@ func (s *Server) handleBackupExport(w http.ResponseWriter, r *http.Request) {
 		ScheduledMessages: schedules,
 		CustomCommands:    commands,
 	}
-	name := fmt.Sprintf("gobot_backup_%s_%s.json", guildID, time.Now().UTC().Format("20060102T150405"))
+	name := fmt.Sprintf("fundamentum_backup_%s_%s.json", guildID, time.Now().UTC().Format("20060102T150405"))
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", name))
 	_ = json.NewEncoder(w).Encode(snap)

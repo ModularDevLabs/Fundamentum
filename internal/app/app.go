@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/db"
-	"github.com/ModularDevLabs/GoBot/internal/discord"
-	"github.com/ModularDevLabs/GoBot/internal/web"
+	"github.com/ModularDevLabs/Fundamentum/internal/db"
+	"github.com/ModularDevLabs/Fundamentum/internal/discord"
+	"github.com/ModularDevLabs/Fundamentum/internal/web"
 )
 
 type App struct {

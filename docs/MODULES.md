@@ -1,6 +1,6 @@
 # Module Guide
 
-This document explains how each GoBot feature module behaves at runtime, how to configure it, and how modules interact.
+This document explains how each Fundamentum feature module behaves at runtime, how to configure it, and how modules interact.
 
 For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 

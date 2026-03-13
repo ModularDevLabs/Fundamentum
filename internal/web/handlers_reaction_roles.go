@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Server) handleReactionRoleRules(w http.ResponseWriter, r *http.Request) {

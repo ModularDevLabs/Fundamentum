@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Server) handleSettingsProfileApply(w http.ResponseWriter, r *http.Request) {

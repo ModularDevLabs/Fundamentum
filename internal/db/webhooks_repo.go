@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 type WebhooksRepo struct {

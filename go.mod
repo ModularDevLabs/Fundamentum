@@ -1,4 +1,4 @@
-module github.com/ModularDevLabs/GoBot
+module github.com/ModularDevLabs/Fundamentum
 
 go 1.22
 

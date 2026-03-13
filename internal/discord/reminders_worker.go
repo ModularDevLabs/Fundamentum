@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Service) runRemindersWorker(ctx context.Context) {

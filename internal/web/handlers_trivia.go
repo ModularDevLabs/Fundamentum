@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 type triviaQuestion struct {
@@ -16,7 +16,7 @@ type triviaQuestion struct {
 }
 
 var triviaBank = []triviaQuestion{
-	{Prompt: "What command shows all channels in a Discord server settings export from GoBot? (single word)", Answer: "channels"},
+	{Prompt: "What command shows all channels in a Discord server settings export from Fundamentum? (single word)", Answer: "channels"},
 	{Prompt: "In Discord, what permission is required to remove messages posted by others?", Answer: "manage messages"},
 	{Prompt: "What does XP stand for in leveling systems?", Answer: "experience points"},
 	{Prompt: "Which Discord object groups text channels together?", Answer: "category"},

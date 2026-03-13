@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Service) antiRaidRecordJoin(guildID string, now time.Time, windowSec int) int {
@@ -71,4 +71,3 @@ func (s *Service) handleAntiRaidOnJoin(ctx context.Context, guildID, userID stri
 		}
 	}
 }
-

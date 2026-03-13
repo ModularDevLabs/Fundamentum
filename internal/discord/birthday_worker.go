@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Service) runBirthdayWorker(ctx context.Context) {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 type LevelingRepo struct {

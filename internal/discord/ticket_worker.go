@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Service) runTicketWorker(ctx context.Context) {

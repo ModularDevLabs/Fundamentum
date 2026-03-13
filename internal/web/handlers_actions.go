@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Server) handleActions(w http.ResponseWriter, r *http.Request) {

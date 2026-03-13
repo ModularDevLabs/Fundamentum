@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/db"
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/db"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 	"github.com/bwmarrin/discordgo"
 )
 

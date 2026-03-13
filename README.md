@@ -1,4 +1,4 @@
-# GoBot
+# Fundamentum
 
 Multi-guild Discord moderation bot with a built-in dashboard to track inactivity, quarantine users, and manage actions.
 

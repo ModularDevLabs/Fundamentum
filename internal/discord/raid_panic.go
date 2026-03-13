@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/db"
+	"github.com/ModularDevLabs/Fundamentum/internal/db"
 	"github.com/bwmarrin/discordgo"
 )
 

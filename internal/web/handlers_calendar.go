@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ModularDevLabs/GoBot/internal/db"
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/db"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Server) handleCalendarEvents(w http.ResponseWriter, r *http.Request) {

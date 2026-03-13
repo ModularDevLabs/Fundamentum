@@ -3,7 +3,7 @@ package discord
 import (
 	"strings"
 
-	"github.com/ModularDevLabs/GoBot/internal/models"
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 	"github.com/bwmarrin/discordgo"
 )
 

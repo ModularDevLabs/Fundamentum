@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ModularDevLabs/GoBot/internal/db"
-	"github.com/ModularDevLabs/GoBot/internal/discord"
+	"github.com/ModularDevLabs/Fundamentum/internal/db"
+	"github.com/ModularDevLabs/Fundamentum/internal/discord"
 )
 
 type Logger interface {

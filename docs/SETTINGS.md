@@ -1,6 +1,6 @@
 # Settings Reference
 
-This document lists every configurable setting used by GoBot.
+This document lists every configurable setting used by Fundamentum.
 For module-level behavior details (triggers, workflows, and interactions), see `docs/MODULES.md`.
 
 ## Dashboard Settings (per guild)
