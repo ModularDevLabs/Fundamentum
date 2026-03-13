@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fundamentum | Discord Operations Bot</title>
+  <meta name="description" content="Fundamentum is a modern Discord operations bot for moderation, safety automation, incident response, and community engagement." />
+  <meta property="og:title" content="Fundamentum" />
+  <meta property="og:description" content="Discord operations bot with a full web dashboard and modular automation." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0e1726" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="bg-orb orb-a" aria-hidden="true"></div>
+  <div class="bg-orb orb-b" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top">Fundamentum</a>
+      <nav class="links">
+        <a href="#features">Features</a>
+        <a href="#modules">Modules</a>
+        <a href="#deploy">Deploy</a>
+      </nav>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme">Theme</button>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero container">
+      <p class="eyebrow">Discord Operations Platform</p>
+      <h1>Run safer, cleaner, and more engaging servers with Fundamentum.</h1>
+      <p class="hero-copy">
+        Moderation automation, incident controls, engagement systems, and an admin dashboard built for live server operations.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="https://github.com/ModularDevLabs/Fundamentum" target="_blank" rel="noreferrer">View on GitHub</a>
+        <a class="btn btn-secondary" href="https://github.com/ModularDevLabs/Fundamentum/releases" target="_blank" rel="noreferrer">Download Releases</a>
+      </div>
+      <div class="hero-stats">
+        <article><span>40+</span><small>Feature Modules</small></article>
+        <article><span>1</span><small>Unified Dashboard</small></article>
+        <article><span>Per Guild</span><small>Independent Config</small></article>
+      </div>
+    </section>
+
+    <section id="features" class="container section">
+      <h2>What Fundamentum gives you</h2>
+      <div class="feature-grid">
+        <article class="card">
+          <h3>Moderation Core</h3>
+          <p>Warnings, AutoMod, account age guard, quarantine workflows, appeals, and action queue controls.</p>
+        </article>
+        <article class="card">
+          <h3>Incident Controls</h3>
+          <p>Incident mode, review queue, maintenance windows, and raid panic controls for high-pressure moments.</p>
+        </article>
+        <article class="card">
+          <h3>Community Systems</h3>
+          <p>Tickets, suggestions, polls, giveaways, birthdays, AFK, reminders, confessions, and calendar events.</p>
+        </article>
+        <article class="card">
+          <h3>Progression</h3>
+          <p>Leveling, role progression, reputation, economy, achievements, trivia, streaks, and season resets.</p>
+        </article>
+        <article class="card">
+          <h3>Ops Visibility</h3>
+          <p>Server pulse, analytics trends, health dashboard, webhook integrations, and immutable audit trail support.</p>
+        </article>
+        <article class="card">
+          <h3>Pragmatic Deployment</h3>
+          <p>Single binary with SQLite by default, plus GitHub releases for Linux, macOS, and Windows.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="modules" class="container section">
+      <h2>Module Categories</h2>
+      <div class="module-columns">
+        <article class="panel">
+          <h3>Safety + Moderation</h3>
+          <ul>
+            <li>Welcome / Goodbye / Audit Log / Invite Tracker</li>
+            <li>AutoMod / Warnings / Verification / Anti-Raid</li>
+            <li>Tickets / Appeals / Member Notes / Custom Commands</li>
+            <li>Account Age Guard / Join Screening / Raid Panic</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>Engagement + Operations</h3>
+          <ul>
+            <li>Reaction Roles / Starboard / Giveaways / Polls / Suggestions</li>
+            <li>Leveling / Reputation / Economy / Achievements / Trivia</li>
+            <li>Birthdays / AFK / Reminders / Calendar / Confessions</li>
+            <li>Analytics / Streaks / Season Resets / Mod Summaries</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="deploy" class="container section deploy">
+      <h2>Install and run in minutes</h2>
+      <pre><code>go build -o modbot ./cmd/modbot
+MODBOT_TOKEN=your_token MODBOT_ADMIN_PASS=your_pass ./modbot --db modbot.sqlite</code></pre>
+      <p>Open <code>http://127.0.0.1:8080</code>, select your guild, and enable modules as needed.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="https://github.com/ModularDevLabs/Fundamentum#quickstart" target="_blank" rel="noreferrer">Quickstart Docs</a>
+        <a class="btn btn-secondary" href="https://github.com/ModularDevLabs/Fundamentum/blob/main/docs/MODULES.md" target="_blank" rel="noreferrer">Module Guide</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-row">
+      <small>© <span id="year"></span> Fundamentum</small>
+      <small>Built for Discord operators</small>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>

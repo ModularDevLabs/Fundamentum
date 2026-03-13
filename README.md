@@ -72,3 +72,19 @@ All feature modules are disabled by default on a new guild and enabled per-guild
 
 - Local build: `./modbot`
 - Cross-platform build script output: `dist/`
+
+## GitHub Pages Website
+
+Marketing site files live in `website/`.
+
+- Page entrypoint: `website/index.html`
+- Styling: `website/styles.css`
+- Theme toggle and small UI behavior: `website/app.js`
+- Deploy workflow: `.github/workflows/pages.yml`
+
+Deployment steps:
+
+1. In GitHub repo settings, open **Pages**.
+2. Set **Source** to **GitHub Actions**.
+3. Push to `main` with changes under `website/`.
+4. Workflow publishes to `https://modulardevlabs.github.io/Fundamentum/`.
