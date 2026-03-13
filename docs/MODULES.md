@@ -54,6 +54,16 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 
 ## Feature Modules
 
+### Message Retention Tooling (settings-driven)
+
+- Trigger: background worker tick every 6 hours.
+- Behavior:
+- Reads guild `retention_days`.
+- If `retention_days > 0`, computes cutoff (`now - retention_days`).
+- Optionally records `retention_archive` action summary with row counts.
+- Purges old records from `warnings`, `ticket_messages`, `appeals`, `suggestions`, `member_notes`, `reminders`, and `actions`.
+- Config keys: `retention_days`, `retention_archive_before_purge`.
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.

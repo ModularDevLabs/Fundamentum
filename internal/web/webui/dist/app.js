@@ -606,6 +606,8 @@ async function loadSettings() {
   qs('#settingsActionRequireConfirm').value = String(cfg.action_require_confirm !== false);
   qs('#settingsActionTwoPerson').value = String(!!cfg.action_two_person_approval);
   qs('#settingsRolePolicies').value = JSON.stringify(cfg.dashboard_role_policies || {}, null, 2);
+  qs('#settingsRetentionDays').value = Number.isFinite(cfg.retention_days) ? cfg.retention_days : 0;
+  qs('#settingsRetentionArchive').value = String(cfg.retention_archive_before_purge !== false);
   qs('#settingsWelcomeEnabled').value = String(!!flags[FEATURE_WELCOME]);
   qs('#settingsWelcomeChannel').value = cfg.welcome_channel_id || '';
   qs('#settingsWelcomeMessage').value = cfg.welcome_message || '';
@@ -756,6 +758,8 @@ async function saveSettings() {
       action_require_confirm: qs('#settingsActionRequireConfirm').value === 'true',
       action_two_person_approval: qs('#settingsActionTwoPerson').value === 'true',
       dashboard_role_policies: rolePolicies,
+      retention_days: parseInt(qs('#settingsRetentionDays').value, 10) || 0,
+      retention_archive_before_purge: qs('#settingsRetentionArchive').value === 'true',
     };
     await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
       method: 'PUT',

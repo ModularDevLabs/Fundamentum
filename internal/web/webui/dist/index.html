@@ -293,6 +293,17 @@
               Role policies JSON (optional)
               <textarea id="settingsRolePolicies" rows="6" placeholder='{"actions":["moderator"],"settings":["admin"],"tickets":["support","moderator"]}'></textarea>
             </label>
+            <label>
+              Message retention days (0=disabled)
+              <input id="settingsRetentionDays" type="number" min="0" />
+            </label>
+            <label>
+              Archive summary before purge
+              <select id="settingsRetentionArchive">
+                <option value="true">Enabled</option>
+                <option value="false">Disabled</option>
+              </select>
+            </label>
           </div>
           <div class="panel-actions">
             <select id="settingsProfilePreset">

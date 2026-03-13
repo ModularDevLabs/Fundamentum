@@ -89,6 +89,18 @@ These are in the **Settings** view and are stored per server (`guild_settings`).
 - `{"actions":["moderator"],"tickets":["support","moderator"],"settings":["admin"]}`
 - Empty/missing policy for a key means unrestricted.
 
+8e. `retention_days`
+- UI label: `Message retention days (0=disabled)`
+- Type: integer (`>= 0`)
+- Default: `0` (disabled)
+- When greater than zero, the retention worker purges records older than this many days.
+
+8f. `retention_archive_before_purge`
+- UI label: `Archive summary before purge`
+- Type: boolean
+- Default: `true`
+- Writes a `retention_archive` action row with table counts and cutoff timestamp before deleting old rows.
+
 9. `feature_flags`
 - Type: object/map of booleans
 - Default:

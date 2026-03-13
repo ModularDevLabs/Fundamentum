@@ -67,6 +67,27 @@ func (r *SettingsRepo) EnsureDefaults(ctx context.Context, guildID string) (mode
 	return cfg, nil
 }
 
+func (r *SettingsRepo) ListGuildIDs(ctx context.Context) ([]string, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT guild_id FROM guild_settings`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]string, 0, 32)
+	for rows.Next() {
+		var guildID string
+		if err := rows.Scan(&guildID); err != nil {
+			return nil, err
+		}
+		if guildID == "" {
+			continue
+		}
+		out = append(out, guildID)
+	}
+	return out, rows.Err()
+}
+
 func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	def := models.DefaultGuildSettings(cfg.GuildID)
 	if cfg.FeatureFlags == nil {
@@ -183,6 +204,12 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	}
 	if cfg.AppealsOpenPhrase == "" {
 		cfg.AppealsOpenPhrase = def.AppealsOpenPhrase
+	}
+	if cfg.RetentionDays < 0 {
+		cfg.RetentionDays = 0
+	}
+	if !cfg.RetentionArchiveBeforePurge && cfg.RetentionDays == 0 {
+		cfg.RetentionArchiveBeforePurge = def.RetentionArchiveBeforePurge
 	}
 	return cfg
 }
