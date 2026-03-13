@@ -35,6 +35,8 @@ type Service struct {
 	raidUntil    map[string]time.Time
 	economyMu    sync.Mutex
 	economyLast  map[string]time.Time
+	voiceMu      sync.Mutex
+	voiceJoined  map[string]time.Time
 }
 
 func NewService(token string, repos *db.Repositories, logger Logger) (*Service, error) {
@@ -43,7 +45,7 @@ func NewService(token string, repos *db.Repositories, logger Logger) (*Service, 
 		return nil, err
 	}
 
-	s.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMembers | discordgo.IntentsGuildMessages | discordgo.IntentsGuildMessageReactions | discordgo.IntentsMessageContent
+	s.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMembers | discordgo.IntentsGuildMessages | discordgo.IntentsGuildMessageReactions | discordgo.IntentsGuildVoiceStates | discordgo.IntentsMessageContent
 
 	svc := &Service{
 		session:      s,
@@ -55,6 +57,7 @@ func NewService(token string, repos *db.Repositories, logger Logger) (*Service, 
 		raidJoins:    make(map[string][]time.Time),
 		raidUntil:    make(map[string]time.Time),
 		economyLast:  make(map[string]time.Time),
+		voiceJoined:  make(map[string]time.Time),
 	}
 
 	s.AddHandler(svc.onReady)
@@ -74,6 +77,7 @@ func NewService(token string, repos *db.Repositories, logger Logger) (*Service, 
 	s.AddHandler(svc.OnInviteDelete)
 	s.AddHandler(svc.OnMessageReactionAdd)
 	s.AddHandler(svc.OnMessageReactionRemove)
+	s.AddHandler(svc.OnVoiceStateUpdate)
 	svc.ensureBackfillInit()
 
 	return svc, nil

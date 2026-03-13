@@ -175,6 +175,15 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - Auto-creates a public thread from matching messages.
 - Settings: `auto_thread_enabled`, `auto_thread_channel_id`, `auto_thread_keywords`.
 
+### Voice Activity Rewards
+
+- Tracks voice join/leave sessions.
+- Awards coins and XP based on session minutes.
+- Settings:
+- `voice_rewards_enabled`
+- `voice_reward_coins_per_minute`
+- `voice_reward_xp_per_minute`
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.

@@ -53,6 +53,9 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			AutoThreadEnabled           bool                 `json:"auto_thread_enabled"`
 			AutoThreadChannelID         string               `json:"auto_thread_channel_id"`
 			AutoThreadKeywords          []string             `json:"auto_thread_keywords"`
+			VoiceRewardsEnabled         bool                 `json:"voice_rewards_enabled"`
+			VoiceRewardCoinsPerMinute   int                  `json:"voice_reward_coins_per_minute"`
+			VoiceRewardXPPerMinute      int                  `json:"voice_reward_xp_per_minute"`
 			FeatureFlags                map[string]bool      `json:"feature_flags"`
 			WelcomeChannelID            string               `json:"welcome_channel_id"`
 			WelcomeMessage              string               `json:"welcome_message"`
@@ -153,6 +156,9 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.AutoThreadEnabled = cfg.AutoThreadEnabled
 		current.AutoThreadChannelID = cfg.AutoThreadChannelID
 		current.AutoThreadKeywords = cfg.AutoThreadKeywords
+		current.VoiceRewardsEnabled = cfg.VoiceRewardsEnabled
+		current.VoiceRewardCoinsPerMinute = cfg.VoiceRewardCoinsPerMinute
+		current.VoiceRewardXPPerMinute = cfg.VoiceRewardXPPerMinute
 		current.FeatureFlags = cfg.FeatureFlags
 		current.WelcomeChannelID = cfg.WelcomeChannelID
 		current.WelcomeMessage = cfg.WelcomeMessage

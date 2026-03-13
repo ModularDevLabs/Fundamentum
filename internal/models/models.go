@@ -47,6 +47,9 @@ type GuildSettings struct {
 	AutoThreadEnabled           bool                `json:"auto_thread_enabled"`
 	AutoThreadChannelID         string              `json:"auto_thread_channel_id"`
 	AutoThreadKeywords          []string            `json:"auto_thread_keywords"`
+	VoiceRewardsEnabled         bool                `json:"voice_rewards_enabled"`
+	VoiceRewardCoinsPerMinute   int                 `json:"voice_reward_coins_per_minute"`
+	VoiceRewardXPPerMinute      int                 `json:"voice_reward_xp_per_minute"`
 	FeatureFlags                map[string]bool     `json:"feature_flags"`
 	WelcomeChannelID            string              `json:"welcome_channel_id"`
 	WelcomeMessage              string              `json:"welcome_message"`
@@ -440,6 +443,9 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		AutoThreadEnabled:           false,
 		AutoThreadChannelID:         "",
 		AutoThreadKeywords:          []string{"?", "help", "issue"},
+		VoiceRewardsEnabled:         false,
+		VoiceRewardCoinsPerMinute:   1,
+		VoiceRewardXPPerMinute:      2,
 		FeatureFlags: map[string]bool{
 			FeatureWelcomeMessages: false,
 			FeatureGoodbyeMessages: false,

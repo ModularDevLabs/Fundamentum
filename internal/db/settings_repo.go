@@ -231,5 +231,11 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.AutoThreadKeywords == nil {
 		cfg.AutoThreadKeywords = append([]string{}, def.AutoThreadKeywords...)
 	}
+	if cfg.VoiceRewardCoinsPerMinute <= 0 {
+		cfg.VoiceRewardCoinsPerMinute = def.VoiceRewardCoinsPerMinute
+	}
+	if cfg.VoiceRewardXPPerMinute <= 0 {
+		cfg.VoiceRewardXPPerMinute = def.VoiceRewardXPPerMinute
+	}
 	return cfg
 }

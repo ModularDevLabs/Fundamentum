@@ -640,6 +640,9 @@ async function loadSettings() {
   qs('#settingsAutoThreadEnabled').value = String(!!cfg.auto_thread_enabled);
   qs('#settingsAutoThreadChannel').value = cfg.auto_thread_channel_id || '';
   qs('#settingsAutoThreadKeywords').value = (cfg.auto_thread_keywords || []).join(',');
+  qs('#settingsVoiceRewardsEnabled').value = String(!!cfg.voice_rewards_enabled);
+  qs('#settingsVoiceCoinsPerMinute').value = cfg.voice_reward_coins_per_minute || 1;
+  qs('#settingsVoiceXPPerMinute').value = cfg.voice_reward_xp_per_minute || 2;
   const incidentEndsRaw = (cfg.incident_mode_ends_at || '').trim();
   let incidentDuration = 0;
   if (incidentEndsRaw) {
@@ -863,6 +866,9 @@ async function saveSettings() {
       auto_thread_enabled: qs('#settingsAutoThreadEnabled').value === 'true',
       auto_thread_channel_id: (qs('#settingsAutoThreadChannel').value || '').trim(),
       auto_thread_keywords: (qs('#settingsAutoThreadKeywords').value || '').split(',').map((v) => v.trim()).filter(Boolean),
+      voice_rewards_enabled: qs('#settingsVoiceRewardsEnabled').value === 'true',
+      voice_reward_coins_per_minute: parseInt(qs('#settingsVoiceCoinsPerMinute').value || '1', 10) || 1,
+      voice_reward_xp_per_minute: parseInt(qs('#settingsVoiceXPPerMinute').value || '2', 10) || 2,
     };
     await apiFetch(`/api/settings?guild_id=${state.guildId}`, {
       method: 'PUT',
