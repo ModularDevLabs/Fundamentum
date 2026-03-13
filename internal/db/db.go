@@ -54,6 +54,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Reminders:      &RemindersRepo{db: db},
 		MemberNotes:    &MemberNotesRepo{db: db},
 		Retention:      &RetentionRepo{db: db},
+		Webhooks:       &WebhooksRepo{db: db},
 	}
 }
 
@@ -77,4 +78,5 @@ type Repositories struct {
 	Reminders      *RemindersRepo
 	MemberNotes    *MemberNotesRepo
 	Retention      *RetentionRepo
+	Webhooks       *WebhooksRepo
 }

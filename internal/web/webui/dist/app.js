@@ -740,6 +740,7 @@ async function loadSettings() {
   await loadReminders();
   await loadMemberNotes();
   await loadDependencyChecks();
+  await loadWebhooks();
 }
 
 async function loadInvitePermissionStatus() {
@@ -926,6 +927,60 @@ async function loadDependencyChecks() {
     table.appendChild(div);
   });
   status.textContent = `Checked at ${new Date().toLocaleTimeString()}`;
+}
+
+async function loadWebhooks() {
+  if (!state.guildId) return;
+  const table = qs('#webhookTable');
+  if (!table) return;
+  const rows = (await apiFetch(`/api/integrations/webhooks?guild_id=${state.guildId}`)) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    const shortURL = row.url && row.url.length > 56 ? `${row.url.slice(0, 56)}...` : row.url;
+    div.innerHTML = `
+      <div>${row.id}</div>
+      <div title="${row.url || ''}">${shortURL || ''}</div>
+      <div>${(row.events || []).join(', ')}</div>
+      <div>${row.enabled ? 'yes' : 'no'}</div>
+      <div>${row.last_error || ''}</div>
+      <div><button class="ghost" data-webhook-del="${row.id}">Delete</button></div>
+    `;
+    table.appendChild(div);
+  });
+}
+
+async function addWebhook() {
+  if (!state.guildId) return;
+  const restore = setBusy(qs('#webhookAdd'), 'Adding...');
+  const status = qs('#webhookStatus');
+  status.textContent = 'Adding...';
+  try {
+    const payload = {
+      url: (qs('#webhookUrl').value || '').trim(),
+      events: (qs('#webhookEvents').value || '').split(',').map((v) => v.trim()).filter(Boolean),
+      enabled: qs('#webhookEnabled').value === 'true',
+    };
+    await apiFetch(`/api/integrations/webhooks?guild_id=${state.guildId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    qs('#webhookUrl').value = '';
+    status.textContent = `Added at ${new Date().toLocaleTimeString()}`;
+    await loadWebhooks();
+  } catch (err) {
+    status.textContent = 'Add failed.';
+    showToast(`Webhook add failed: ${err.message}`, 'error');
+  } finally {
+    restore();
+  }
+}
+
+async function deleteWebhook(id) {
+  if (!id || !state.guildId) return;
+  await apiFetch(`/api/integrations/webhooks/${id}?guild_id=${state.guildId}`, { method: 'DELETE' });
 }
 
 async function saveWelcome() {
@@ -2633,6 +2688,8 @@ function wireEvents() {
   qs('#backupDownload').onclick = downloadBackupSnapshot;
   qs('#backupRestore').onclick = restoreBackupSnapshot;
   qs('#dependencyCheckRun').onclick = () => loadDependencyChecks().catch((err) => showToast(`Dependency check failed: ${err.message}`, 'error'));
+  qs('#webhookRefresh').onclick = () => loadWebhooks().catch((err) => showToast(`Webhook load failed: ${err.message}`, 'error'));
+  qs('#webhookAdd').onclick = () => addWebhook().catch((err) => showToast(`Webhook add failed: ${err.message}`, 'error'));
   qs('#welcomeSave').onclick = () => { if (requireModulePermissions(FEATURE_WELCOME, 'Save welcome module')) saveWelcome(); };
   qs('#goodbyeSave').onclick = () => { if (requireModulePermissions(FEATURE_GOODBYE, 'Save goodbye module')) saveGoodbye(); };
   qs('#auditSave').onclick = () => { if (requireModulePermissions(FEATURE_AUDIT, 'Save audit module')) saveAudit(); };
@@ -2756,6 +2813,18 @@ function wireEvents() {
       await loadScheduledMessages();
     } catch (err) {
       showToast(`Delete schedule failed: ${err.message}`, 'error');
+    }
+  });
+
+  qs('#webhookTable').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-webhook-del]');
+    if (!btn) return;
+    try {
+      await deleteWebhook(btn.getAttribute('data-webhook-del'));
+      showToast('Webhook deleted.');
+      await loadWebhooks();
+    } catch (err) {
+      showToast(`Delete webhook failed: ${err.message}`, 'error');
     }
   });
 

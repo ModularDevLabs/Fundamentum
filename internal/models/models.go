@@ -287,6 +287,17 @@ type GuildInfo struct {
 	Name string `json:"name"`
 }
 
+type WebhookIntegrationRow struct {
+	ID        int64     `json:"id"`
+	GuildID   string    `json:"guild_id"`
+	URL       string    `json:"url"`
+	Events    []string  `json:"events"`
+	Enabled   bool      `json:"enabled"`
+	LastError string    `json:"last_error"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 const (
 	FeatureWelcomeMessages = "welcome_messages"
 	FeatureGoodbyeMessages = "goodbye_messages"

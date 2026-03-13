@@ -201,6 +201,7 @@ func (s *Service) emitAuditEvent(guildID, eventType, message string) {
 	if err != nil {
 		return
 	}
+	s.emitWebhookEvent(guildID, eventType, message)
 	if !settings.FeatureEnabled(models.FeatureAuditLogStream) || settings.AuditLogChannelID == "" {
 		return
 	}

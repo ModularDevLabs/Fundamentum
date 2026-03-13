@@ -427,6 +427,42 @@
             <div id="dependencyCheckTable"></div>
           </div>
         </div>
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Webhook Integrations</div>
+          <div class="form-grid">
+            <label>
+              Webhook URL
+              <input id="webhookUrl" placeholder="https://example.com/hook" />
+            </label>
+            <label>
+              Event types (comma)
+              <input id="webhookEvents" placeholder="action_success,action_failed" />
+            </label>
+            <label>
+              Enabled
+              <select id="webhookEnabled">
+                <option value="true">Enabled</option>
+                <option value="false">Disabled</option>
+              </select>
+            </label>
+          </div>
+          <div class="panel-actions">
+            <button id="webhookAdd" class="primary">Add webhook</button>
+            <button id="webhookRefresh" class="ghost">Refresh</button>
+            <span id="webhookStatus" class="status-line"></span>
+          </div>
+          <div class="table" style="margin-top: 12px;">
+            <div class="table-row table-header">
+              <div>ID</div>
+              <div>URL</div>
+              <div>Events</div>
+              <div>Enabled</div>
+              <div>Last Error</div>
+              <div>Action</div>
+            </div>
+            <div id="webhookTable"></div>
+          </div>
+        </div>
       </section>
 
       <section id="view-welcome" class="view">

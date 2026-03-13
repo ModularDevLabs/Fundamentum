@@ -222,6 +222,18 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_member_notes_guild_user
 		ON member_notes(guild_id, user_id, created_at);`,
+		`CREATE TABLE IF NOT EXISTS webhook_integrations (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			guild_id TEXT NOT NULL,
+			url TEXT NOT NULL,
+			events_json TEXT NOT NULL,
+			enabled INTEGER NOT NULL DEFAULT 1,
+			last_error TEXT,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_webhooks_guild_enabled
+		ON webhook_integrations(guild_id, enabled);`,
 	}
 
 	for _, stmt := range stmts {

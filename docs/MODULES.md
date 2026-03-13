@@ -100,6 +100,18 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - Shows current safety posture (`incident_mode`, `action_dry_run`, two-person approval) and retention state.
 - API: `GET /api/health/dashboard?guild_id=...`.
 
+### Webhook Integrations (dashboard tool)
+
+- Trigger: Settings view -> `Webhook Integrations`.
+- Behavior:
+- Stores per-guild outbound webhook URLs with event subscriptions.
+- On matching audit/action events, POSTs JSON payload to each enabled integration.
+- Tracks last delivery error for each webhook in the dashboard.
+- APIs:
+- `GET /api/integrations/webhooks?guild_id=...`
+- `POST /api/integrations/webhooks?guild_id=...`
+- `DELETE /api/integrations/webhooks/{id}?guild_id=...`
+
 ### Welcome Messages (`welcome_messages`)
 
 - Trigger: member joins.
