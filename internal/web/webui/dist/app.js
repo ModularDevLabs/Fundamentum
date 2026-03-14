@@ -89,6 +89,26 @@ const FEATURE_BY_VIEW = {
 const NAV_GROUPS_STORAGE_KEY = 'modbot_nav_groups';
 const ACTIVE_VIEW_STORAGE_KEY = 'modbot_active_view';
 const THEME_STORAGE_KEY = 'modbot_theme';
+const VIEW_CHROME_META = {
+  overview: { title: 'Overview', subtitle: 'Monitor health, triage moderation, and run guild operations.' },
+  members: { title: 'Members', subtitle: 'Review activity states, search users, and run scoped moderation actions.' },
+  actions: { title: 'Actions', subtitle: 'Track queued/running/failed actions and validate policy safety before execution.' },
+  cases: { title: 'Cases', subtitle: 'Cross-module timeline for user investigations and moderation history.' },
+  events: { title: 'Events', subtitle: 'Live operational logs for debugging, auditing, and incident response.' },
+  settings: { title: 'Settings', subtitle: 'Global guild controls for safety, retention, permissions, and integrations.' },
+};
+const VIEW_TITLE_OVERRIDES = {
+  auditlog: 'Audit Log',
+  reactionroles: 'Reaction Roles',
+  antiraid: 'Anti-Raid',
+  roleprogression: 'Role Progression',
+  keywordalerts: 'Keyword Alerts',
+  accountageguard: 'Account Age Guard',
+  joinscreening: 'Join Screening',
+  membernotes: 'Member Notes',
+  customcommands: 'Custom Commands',
+  seasonresets: 'Season Resets',
+};
 const MODULE_GUIDES = {
   welcome: { title: 'How To Use', points: ['Enable the module and set a channel ID.', 'Use {user} and {server} tokens in the message template.', 'Save, then test with a new account join.'] },
   goodbye: { title: 'How To Use', points: ['Enable and set a goodbye channel ID.', 'Tune the message template to match your community tone.', 'Save and verify with a member leave event.'] },
@@ -501,6 +521,29 @@ function ensureViewGroupExpanded(view) {
   saveNavGroupState(groups);
 }
 
+function selectedGuildName() {
+  const guild = (state.guilds || []).find((g) => g.id === state.guildId);
+  if (guild && guild.name) return guild.name;
+  const select = qs('#guildSelect');
+  if (!select || !select.options || !select.value) return 'No guild selected';
+  const opt = select.options[select.selectedIndex];
+  return (opt && opt.textContent) ? opt.textContent : 'No guild selected';
+}
+
+function updateContentChrome(view) {
+  const titleEl = qs('#contentChromeTitle');
+  const subtitleEl = qs('#contentChromeSubtitle');
+  const guildEl = qs('#contentChromeGuild');
+  const meta = VIEW_CHROME_META[view] || {};
+  const fallbackTitle = VIEW_TITLE_OVERRIDES[view] || (view || 'overview')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+  if (titleEl) titleEl.textContent = meta.title || fallbackTitle;
+  if (subtitleEl) subtitleEl.textContent = meta.subtitle || 'Manage module configuration, runtime data, and operational tasks.';
+  if (guildEl) guildEl.textContent = selectedGuildName();
+}
+
 function setActiveView(view, persist = true) {
   const targetView = qs(`#view-${view}`);
   if (!targetView) return;
@@ -512,6 +555,7 @@ function setActiveView(view, persist = true) {
   qsa('.view').forEach((v) => v.classList.remove('active'));
   targetView.classList.add('active');
   ensureViewGroupExpanded(view);
+  updateContentChrome(view);
   if (persist) {
     localStorage.setItem(ACTIVE_VIEW_STORAGE_KEY, view);
   }
@@ -682,9 +726,11 @@ async function loadGuilds() {
     state.guildId = state.guilds[0].id;
   }
   select.value = state.guildId;
+  updateContentChrome(localStorage.getItem(ACTIVE_VIEW_STORAGE_KEY) || 'overview');
   select.onchange = () => {
     state.guildId = select.value;
     localStorage.setItem('modbot_guild', state.guildId);
+    updateContentChrome(localStorage.getItem(ACTIVE_VIEW_STORAGE_KEY) || 'overview');
     refreshAll();
   };
 }
