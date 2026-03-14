@@ -199,16 +199,16 @@ Enable modules as needed</code></pre>
       <h2>FAQ</h2>
       <div class="faq">
         <article>
-          <h3>Can this live in the same repo as the bot?</h3>
-          <p>Yes. That is a common OSS pattern. Website and product versions stay aligned and release links stay accurate.</p>
+          <h3>How does first startup work?</h3>
+          <p>Run <code>./modbot</code>. If token/password are missing, Fundamentum prompts for them and stores them in local <code>.modbot.config.json</code> with secure permissions.</p>
         </article>
         <article>
           <h3>Do I need all modules enabled?</h3>
           <p>No. New guilds default to disabled modules. Enable only the feature set your community needs.</p>
         </article>
         <article>
-          <h3>Can I use binaries instead of building?</h3>
-          <p>Yes. Use GitHub Releases for Linux, macOS, and Windows artifacts.</p>
+          <h3>How should I roll this out safely?</h3>
+          <p>Start with observability modules first (audit log, analytics, pulse), then enable enforcement modules (AutoMod, warnings, anti-raid) after validating permissions and policy.</p>
         </article>
       </div>
     </section>
