@@ -97,8 +97,10 @@ All feature modules are disabled by default on a new guild and enabled per-guild
 
 ## Build Outputs
 
-- Local build: `./modbot`
-- Cross-platform build script output: `dist/`
+- `./scripts/build.sh` (or `build.ps1`) now builds both:
+- Local run binary: `./modbot` (recommended for normal operation)
+- Cross-platform release artifacts: `dist/`
+- Runtime config file `.modbot.config.json` is loaded from the current working directory, so launching from repo root keeps using your existing local config.
 
 ## GitHub Pages Website
 

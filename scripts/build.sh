@@ -5,6 +5,10 @@ NAME=modbot
 OUT_DIR=dist
 mkdir -p "$OUT_DIR"
 
+echo "Building local binary ./${NAME} for normal dashboard runs..."
+CGO_ENABLED=0 go build -o "$NAME" ./cmd/modbot
+echo "Built ./${NAME}"
+
 build() {
   local os="$1"
   local arch="$2"
