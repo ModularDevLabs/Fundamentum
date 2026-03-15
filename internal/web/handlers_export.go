@@ -6,9 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ModularDevLabs/Fundamentum/internal/models"
 )
 
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
@@ -31,21 +34,84 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 
 	switch exportType {
 	case "members":
-		rows, err := s.repos.Activity.ListMembersAll(r.Context(), guildID)
+		settings, err := s.repos.Settings.Get(r.Context(), guildID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		activityRows, err := s.repos.Activity.ListMembersAll(r.Context(), guildID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		rows := make([]models.MemberRow, 0, len(activityRows))
+		activityByUser := make(map[string]models.MemberRow, len(activityRows))
+		for _, row := range activityRows {
+			activityByUser[row.UserID] = row
+		}
+
+		members, err := s.discord.ListGuildMembers(r.Context(), guildID)
+		if err != nil {
+			// Fallback: export activity rows when live guild member fetch is unavailable.
+			members = nil
+		}
+		if len(members) > 0 {
+			for _, m := range members {
+				if m == nil || m.User == nil {
+					continue
+				}
+				row := models.MemberRow{
+					GuildID: guildID,
+					UserID:  m.User.ID,
+				}
+				if stored, ok := activityByUser[m.User.ID]; ok {
+					row = stored
+				} else {
+					row.Username = m.User.Username
+					row.DisplayName = m.Nick
+					if row.DisplayName == "" {
+						row.DisplayName = m.User.Username
+					}
+				}
+				if settings.QuarantineRoleID != "" {
+					for _, roleID := range m.Roles {
+						if roleID == settings.QuarantineRoleID {
+							row.Quarantined = true
+							break
+						}
+					}
+				}
+				rows = append(rows, row)
+			}
+		} else {
+			rows = activityRows
+		}
+
+		cutoff := time.Now().AddDate(0, 0, -settings.InactiveDays)
+		for i := range rows {
+			rows[i].Status = statusFromLast(rows[i].LastMessageAt, cutoff)
+		}
+		sort.SliceStable(rows, func(i, j int) bool {
+			a := strings.ToLower(rows[i].DisplayName)
+			if a == "" {
+				a = strings.ToLower(rows[i].Username)
+			}
+			b := strings.ToLower(rows[j].DisplayName)
+			if b == "" {
+				b = strings.ToLower(rows[j].Username)
+			}
+			return a < b
+		})
 		if format == "csv" {
 			w.Header().Set("Content-Type", "text/csv")
 			cw := csv.NewWriter(w)
-			_ = cw.Write([]string{"user_id", "username", "display_name", "status", "last_message_at", "last_channel_id"})
+			_ = cw.Write([]string{"user_id", "username", "global_name", "display_name", "status", "quarantined", "last_message_at", "last_channel_id"})
 			for _, row := range rows {
 				last := ""
 				if row.LastMessageAt != nil {
 					last = row.LastMessageAt.UTC().Format(time.RFC3339)
 				}
-				_ = cw.Write([]string{row.UserID, row.Username, row.DisplayName, row.Status, last, row.LastChannelID})
+				_ = cw.Write([]string{row.UserID, row.Username, row.GlobalName, row.DisplayName, row.Status, strconv.FormatBool(row.Quarantined), last, row.LastChannelID})
 			}
 			cw.Flush()
 			return
