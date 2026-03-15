@@ -152,6 +152,60 @@ const MODULE_GUIDES = {
   calendar: { title: 'How To Use', points: ['Enable calendar before creating events.', 'Create events with ISO start time and creator user ID.', 'Use RSVP controls and view responses per event.'] },
   confessions: { title: 'How To Use', points: ['Enable confessions and set channel/review settings.', 'Review pending items and approve/reject them.', 'Approved confessions are posted anonymously to configured channel.'] },
 };
+const CORE_SETTINGS_TOOLTIPS = {
+  settingsAdminPolicy: 'How to handle targets with Administrator permission: refuse, quarantine, or remove admin roles first.',
+  settingsQuarantineRole: 'Role ID used to isolate users during quarantine actions. Leave blank to auto-provision.',
+  settingsReadmeChannel: 'Channel ID visible to quarantined users for instructions. Leave blank to auto-provision.',
+  settingsAllowlist: 'Comma-separated role IDs preserved during quarantine role stripping.',
+  settingsSafeMode: 'When enabled, skips broad channel overwrite edits and uses safer limited quarantine behavior.',
+  settingsActionDryRun: 'Validate moderation actions without executing them. Use this for policy testing.',
+  settingsActionRequireConfirm: 'Require CONFIRM token before destructive actions (kick/quarantine/remove roles).',
+  settingsActionTwoPerson: 'Require a second approver user ID for destructive actions.',
+  settingsRolePolicies: 'Optional JSON RBAC map controlling which dashboard roles can access specific capability groups.',
+  settingsModuleScopes: 'Optional JSON map of module feature key to allowed channel IDs.',
+  settingsRetentionDays: 'Data retention window in days. 0 disables purge worker.',
+  settingsRetentionArchive: 'Write a purge summary record before retention cleanup deletes rows.',
+  settingsIncidentModeEnabled: 'Enable elevated incident safeguards and incident-state signaling in the dashboard.',
+  settingsIncidentModeReason: 'Optional short reason shown with incident mode context.',
+  settingsIncidentModeDuration: 'Auto-disable incident mode after this many minutes. 0 means manual disable only.',
+  settingsImmutableAuditTrail: 'Enable hash-chained audit trail records for tamper-evident event history.',
+  settingsMaintenanceEnabled: 'Enable UTC maintenance window that blocks destructive operations and pauses workers.',
+  settingsMaintenanceStart: 'Maintenance window start time in UTC (HH:MM).',
+  settingsMaintenanceEnd: 'Maintenance window end time in UTC (HH:MM).',
+  settingsReviewQueueEnabled: 'Queue destructive moderation actions for explicit approve/reject review.',
+  settingsModSummaryChannel: 'Channel ID for periodic moderation summary posts.',
+  settingsModSummaryHours: 'Hours between automated moderation summary posts.',
+  settingsAutoThreadEnabled: 'Enable helper that creates threads for messages matching configured keywords.',
+  settingsAutoThreadChannel: 'Channel ID where auto-thread helper is active.',
+  settingsAutoThreadKeywords: 'Comma-separated keywords that trigger auto-thread creation.',
+  settingsVoiceRewardsEnabled: 'Enable passive coins/XP rewards for tracked voice activity.',
+  settingsVoiceCoinsPerMinute: 'Coins granted per minute of eligible voice presence.',
+  settingsVoiceXPPerMinute: 'XP granted per minute of eligible voice presence.',
+  settingsConfessionsChannel: 'Destination channel ID where approved confessions are posted.',
+  settingsConfessionsReview: 'When enabled, confessions require moderator review before publishing.',
+  settingsProfilePreset: 'Apply a baseline settings profile to speed up initial guild configuration.',
+  settingsApplyProfile: 'Apply the selected preset immediately to current guild settings.',
+  settingsSave: 'Persist all changes in this Settings panel.',
+  dashboardUserName: 'Unique dashboard username for a new local account.',
+  dashboardUserPassword: 'Initial password for the new dashboard user.',
+  dashboardUserRole: 'Access role for the new dashboard user.',
+  dashboardUserEnabled: 'Whether the new dashboard user can sign in.',
+  dashboardUserAdd: 'Create a dashboard user with the entered credentials and role.',
+  dashboardUsersRefresh: 'Reload dashboard users and current status.',
+  exportType: 'Dataset to export from the selected guild.',
+  exportFormat: 'Output format for export download (JSON or CSV).',
+  exportCaseUserId: 'Required only for case exports; set target user ID.',
+  exportDownload: 'Download the selected export for the current guild.',
+  backupDownload: 'Download a JSON snapshot of guild settings and supported module data.',
+  backupRestoreJson: 'Paste a previously exported backup JSON snapshot here.',
+  backupRestore: 'Restore settings and supported module data from pasted snapshot JSON.',
+  dependencyCheckRun: 'Run configuration dependency checks across enabled modules.',
+  webhookUrl: 'HTTPS endpoint that receives outbound Fundamentum event payloads.',
+  webhookEvents: 'Comma-separated event types to deliver to this webhook.',
+  webhookEnabled: 'Enable or disable webhook delivery without deleting configuration.',
+  webhookAdd: 'Save a new webhook integration entry.',
+  webhookRefresh: 'Reload configured webhook integrations.',
+};
 
 function setModuleBadge(enabled, badgeEl, cardEl) {
   if (!badgeEl || !cardEl) return;
@@ -310,6 +364,18 @@ function injectModuleGuides() {
       ${dynamicLeveling}
     `;
     grid.appendChild(card);
+  });
+}
+
+function applyCoreSettingsTooltips() {
+  const root = qs('#view-settings');
+  if (!root) return;
+  Object.entries(CORE_SETTINGS_TOOLTIPS).forEach(([id, text]) => {
+    const el = root.querySelector(`#${id}`);
+    if (!el) return;
+    el.title = text;
+    const label = el.closest('label');
+    if (label) label.title = text;
   });
 }
 
@@ -4500,6 +4566,7 @@ function wireEvents() {
 
   initNavUI();
   injectModuleGuides();
+  applyCoreSettingsTooltips();
   updateLevelingGuideExamples();
   startMemberFilterWatch();
 }
