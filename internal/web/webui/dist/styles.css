@@ -516,6 +516,10 @@ button[disabled] {
   grid-template-columns: 1fr 0.7fr 0.7fr 0.7fr;
 }
 
+.user-row {
+  grid-template-columns: 1fr 0.7fr 0.7fr 1fr 0.9fr;
+}
+
 .pulse-row,
 .health-row {
   grid-template-columns: minmax(220px, 1fr) auto;

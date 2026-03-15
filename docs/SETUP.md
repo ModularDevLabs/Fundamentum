@@ -57,7 +57,7 @@ Without `SEND_MESSAGES`:
 Replace `CLIENT_ID` with your application client ID and open the URL:
 
 ```
-https://discord.com/oauth2/authorize?client_id=CLIENT_ID&scope=bot&permissions=268512370
+https://discord.com/oauth2/authorize?client_id=CLIENT_ID&scope=bot&permissions=275146435698
 ```
 
 ## 5) Role hierarchy
@@ -80,7 +80,23 @@ Or with explicit env vars:
 MODBOT_TOKEN=your_token MODBOT_ADMIN_PASS=your_pass ./modbot --db modbot.sqlite
 ```
 
-Open the dashboard at `http://127.0.0.1:8080` and log in with the admin password.
+Open the dashboard at `http://127.0.0.1:8080` and log in with:
+- Username: `admin`
+- Password: value from `MODBOT_ADMIN_PASS`
+
+Create additional dashboard users/roles from `Settings -> Dashboard Users (Admin)`.
+
+## 7) Exposing the dashboard safely
+
+Default bind is local (`127.0.0.1:8080`). If multiple operators need access:
+
+1. Keep Fundamentum bound to localhost.
+2. Place a reverse proxy in front with HTTPS termination.
+3. Restrict access (VPN, IP allowlist, or SSO at the proxy).
+4. Optionally enable trusted auth-proxy mode for OIDC/SSO:
+- `MODBOT_DASHBOARD_AUTH_PROXY_ENABLED=true`
+- `MODBOT_DASHBOARD_AUTH_PROXY_SECRET=<shared-secret>`
+- Proxy must inject `X-Modbot-Proxy-Secret`, user header, and role header.
 
 On startup, and when the bot joins a guild while running, the bot attempts to auto-create/ensure the quarantine role and readme channel.
 

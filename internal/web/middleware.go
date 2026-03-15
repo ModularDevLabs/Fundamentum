@@ -2,7 +2,9 @@ package web
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -11,23 +13,87 @@ import (
 
 type authContextKey string
 
-const dashboardRoleContextKey authContextKey = "dashboard_role"
+const (
+	dashboardRoleContextKey     authContextKey = "dashboard_role"
+	dashboardUserContextKey     authContextKey = "dashboard_user"
+	dashboardCSRFContextKey     authContextKey = "dashboard_csrf"
+	dashboardAuthModeContextKey authContextKey = "dashboard_auth_mode"
+)
+
+type authIdentity struct {
+	Username  string
+	Role      string
+	CSRFToken string
+	Mode      string // session | proxy | legacy
+}
 
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		role, ok := s.authenticatedRole(r)
+		identity, ok := s.authenticatedIdentity(r)
 		if !ok {
 			w.WriteHeader(http.StatusUnauthorized)
 			_, _ = w.Write([]byte("unauthorized"))
 			return
 		}
-		ctx := context.WithValue(r.Context(), dashboardRoleContextKey, role)
+		ctx := context.WithValue(r.Context(), dashboardRoleContextKey, identity.Role)
+		ctx = context.WithValue(ctx, dashboardUserContextKey, identity.Username)
+		ctx = context.WithValue(ctx, dashboardCSRFContextKey, identity.CSRFToken)
+		ctx = context.WithValue(ctx, dashboardAuthModeContextKey, identity.Mode)
 		r = r.WithContext(ctx)
+
 		if !s.authorizeRoleForRequest(w, r) {
+			return
+		}
+		if !s.validateCSRFForRequest(w, r, identity) {
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (s *Server) validateCSRFForRequest(w http.ResponseWriter, r *http.Request, identity authIdentity) bool {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
+		return true
+	}
+	if identity.Mode == "proxy" {
+		if !sameOrigin(r) {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("forbidden: cross-origin request blocked"))
+			return false
+		}
+		return true
+	}
+	csrf := strings.TrimSpace(r.Header.Get("X-CSRF-Token"))
+	if csrf == "" || csrf != identity.CSRFToken {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte("forbidden: missing or invalid csrf token"))
+		return false
+	}
+	return true
+}
+
+func sameOrigin(r *http.Request) bool {
+	reqHost := strings.ToLower(strings.TrimSpace(r.Host))
+	if reqHost == "" {
+		return false
+	}
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin != "" {
+		u, err := url.Parse(origin)
+		if err != nil {
+			return false
+		}
+		return strings.EqualFold(u.Host, reqHost)
+	}
+	referer := strings.TrimSpace(r.Header.Get("Referer"))
+	if referer != "" {
+		u, err := url.Parse(referer)
+		if err != nil {
+			return false
+		}
+		return strings.EqualFold(u.Host, reqHost)
+	}
+	return false
 }
 
 func (s *Server) authorizeRoleForRequest(w http.ResponseWriter, r *http.Request) bool {
@@ -68,6 +134,21 @@ func (s *Server) authorizeRoleForRequest(w http.ResponseWriter, r *http.Request)
 func dashboardRoleFromContext(ctx context.Context) string {
 	role, _ := ctx.Value(dashboardRoleContextKey).(string)
 	return strings.TrimSpace(strings.ToLower(role))
+}
+
+func dashboardUsernameFromContext(ctx context.Context) string {
+	name, _ := ctx.Value(dashboardUserContextKey).(string)
+	return strings.TrimSpace(strings.ToLower(name))
+}
+
+func dashboardCSRFTokenFromContext(ctx context.Context) string {
+	token, _ := ctx.Value(dashboardCSRFContextKey).(string)
+	return strings.TrimSpace(token)
+}
+
+func dashboardAuthModeFromContext(ctx context.Context) string {
+	mode, _ := ctx.Value(dashboardAuthModeContextKey).(string)
+	return strings.TrimSpace(strings.ToLower(mode))
 }
 
 func rbacPolicyKeyForPath(path string) string {
@@ -129,36 +210,65 @@ func rbacPolicyKeyForPath(path string) string {
 	}
 }
 
-func (s *Server) authenticatedRole(r *http.Request) (string, bool) {
-	secret := ""
-	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
-		secret = strings.TrimPrefix(auth, "Bearer ")
-	}
-	if secret == "" {
-		cookie, err := r.Cookie("modbot_auth")
-		if err == nil {
-			secret = cookie.Value
+func (s *Server) authenticatedIdentity(r *http.Request) (authIdentity, bool) {
+	now := time.Now().UTC()
+	if cookie, err := r.Cookie("modbot_session"); err == nil && strings.TrimSpace(cookie.Value) != "" {
+		sess, err := s.repos.DashboardAuth.GetSession(r.Context(), strings.TrimSpace(cookie.Value))
+		if err == nil && !sess.Revoked && sess.ExpiresAt.After(now) {
+			if now.Sub(sess.LastSeenAt) > 2*time.Minute {
+				_ = s.repos.DashboardAuth.TouchSession(r.Context(), sess.SessionID, now)
+			}
+			return authIdentity{Username: sess.Username, Role: sess.Role, CSRFToken: sess.CSRFToken, Mode: "session"}, true
+		}
+		if err != nil && err != sql.ErrNoRows {
+			s.logger.Error("session lookup failed: %v", err)
 		}
 	}
-	if secret == "" {
-		return "", false
+
+	if s.authProxyEnabled && strings.TrimSpace(s.authProxySecret) != "" {
+		proxySecret := strings.TrimSpace(r.Header.Get("X-Modbot-Proxy-Secret"))
+		if proxySecret == strings.TrimSpace(s.authProxySecret) {
+			username := strings.TrimSpace(strings.ToLower(r.Header.Get(s.authProxyUserHeader)))
+			if username != "" {
+				role := strings.TrimSpace(strings.ToLower(r.Header.Get(s.authProxyRoleHeader)))
+				if role == "" {
+					role = "support"
+				}
+				return authIdentity{Username: username, Role: role, Mode: "proxy"}, true
+			}
+		}
 	}
-	role, ok := s.roleFromSecret(secret)
-	if !ok {
-		return "", false
+
+	if s.allowLegacyBearer {
+		if secret := legacySecretFromRequest(r); secret != "" {
+			if role, ok := s.roleFromLegacySecret(secret); ok {
+				return authIdentity{Username: role, Role: role, Mode: "legacy"}, true
+			}
+		}
 	}
-	return role, true
+
+	return authIdentity{}, false
 }
 
-func (s *Server) roleFromSecret(secret string) (string, bool) {
+func legacySecretFromRequest(r *http.Request) string {
+	auth := r.Header.Get("Authorization")
+	if strings.HasPrefix(auth, "Bearer ") {
+		return strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
+	}
+	if cookie, err := r.Cookie("modbot_auth"); err == nil {
+		return strings.TrimSpace(cookie.Value)
+	}
+	return ""
+}
+
+func (s *Server) roleFromLegacySecret(secret string) (string, bool) {
 	if secret == s.adminPass {
 		return "admin", true
 	}
 	for role, candidate := range s.dashboardRoleSecrets {
 		if strings.TrimSpace(secret) == strings.TrimSpace(candidate) {
 			normalized := strings.TrimSpace(strings.ToLower(role))
-			if normalized == "" || normalized == "admin" {
+			if normalized == "" {
 				continue
 			}
 			return normalized, true

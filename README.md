@@ -24,7 +24,9 @@ MODBOT_TOKEN=your_token MODBOT_ADMIN_PASS=your_pass ./run.sh
 
 3. Open dashboard
 
-Visit `http://127.0.0.1:8080` and enter the admin password.
+Visit `http://127.0.0.1:8080` and sign in as:
+- Username: `admin`
+- Password: value of `MODBOT_ADMIN_PASS`
 
 ## Configuration
 
@@ -36,6 +38,12 @@ Environment variables:
 - `MODBOT_BIND` HTTP bind address (default: `127.0.0.1:8080`)
 - `MODBOT_LOG_LEVEL` Log level: `info` or `debug`
 - `MODBOT_DASHBOARD_ROLE_SECRETS` Optional JSON map for non-admin dashboard login credentials (example: `{"moderator":"mod-pass","support":"support-pass"}`)
+- `MODBOT_DASHBOARD_SESSION_TTL_MINUTES` Session lifetime in minutes (default: `480`)
+- `MODBOT_DASHBOARD_ALLOW_LEGACY_BEARER` Allow legacy secret bearer auth (`true`/`false`, default `false`)
+- `MODBOT_DASHBOARD_AUTH_PROXY_ENABLED` Enable trusted auth-proxy mode for reverse-proxy SSO (`true`/`false`)
+- `MODBOT_DASHBOARD_AUTH_PROXY_SECRET` Shared secret required in `X-Modbot-Proxy-Secret` header when auth-proxy mode is enabled
+- `MODBOT_DASHBOARD_AUTH_PROXY_USER_HEADER` Username header name in proxy mode (default: `X-Auth-Request-User`)
+- `MODBOT_DASHBOARD_AUTH_PROXY_ROLE_HEADER` Role header name in proxy mode (default: `X-Auth-Request-Role`)
 
 Flags override env vars:
 
@@ -45,8 +53,25 @@ Flags override env vars:
 - `--bind`
 - `--log-level`
 - `--dashboard-role-secrets`
+- `--dashboard-session-ttl-minutes`
+- `--dashboard-allow-legacy-bearer`
+- `--dashboard-auth-proxy-enabled`
+- `--dashboard-auth-proxy-secret`
+- `--dashboard-auth-proxy-user-header`
+- `--dashboard-auth-proxy-role-header`
 
 If token/password are not provided, startup prompts for them and saves them to local file `.modbot.config.json` (permissions `0600`) for future runs.
+
+## Dashboard Access Model
+
+- Dashboard users are username/password accounts.
+- A bootstrap admin account is created/updated at startup:
+- Username: `admin`
+- Password: `MODBOT_ADMIN_PASS`
+- Additional users can be managed in **Settings -> Dashboard Users (Admin)**.
+- API write requests use session-bound CSRF tokens.
+- Non-admin authorization is enforced server-side via `dashboard_role_policies`.
+- Optional OIDC/SSO integration is supported through trusted reverse-proxy headers (auth-proxy mode).
 
 ## Capabilities
 

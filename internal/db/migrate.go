@@ -424,6 +424,31 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_season_reset_runs_guild
 		ON season_reset_runs(guild_id, started_at DESC);`,
+		`CREATE TABLE IF NOT EXISTS dashboard_users (
+			username TEXT PRIMARY KEY,
+			password_hash TEXT NOT NULL,
+			role TEXT NOT NULL,
+			enabled INTEGER NOT NULL DEFAULT 1,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			last_login_at TEXT
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_dashboard_users_role
+		ON dashboard_users(role, enabled);`,
+		`CREATE TABLE IF NOT EXISTS dashboard_sessions (
+			session_id TEXT PRIMARY KEY,
+			username TEXT NOT NULL,
+			role TEXT NOT NULL,
+			csrf_token TEXT NOT NULL,
+			created_at TEXT NOT NULL,
+			expires_at TEXT NOT NULL,
+			last_seen_at TEXT NOT NULL,
+			source_ip TEXT,
+			user_agent TEXT,
+			revoked INTEGER NOT NULL DEFAULT 0
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_dashboard_sessions_expiry
+		ON dashboard_sessions(expires_at, revoked);`,
 	}
 
 	for _, stmt := range stmts {

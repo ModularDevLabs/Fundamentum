@@ -1,8 +1,10 @@
 const state = {
-  token: localStorage.getItem('modbot_token') || '',
   guildId: localStorage.getItem('modbot_guild') || '',
   guilds: [],
   dashboardRole: 'admin',
+  dashboardUser: '',
+  csrfToken: '',
+  authMode: '',
   currentSettings: null,
   modulePermissions: {},
   selectedUsers: new Map(),
@@ -233,6 +235,7 @@ const qsa = (sel) => Array.from(document.querySelectorAll(sel));
 
 const loginModal = qs('#loginModal');
 const loginError = qs('#loginError');
+const loginUserInput = qs('#loginUsername');
 const loginInput = qs('#loginPassword');
 const toastHost = qs('#toastHost');
 
@@ -673,10 +676,11 @@ function syncOverviewPolling(backfills) {
 
 async function apiFetch(path, options = {}) {
   const headers = options.headers || {};
-  if (state.token) {
-    headers['Authorization'] = `Bearer ${state.token}`;
+  const method = String(options.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS' && state.csrfToken) {
+    headers['X-CSRF-Token'] = state.csrfToken;
   }
-  const res = await fetch(path, { ...options, headers });
+  const res = await fetch(path, { ...options, credentials: 'same-origin', headers });
   if (res.status === 401) {
     showLogin();
     throw new Error('unauthorized');
@@ -691,19 +695,20 @@ async function apiFetch(path, options = {}) {
 
 async function login() {
   loginError.textContent = '';
+  const username = (loginUserInput?.value || 'admin').trim().toLowerCase();
   const password = loginInput.value.trim();
-  if (!password) return;
+  if (!username || !password) return;
   const res = await fetch('/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
+    credentials: 'same-origin',
+    body: JSON.stringify({ username, password }),
   });
   if (res.status !== 204) {
-    loginError.textContent = 'Incorrect password.';
+    loginError.textContent = res.status === 429 ? 'Too many attempts. Try again shortly.' : 'Invalid username or password.';
     return;
   }
-  state.token = password;
-  localStorage.setItem('modbot_token', password);
+  loginInput.value = '';
   hideLogin();
   await bootstrap();
 }
@@ -711,6 +716,9 @@ async function login() {
 async function loadAuthContext() {
   const res = await apiFetch('/api/auth/me');
   const role = (res && res.role ? String(res.role) : 'admin').toLowerCase();
+  state.dashboardUser = (res && res.username ? String(res.username) : '').toLowerCase();
+  state.csrfToken = (res && res.csrf_token ? String(res.csrf_token) : '');
+  state.authMode = (res && res.auth_mode ? String(res.auth_mode) : 'session');
   state.dashboardRole = role || 'admin';
   const roleSelect = qs('#dashboardRoleSelect');
   if (!roleSelect) return;
@@ -1251,6 +1259,49 @@ async function addWebhook() {
 async function deleteWebhook(id) {
   if (!id || !state.guildId) return;
   await apiFetch(`/api/integrations/webhooks/${id}?guild_id=${state.guildId}`, { method: 'DELETE' });
+}
+
+async function loadDashboardUsers() {
+  const table = qs('#dashboardUsersTable');
+  if (!table) return;
+  const status = qs('#dashboardUsersStatus');
+  if (state.dashboardRole !== 'admin') {
+    table.innerHTML = '<div class="table-row user-row"><div>Restricted</div><div>—</div><div>—</div><div>—</div><div>Admin only</div></div>';
+    if (status) status.textContent = 'Dashboard user management is admin-only.';
+    return;
+  }
+  const rows = (await apiFetch('/api/dashboard/users')) || [];
+  table.innerHTML = '';
+  rows.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'table-row user-row';
+    const enabledText = row.enabled ? 'yes' : 'no';
+    div.innerHTML = `<div>${row.username}</div><div>${row.role}</div><div>${enabledText}</div><div>${row.last_login_at || 'never'}</div><div><button class=\"ghost\" data-user-role=\"${row.username}\">Role</button> <button class=\"ghost\" data-user-pass=\"${row.username}\">Reset password</button> <button class=\"ghost\" data-user-toggle=\"${row.username}\" data-enabled=\"${row.enabled}\">${row.enabled ? 'Disable' : 'Enable'}</button> <button class=\"ghost\" data-user-del=\"${row.username}\">Delete</button></div>`;
+    table.appendChild(div);
+  });
+  if (status) status.textContent = `${rows.length} dashboard user(s).`;
+}
+
+async function addDashboardUser() {
+  if (state.dashboardRole !== 'admin') {
+    throw new Error('admin role required');
+  }
+  const username = (qs('#dashboardUserName').value || '').trim().toLowerCase();
+  const password = (qs('#dashboardUserPassword').value || '').trim();
+  const role = (qs('#dashboardUserRole').value || 'support').trim().toLowerCase();
+  const enabled = qs('#dashboardUserEnabled').value === 'true';
+  if (!username || !password || !role) {
+    throw new Error('username, password, and role are required');
+  }
+  await apiFetch('/api/dashboard/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, role, enabled }),
+  });
+  qs('#dashboardUserName').value = '';
+  qs('#dashboardUserPassword').value = '';
+  showToast('Dashboard user added.');
+  await loadDashboardUsers();
 }
 
 async function saveWelcome() {
@@ -3854,12 +3905,26 @@ function wireEvents() {
   };
 
   qs('#loginBtn').onclick = login;
-  qs('#logoutBtn').onclick = () => {
+  if (loginUserInput) {
+    loginUserInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') login();
+    });
+  }
+  if (loginInput) {
+    loginInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') login();
+    });
+  }
+  qs('#logoutBtn').onclick = async () => {
     stopOverviewPolling();
     stopEventsPolling();
-    state.token = '';
     state.dashboardRole = 'admin';
-    localStorage.removeItem('modbot_token');
+    state.dashboardUser = '';
+    state.csrfToken = '';
+    state.authMode = '';
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' });
+    } catch (_) {}
     showLogin();
   };
   const themeSelect = qs('#themeSelect');
@@ -3873,6 +3938,8 @@ function wireEvents() {
   qs('#exportDownload').onclick = downloadExport;
   qs('#backupDownload').onclick = downloadBackupSnapshot;
   qs('#backupRestore').onclick = restoreBackupSnapshot;
+  qs('#dashboardUserAdd').onclick = () => addDashboardUser().catch((err) => showToast(`Add dashboard user failed: ${err.message}`, 'error'));
+  qs('#dashboardUsersRefresh').onclick = () => loadDashboardUsers().catch((err) => showToast(`Dashboard users load failed: ${err.message}`, 'error'));
   qs('#dependencyCheckRun').onclick = () => loadDependencyChecks().catch((err) => showToast(`Dependency check failed: ${err.message}`, 'error'));
   qs('#webhookRefresh').onclick = () => loadWebhooks().catch((err) => showToast(`Webhook load failed: ${err.message}`, 'error'));
   qs('#webhookAdd').onclick = () => addWebhook().catch((err) => showToast(`Webhook add failed: ${err.message}`, 'error'));
@@ -4281,6 +4348,73 @@ function wireEvents() {
     }
   });
 
+  qs('#dashboardUsersTable').addEventListener('click', async (e) => {
+    const setRole = e.target.closest('button[data-user-role]');
+    if (setRole) {
+      const username = setRole.getAttribute('data-user-role');
+      const role = prompt(`Set role for ${username} (admin/moderator/support/custom):`, 'support');
+      if (!role || !role.trim()) return;
+      try {
+        await apiFetch(`/api/dashboard/users/${encodeURIComponent(username)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: role.trim().toLowerCase() }),
+        });
+        showToast('User role updated.');
+        await loadDashboardUsers();
+      } catch (err) {
+        showToast(`Role update failed: ${err.message}`, 'error');
+      }
+      return;
+    }
+    const resetPwd = e.target.closest('button[data-user-pass]');
+    if (resetPwd) {
+      const username = resetPwd.getAttribute('data-user-pass');
+      const password = prompt(`Set new password for ${username}:`);
+      if (!password || !password.trim()) return;
+      try {
+        await apiFetch(`/api/dashboard/users/${encodeURIComponent(username)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: password.trim() }),
+        });
+        showToast('Password updated.');
+      } catch (err) {
+        showToast(`Password update failed: ${err.message}`, 'error');
+      }
+      return;
+    }
+    const toggle = e.target.closest('button[data-user-toggle]');
+    if (toggle) {
+      const username = toggle.getAttribute('data-user-toggle');
+      const enabled = toggle.getAttribute('data-enabled') !== 'true';
+      try {
+        await apiFetch(`/api/dashboard/users/${encodeURIComponent(username)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled }),
+        });
+        showToast(`User ${enabled ? 'enabled' : 'disabled'}.`);
+        await loadDashboardUsers();
+      } catch (err) {
+        showToast(`User toggle failed: ${err.message}`, 'error');
+      }
+      return;
+    }
+    const del = e.target.closest('button[data-user-del]');
+    if (del) {
+      const username = del.getAttribute('data-user-del');
+      if (!confirm(`Delete dashboard user ${username}?`)) return;
+      try {
+        await apiFetch(`/api/dashboard/users/${encodeURIComponent(username)}`, { method: 'DELETE' });
+        showToast('Dashboard user deleted.');
+        await loadDashboardUsers();
+      } catch (err) {
+        showToast(`Delete failed: ${err.message}`, 'error');
+      }
+    }
+  });
+
   qs('#membersTable').addEventListener('change', (e) => {
     const checkbox = e.target.closest('.member-select');
     if (!checkbox) return;
@@ -4326,6 +4460,7 @@ async function refreshAll() {
   await loadCases();
   await loadEvents();
   await loadSettings();
+  await loadDashboardUsers();
   await loadModulePermissions();
   await loadAnalyticsTrends();
   await loadReactionRoleRules();
@@ -4356,8 +4491,6 @@ async function bootstrap() {
 
 applyTheme(preferredTheme());
 wireEvents();
-if (!state.token) {
-  showLogin();
-} else {
-  bootstrap().catch(showLogin);
-}
+apiFetch('/api/auth/me')
+  .then(() => bootstrap().catch(showLogin))
+  .catch(() => showLogin());

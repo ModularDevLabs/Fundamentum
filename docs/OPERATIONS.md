@@ -25,6 +25,8 @@ Stop: `Ctrl+C`
 - **Incident mode**: Toggle incident mode in Settings to raise operator visibility and add extra safeguards during active incidents.
 - **Retention + maintenance**: Configure retention purges and maintenance windows in Settings.
 - **Dashboard RBAC**: Use `dashboard_role_policies` with credential-bound dashboard roles (admin/moderator/support) to restrict which APIs each role can call.
+- **Dashboard users**: Admin can create, disable, rotate passwords, and delete dashboard users from Settings -> Dashboard Users (Admin).
+- **CSRF/session security**: Mutating API calls require session-bound CSRF tokens; credentials are not accepted from client-side role headers.
 - **Exports**: Use Settings -> Exports to download JSON/CSV for members, actions, warnings, tickets, and per-user case timelines.
 - **Backup / Restore**: Use Settings -> Backup / Restore to download a guild snapshot and restore settings + reaction roles + scheduled messages + custom commands.
 - **Module pages**: Every module page has its own enable/disable control, save action, and quick how-to panel.
@@ -97,7 +99,7 @@ Guild selector and user-facing tables prefer server/user names over raw IDs.
 
 ## Troubleshooting
 
-- **Unauthorized dashboard**: Make sure `MODBOT_ADMIN_PASS` matches what you enter.
+- **Unauthorized dashboard**: Verify username/password, and ensure the account is enabled in Dashboard Users.
 - **Missing permissions**: Verify the bot role is above target roles and permissions are granted.
 - **Backfill no data**: Confirm `Read Message History` and `View Channel` permissions on channels.
 - **Backfill skipped channels**: Private/admin channels inaccessible to the bot are expected to be skipped.

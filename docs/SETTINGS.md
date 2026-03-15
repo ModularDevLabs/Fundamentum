@@ -934,7 +934,7 @@ These configure the local bot process, not per-guild behavior.
 - Discord bot token.
 
 2. `MODBOT_ADMIN_PASS` or `--admin-pass`
-- Dashboard login password.
+- Bootstrap admin password (username `admin`).
 
 3. `MODBOT_DB` or `--db`
 - SQLite path. Default: `modbot.sqlite`.
@@ -944,6 +944,31 @@ These configure the local bot process, not per-guild behavior.
 
 5. `MODBOT_LOG_LEVEL` or `--log-level`
 - `info` or `debug`.
+
+6. `MODBOT_DASHBOARD_ROLE_SECRETS` or `--dashboard-role-secrets`
+- Optional JSON map that bootstraps/updates role-named dashboard users from startup config.
+- Example: `{"moderator":"mod-pass","support":"support-pass"}`.
+
+7. `MODBOT_DASHBOARD_SESSION_TTL_MINUTES` or `--dashboard-session-ttl-minutes`
+- Session TTL in minutes.
+- Default: `480`.
+
+8. `MODBOT_DASHBOARD_ALLOW_LEGACY_BEARER` or `--dashboard-allow-legacy-bearer`
+- Allow legacy bearer-secret auth for API requests.
+- Default: `false`.
+
+9. `MODBOT_DASHBOARD_AUTH_PROXY_ENABLED` or `--dashboard-auth-proxy-enabled`
+- Enables trusted reverse-proxy auth mode for SSO/OIDC integration.
+- Requires proxy secret and identity headers.
+
+10. `MODBOT_DASHBOARD_AUTH_PROXY_SECRET` or `--dashboard-auth-proxy-secret`
+- Shared secret that must be sent in `X-Modbot-Proxy-Secret`.
+
+11. `MODBOT_DASHBOARD_AUTH_PROXY_USER_HEADER` or `--dashboard-auth-proxy-user-header`
+- Username header key from proxy (default `X-Auth-Request-User`).
+
+12. `MODBOT_DASHBOARD_AUTH_PROXY_ROLE_HEADER` or `--dashboard-auth-proxy-role-header`
+- Role header key from proxy (default `X-Auth-Request-Role`).
 
 If token/password are missing at startup, the app prompts and saves to local `.modbot.config.json` (mode `0600`).
 

@@ -1,11 +1,19 @@
 package web
 
 import (
+	"crypto/rand"
+	"database/sql"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/ModularDevLabs/Fundamentum/internal/db"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (s *Server) registerRoutes(mux *http.ServeMux) {
@@ -13,6 +21,9 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 
 	api := http.NewServeMux()
 	api.HandleFunc("/api/auth/me", s.handleAuthMe)
+	api.HandleFunc("/api/auth/logout", s.handleAuthLogout)
+	api.HandleFunc("/api/dashboard/users", s.handleDashboardUsers)
+	api.HandleFunc("/api/dashboard/users/", s.handleDashboardUserDetail)
 	api.HandleFunc("/api/health", s.handleHealth)
 	api.HandleFunc("/api/health/dashboard", s.handleHealthDashboard)
 	api.HandleFunc("/api/pulse", s.handleServerPulse)
@@ -111,31 +122,98 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var payload struct {
+		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	role, ok := s.roleFromSecret(payload.Password)
-	if !ok {
+	username := strings.ToLower(strings.TrimSpace(payload.Username))
+	if username == "" {
+		username = "admin"
+	}
+	password := strings.TrimSpace(payload.Password)
+	if password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	ip := clientIPFromRequest(r)
+	if allowed, retryAfter := s.loginAttemptAllowed(ip, username); !allowed {
+		if retryAfter > 0 {
+			w.Header().Set("Retry-After", strconv.Itoa(int(retryAfter.Seconds())+1))
+		}
+		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = w.Write([]byte("too many login attempts"))
+		return
+	}
+	user, err := s.repos.DashboardAuth.GetUser(r.Context(), username)
+	if err != nil {
+		s.recordLoginFailure(ip, username)
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if !user.Enabled {
+		s.recordLoginFailure(ip, username)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		s.recordLoginFailure(ip, username)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	s.recordLoginSuccess(ip, username)
+	now := time.Now().UTC()
+	sessionID, err := randomToken(32)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	csrfToken, err := randomToken(32)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := s.repos.DashboardAuth.CreateSession(r.Context(), db.DashboardSessionRow{
+		SessionID:  sessionID,
+		Username:   user.Username,
+		Role:       user.Role,
+		CSRFToken:  csrfToken,
+		CreatedAt:  now,
+		ExpiresAt:  now.Add(s.sessionTTL),
+		LastSeenAt: now,
+		SourceIP:   ip,
+		UserAgent:  strings.TrimSpace(r.UserAgent()),
+	}); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_ = s.repos.DashboardAuth.SetLastLogin(r.Context(), user.Username, now)
 	http.SetCookie(w, &http.Cookie{
-		Name:     "modbot_auth",
-		Value:    payload.Password,
+		Name:     "modbot_session",
+		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   isSecureRequest(r),
+		SameSite: http.SameSiteStrictMode,
+		Expires:  now.Add(s.sessionTTL),
 	})
 	http.SetCookie(w, &http.Cookie{
 		Name:     "modbot_role",
-		Value:    role,
+		Value:    user.Role,
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   isSecureRequest(r),
+		SameSite: http.SameSiteStrictMode,
+		Expires:  now.Add(s.sessionTTL),
 	})
+	http.SetCookie(w, &http.Cookie{Name: "modbot_auth", Value: "", Path: "/", Expires: time.Unix(0, 0).UTC(), MaxAge: -1, HttpOnly: true, Secure: isSecureRequest(r), SameSite: http.SameSiteStrictMode})
+	_ = s.repos.DashboardAuth.PurgeExpiredSessions(r.Context(), now)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -148,7 +226,35 @@ func (s *Server) handleAuthMe(w http.ResponseWriter, r *http.Request) {
 	if role == "" {
 		role = "admin"
 	}
-	writeJSON(w, map[string]string{"role": role})
+	writeJSON(w, map[string]string{
+		"role":       role,
+		"username":   dashboardUsernameFromContext(r.Context()),
+		"csrf_token": dashboardCSRFTokenFromContext(r.Context()),
+		"auth_mode":  dashboardAuthModeFromContext(r.Context()),
+	})
+}
+
+func (s *Server) handleAuthLogout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	if cookie, err := r.Cookie("modbot_session"); err == nil && strings.TrimSpace(cookie.Value) != "" {
+		_ = s.repos.DashboardAuth.RevokeSession(r.Context(), strings.TrimSpace(cookie.Value))
+	}
+	expired := time.Unix(0, 0).UTC()
+	http.SetCookie(w, &http.Cookie{Name: "modbot_session", Value: "", Path: "/", Expires: expired, MaxAge: -1, HttpOnly: true, Secure: isSecureRequest(r), SameSite: http.SameSiteStrictMode})
+	http.SetCookie(w, &http.Cookie{Name: "modbot_role", Value: "", Path: "/", Expires: expired, MaxAge: -1, HttpOnly: true, Secure: isSecureRequest(r), SameSite: http.SameSiteStrictMode})
+	http.SetCookie(w, &http.Cookie{Name: "modbot_auth", Value: "", Path: "/", Expires: expired, MaxAge: -1, HttpOnly: true, Secure: isSecureRequest(r), SameSite: http.SameSiteStrictMode})
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func randomToken(bytesLen int) (string, error) {
+	b := make([]byte, bytesLen)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 func parseInt(value string, fallback int) int {
