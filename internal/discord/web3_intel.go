@@ -34,17 +34,14 @@ type dexScreenerTokenResponse struct {
 }
 
 type dexPair struct {
-	ChainID   string  `json:"chainId"`
-	DexID     string  `json:"dexId"`
-	URL       string  `json:"url"`
-	PairAddr  string  `json:"pairAddress"`
-	PriceUSD  string  `json:"priceUsd"`
-	FDV       float64 `json:"fdv"`
-	MarketCap float64 `json:"marketCap"`
-	BaseToken struct {
-		Symbol string `json:"symbol"`
-		Name   string `json:"name"`
-	} `json:"baseToken"`
+	ChainID   string       `json:"chainId"`
+	DexID     string       `json:"dexId"`
+	URL       string       `json:"url"`
+	PairAddr  string       `json:"pairAddress"`
+	PriceUSD  string       `json:"priceUsd"`
+	FDV       float64      `json:"fdv"`
+	MarketCap float64      `json:"marketCap"`
+	BaseToken dexTokenMeta `json:"baseToken"`
 	Liquidity struct {
 		USD float64 `json:"usd"`
 	} `json:"liquidity"`
@@ -54,6 +51,22 @@ type dexPair struct {
 	PriceChange struct {
 		H24 float64 `json:"h24"`
 	} `json:"priceChange"`
+	Info struct {
+		Websites []struct {
+			Label string `json:"label"`
+			URL   string `json:"url"`
+		} `json:"websites"`
+		Socials []struct {
+			Type string `json:"type"`
+			URL  string `json:"url"`
+		} `json:"socials"`
+	} `json:"info"`
+}
+
+type dexTokenMeta struct {
+	Address string `json:"address"`
+	Symbol  string `json:"symbol"`
+	Name    string `json:"name"`
 }
 
 type cgSearchResponse struct {
@@ -77,6 +90,11 @@ type cgMarket struct {
 	PriceChangePercentage24H *float64 `json:"price_change_percentage_24h"`
 }
 
+type quickLink struct {
+	Label string
+	URL   string
+}
+
 func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.MessageCreate, settings models.GuildSettings) {
 	if !settings.FeatureEnabled(models.FeatureWeb3Intel) {
 		return
@@ -92,22 +110,25 @@ func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.Messa
 	lookupCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	var out string
+	var embed *discordgo.MessageEmbed
 	var err error
 	switch {
 	case signal.Contract != "":
-		out, err = s.resolveContractIntel(lookupCtx, signal.Contract)
+		embed, err = s.resolveContractIntelEmbed(lookupCtx, signal.Contract)
 	case signal.CashTag != "":
-		out, err = s.resolveCashTagIntel(lookupCtx, signal.CashTag)
+		embed, err = s.resolveCashTagEmbed(lookupCtx, signal.CashTag)
 	}
 	if err != nil {
 		s.logger.Debug("web3 intel lookup failed guild=%s channel=%s err=%v", m.GuildID, m.ChannelID, err)
 		return
 	}
-	if strings.TrimSpace(out) == "" {
+	if embed == nil {
 		return
 	}
-	if _, err := s.session.ChannelMessageSend(m.ChannelID, out); err != nil {
+	_, err = s.session.ChannelMessageSendComplex(m.ChannelID, &discordgo.MessageSend{
+		Embed: embed,
+	})
+	if err != nil {
 		s.logger.Error("web3 intel reply failed guild=%s channel=%s err=%v", m.GuildID, m.ChannelID, err)
 	}
 }
@@ -147,55 +168,106 @@ func detectWeb3Signal(content string) web3Signal {
 	return web3Signal{}
 }
 
-func (s *Service) resolveContractIntel(ctx context.Context, contract string) (string, error) {
+func (s *Service) resolveContractIntelEmbed(ctx context.Context, contract string) (*discordgo.MessageEmbed, error) {
 	var dex dexScreenerTokenResponse
 	if err := web3FetchJSON(ctx, "https://api.dexscreener.com/latest/dex/tokens/"+url.PathEscape(contract), &dex); err != nil {
-		return "", err
-	}
-	if len(dex.Pairs) == 0 {
-		return "", nil
+		return nil, err
 	}
 	best := chooseBestDexPair(dex.Pairs)
 	if best == nil {
-		return "", nil
+		return nil, nil
 	}
-	price := parseDecimal(best.PriceUSD)
+	tokenAddr := best.BaseToken.Address
+	if tokenAddr == "" {
+		tokenAddr = contract
+	}
+
+	name := fallback(best.BaseToken.Name, "Token")
+	symbol := strings.ToUpper(fallback(best.BaseToken.Symbol, "?"))
+	chain := formatChain(best.ChainID)
+
+	primaryLinks := make([]quickLink, 0, 5)
+	if best.URL != "" {
+		primaryLinks = append(primaryLinks, quickLink{Label: "Chart", URL: best.URL})
+	}
+	primaryLinks = append(primaryLinks, quickLink{Label: "Defined", URL: "https://www.defined.fi/search?query=" + url.QueryEscape(tokenAddr)})
+	if explorer := explorerTokenURL(best.ChainID, tokenAddr); explorer != "" {
+		primaryLinks = append(primaryLinks, quickLink{Label: "Explorer", URL: explorer})
+	}
+	primaryLinks = append(primaryLinks, quickLink{Label: "X Search", URL: "https://x.com/search?q=" + url.QueryEscape(tokenAddr)})
+	primaryLinks = append(primaryLinks, quickLink{Label: "CG Search", URL: "https://www.coingecko.com/en/search?query=" + url.QueryEscape(tokenAddr)})
+
+	socialLinks := socialLinksFromDex(best)
+	tradeLinks := tradeLinksForChain(best.ChainID, tokenAddr, best.PairAddr)
+
 	mcap := best.MarketCap
 	if mcap <= 0 {
 		mcap = best.FDV
 	}
-	line := fmt.Sprintf(
-		"**Web3 Intel** `%s`\n%s (%s) on %s via %s\nPrice: %s | 24h: %s | MCap: %s | Liquidity: %s\nDexscreener: %s",
-		contract,
-		fallback(best.BaseToken.Name, "Token"),
-		strings.ToUpper(fallback(best.BaseToken.Symbol, "?")),
-		formatChain(best.ChainID),
-		fallback(best.DexID, "dex"),
-		formatUSD(price),
+	stats := fmt.Sprintf(
+		"Price: %s\n24h: %s\nMCap: %s\nFDV: %s\nLiquidity: %s\nVolume (24h): %s",
+		formatUSD(parseDecimal(best.PriceUSD)),
 		formatPercent(best.PriceChange.H24),
 		formatUSDCompact(mcap),
+		formatUSDCompact(best.FDV),
 		formatUSDCompact(best.Liquidity.USD),
-		fallback(best.URL, "n/a"),
+		formatUSDCompact(best.Volume.H24),
 	)
-	return trimMessage(line), nil
+	desc := fmt.Sprintf("%s (%s) on **%s** via **%s**", name, symbol, chain, fallback(strings.ToUpper(best.DexID), "DEX"))
+	if len(primaryLinks) > 0 {
+		desc += "\n" + formatQuickLinks(primaryLinks)
+	}
+	if len(socialLinks) > 0 {
+		desc += "\nSocial: " + formatQuickLinks(socialLinks)
+	}
+
+	fields := []*discordgo.MessageEmbedField{
+		{
+			Name:   "Market Snapshot",
+			Value:  stats,
+			Inline: true,
+		},
+	}
+	if len(tradeLinks) > 0 {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Quick Trade",
+			Value:  formatQuickLinks(tradeLinks),
+			Inline: true,
+		})
+	}
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:  "Contract",
+		Value: "`" + tokenAddr + "`",
+	})
+
+	return &discordgo.MessageEmbed{
+		Title:       "Web3 Intel",
+		Description: trimEmbedText(desc, 1024),
+		Fields:      fields,
+		Color:       0x2ecc71,
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "Sources: Dexscreener / Defined / CoinGecko",
+		},
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	}, nil
 }
 
-func (s *Service) resolveCashTagIntel(ctx context.Context, token string) (string, error) {
+func (s *Service) resolveCashTagEmbed(ctx context.Context, token string) (*discordgo.MessageEmbed, error) {
 	var search cgSearchResponse
 	if err := web3FetchJSON(ctx, "https://api.coingecko.com/api/v3/search?query="+url.QueryEscape(token), &search); err != nil {
-		return "", err
+		return nil, err
 	}
 	coin := chooseCoinGeckoCoin(search.Coins, token)
 	if coin == nil {
-		return "", nil
+		return nil, nil
 	}
 	var markets []cgMarket
 	u := "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=" + url.QueryEscape(coin.ID)
 	if err := web3FetchJSON(ctx, u, &markets); err != nil {
-		return "", err
+		return nil, err
 	}
 	if len(markets) == 0 {
-		return "", nil
+		return nil, nil
 	}
 	m := markets[0]
 	fdv := 0.0
@@ -206,18 +278,33 @@ func (s *Service) resolveCashTagIntel(ctx context.Context, token string) (string
 	if m.PriceChangePercentage24H != nil {
 		change = *m.PriceChangePercentage24H
 	}
-	line := fmt.Sprintf(
-		"**Web3 Intel** `$%s`\n%s (%s)\nPrice: %s | 24h: %s | MCap: %s | FDV: %s\nCoinGecko: https://www.coingecko.com/en/coins/%s",
-		strings.ToUpper(token),
+	description := fmt.Sprintf(
+		"%s (%s)\n%s",
 		fallback(m.Name, coin.Name),
 		strings.ToUpper(fallback(m.Symbol, coin.Symbol)),
-		formatUSD(m.CurrentPrice),
-		formatPercent(change),
-		formatUSDCompact(m.MarketCap),
-		formatUSDCompact(fdv),
-		coin.ID,
+		formatQuickLinks([]quickLink{
+			{Label: "CoinGecko", URL: "https://www.coingecko.com/en/coins/" + coin.ID},
+			{Label: "Search DexScreener", URL: "https://dexscreener.com/?q=" + url.QueryEscape(strings.ToUpper(token))},
+		}),
 	)
-	return trimMessage(line), nil
+	return &discordgo.MessageEmbed{
+		Title:       fmt.Sprintf("Web3 Intel • $%s", strings.ToUpper(token)),
+		Description: trimEmbedText(description, 1024),
+		Color:       0x3498db,
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "Market Snapshot",
+				Inline: false,
+				Value: fmt.Sprintf("Price: %s\n24h: %s\nMCap: %s\nFDV: %s",
+					formatUSD(m.CurrentPrice),
+					formatPercent(change),
+					formatUSDCompact(m.MarketCap),
+					formatUSDCompact(fdv),
+				),
+			},
+		},
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	}, nil
 }
 
 func chooseBestDexPair(pairs []dexPair) *dexPair {
@@ -302,6 +389,99 @@ func web3FetchJSON(ctx context.Context, endpoint string, out any) error {
 	return json.NewDecoder(res.Body).Decode(out)
 }
 
+func socialLinksFromDex(pair *dexPair) []quickLink {
+	if pair == nil {
+		return nil
+	}
+	out := make([]quickLink, 0, 2)
+	for _, w := range pair.Info.Websites {
+		if strings.TrimSpace(w.URL) == "" {
+			continue
+		}
+		out = append(out, quickLink{Label: "Website", URL: w.URL})
+		break
+	}
+	for _, s := range pair.Info.Socials {
+		if strings.TrimSpace(s.URL) == "" {
+			continue
+		}
+		t := strings.ToLower(strings.TrimSpace(s.Type))
+		if strings.Contains(t, "twitter") || strings.Contains(t, "x") {
+			out = append(out, quickLink{Label: "X", URL: s.URL})
+			break
+		}
+	}
+	return out
+}
+
+func tradeLinksForChain(chainID, tokenAddr, pairAddr string) []quickLink {
+	chain := strings.ToLower(strings.TrimSpace(chainID))
+	addr := strings.TrimSpace(tokenAddr)
+	pair := strings.TrimSpace(pairAddr)
+	if addr == "" {
+		return nil
+	}
+	out := make([]quickLink, 0, 4)
+	switch chain {
+	case "solana":
+		out = append(out,
+			quickLink{Label: "Jupiter", URL: "https://jup.ag/swap/SOL-" + url.QueryEscape(addr)},
+			quickLink{Label: "Birdeye", URL: "https://birdeye.so/token/" + url.PathEscape(addr) + "?chain=solana"},
+		)
+	case "bsc":
+		out = append(out,
+			quickLink{Label: "Pancake", URL: "https://pancakeswap.finance/swap?outputCurrency=" + url.QueryEscape(addr)},
+		)
+	default:
+		out = append(out,
+			quickLink{Label: "Uniswap", URL: "https://app.uniswap.org/swap?chain=" + url.QueryEscape(chainForUniswap(chain)) + "&outputCurrency=" + url.QueryEscape(addr)},
+		)
+	}
+	if pair != "" && chain != "" {
+		out = append(out, quickLink{Label: "DEXTools", URL: "https://www.dextools.io/app/en/" + url.PathEscape(chain) + "/pair-explorer/" + url.PathEscape(pair)})
+	}
+	return out
+}
+
+func chainForUniswap(chain string) string {
+	switch chain {
+	case "ethereum", "base", "arbitrum", "optimism", "polygon":
+		return chain
+	default:
+		return "ethereum"
+	}
+}
+
+func explorerTokenURL(chainID, tokenAddr string) string {
+	chain := strings.ToLower(strings.TrimSpace(chainID))
+	addr := strings.TrimSpace(tokenAddr)
+	if addr == "" {
+		return ""
+	}
+	switch chain {
+	case "ethereum":
+		return "https://etherscan.io/token/" + url.PathEscape(addr)
+	case "arbitrum":
+		return "https://arbiscan.io/token/" + url.PathEscape(addr)
+	case "optimism":
+		return "https://optimistic.etherscan.io/token/" + url.PathEscape(addr)
+	case "base":
+		return "https://basescan.org/token/" + url.PathEscape(addr)
+	case "polygon":
+		return "https://polygonscan.com/token/" + url.PathEscape(addr)
+	case "linea":
+		return "https://lineascan.build/token/" + url.PathEscape(addr)
+	case "zksync":
+		return "https://era.zksync.network/address/" + url.PathEscape(addr)
+	case "bsc":
+		return "https://bscscan.com/token/" + url.PathEscape(addr)
+	case "solana":
+		return "https://solscan.io/token/" + url.PathEscape(addr)
+	default:
+		return "https://dexscreener.com/search?q=" + url.QueryEscape(addr)
+	}
+}
+
 func parseDecimal(raw string) float64 {
 	n, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
 	if err != nil {
@@ -372,6 +552,20 @@ func formatChain(chain string) string {
 	}
 }
 
+func formatQuickLinks(links []quickLink) string {
+	out := make([]string, 0, len(links))
+	for _, l := range links {
+		if strings.TrimSpace(l.URL) == "" || strings.TrimSpace(l.Label) == "" {
+			continue
+		}
+		out = append(out, fmt.Sprintf("[%s](%s)", l.Label, l.URL))
+	}
+	if len(out) == 0 {
+		return "n/a"
+	}
+	return strings.Join(out, " • ")
+}
+
 func fallback(v, d string) string {
 	if strings.TrimSpace(v) == "" {
 		return d
@@ -379,9 +573,9 @@ func fallback(v, d string) string {
 	return v
 }
 
-func trimMessage(s string) string {
-	if len(s) <= 1900 {
+func trimEmbedText(s string, max int) string {
+	if max <= 0 || len(s) <= max {
 		return s
 	}
-	return s[:1897] + "..."
+	return s[:max-3] + "..."
 }
