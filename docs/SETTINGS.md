@@ -95,7 +95,7 @@ These are in the dashboard configuration surfaces (Core Settings + module pages)
 - Default: empty map
 - Empty/missing list for a module means no channel restriction.
 - Example:
-- `{"automod":["123456789012345678"],"suggestions":["234567890123456789"]}`
+- `{"web3_intel":["123456789012345678"],"automod":["123456789012345678"],"suggestions":["234567890123456789"]}`
 
 8e. `retention_days`
 - UI label: `Message retention days (0=disabled)`

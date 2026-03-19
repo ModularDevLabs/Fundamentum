@@ -154,7 +154,7 @@ const MODULE_GUIDES = {
   trivia: { title: 'How To Use', points: ['Enable trivia, then generate a question.', 'Submit answers with acting user ID to award score.', 'Refresh leaderboard to track competition.'] },
   calendar: { title: 'How To Use', points: ['Enable calendar before creating events.', 'Create events with ISO start time and creator user ID.', 'Use RSVP controls and view responses per event.'] },
   confessions: { title: 'How To Use', points: ['Enable confessions and set channel/review settings.', 'Review pending items and approve/reject them.', 'Approved confessions are posted anonymously to configured channel.'] },
-  web3intel: { title: 'How To Use', points: ['Enable module to watch for $TOKEN symbols and contract addresses in chat.', 'Users can post Ethereum/L2, Solana, BNB, Hyperliquid, or Monad contract addresses for Dexscreener snapshots.', 'Users can post $cash-tags to resolve token data from CoinGecko.', 'Use module channel scopes if you only want web3 lookups in specific channels.'] },
+  web3intel: { title: 'How To Use', points: ['Enable module to watch for $TOKEN symbols and contract addresses in chat.', 'Users can post Ethereum/L2, Solana, BNB, Hyperliquid, or Monad contract addresses for Dexscreener snapshots.', 'Users can post $cash-tags to resolve token data from CoinGecko.', 'To scope by channel: Settings -> Module channel scopes JSON, example {"web3_intel":["123456789012345678"]}.'] },
 };
 const CORE_SETTINGS_TOOLTIPS = {
   settingsAdminPolicy: 'How to handle targets with Administrator permission: refuse, quarantine, or remove admin roles first.',
@@ -166,7 +166,7 @@ const CORE_SETTINGS_TOOLTIPS = {
   settingsActionRequireConfirm: 'Require CONFIRM token before destructive actions (kick/quarantine/remove roles).',
   settingsActionTwoPerson: 'Require a second approver user ID for destructive actions.',
   settingsRolePolicies: 'Optional JSON RBAC map controlling which dashboard roles can access specific capability groups.',
-  settingsModuleScopes: 'Optional JSON map of module feature key to allowed channel IDs.',
+  settingsModuleScopes: 'Optional JSON map of module feature key to allowed channel IDs. Example: {"web3_intel":["123456789012345678"]}.',
   settingsRetentionDays: 'Data retention window in days. 0 disables purge worker.',
   settingsRetentionArchive: 'Write a purge summary record before retention cleanup deletes rows.',
   settingsIncidentModeEnabled: 'Enable elevated incident safeguards and incident-state signaling in the dashboard.',

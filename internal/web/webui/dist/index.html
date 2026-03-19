@@ -416,8 +416,9 @@
             </label>
             <label>
               Module channel scopes JSON (optional)
-              <textarea id="settingsModuleScopes" rows="6" placeholder='{"automod":["1234567890"],"suggestions":["2222222222"]}'></textarea>
+              <textarea id="settingsModuleScopes" rows="6" placeholder='{"web3_intel":["123456789012345678"],"automod":["123456789012345678"],"suggestions":["222222222222222222"]}'></textarea>
             </label>
+            <p class="module-note">Example: <code>{"web3_intel":["123456789012345678"]}</code> limits Web3 lookups to one channel. Use Discord channel IDs.</p>
             <label>
               Message retention days (0=disabled)
               <input id="settingsRetentionDays" type="number" min="0" />
