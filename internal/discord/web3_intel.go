@@ -114,9 +114,9 @@ func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.Messa
 	var err error
 	switch {
 	case signal.Contract != "":
-		embed, err = s.resolveContractIntelEmbed(lookupCtx, signal.Contract)
+		embed, err = s.resolveContractIntelEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal.Contract)
 	case signal.CashTag != "":
-		embed, err = s.resolveCashTagEmbed(lookupCtx, signal.CashTag)
+		embed, err = s.resolveCashTagEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal.CashTag)
 	}
 	if err != nil {
 		s.logger.Debug("web3 intel lookup failed guild=%s channel=%s err=%v", m.GuildID, m.ChannelID, err)
@@ -168,7 +168,7 @@ func detectWeb3Signal(content string) web3Signal {
 	return web3Signal{}
 }
 
-func (s *Service) resolveContractIntelEmbed(ctx context.Context, contract string) (*discordgo.MessageEmbed, error) {
+func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scannerUserID, scannerName, contract string) (*discordgo.MessageEmbed, error) {
 	var dex dexScreenerTokenResponse
 	if err := web3FetchJSON(ctx, "https://api.dexscreener.com/latest/dex/tokens/"+url.PathEscape(contract), &dex); err != nil {
 		return nil, err
@@ -204,9 +204,23 @@ func (s *Service) resolveContractIntelEmbed(ctx context.Context, contract string
 	if mcap <= 0 {
 		mcap = best.FDV
 	}
+	currentPrice := parseDecimal(best.PriceUSD)
+	firstScan, created, err := s.repos.Web3Scans.GetOrCreateFirstScan(ctx, models.Web3FirstScanRow{
+		GuildID:            guildID,
+		AssetKey:           "contract:" + normalizeContractKey(tokenAddr),
+		AssetType:          "contract",
+		DisplaySymbol:      symbol,
+		DisplayName:        name,
+		FirstScannerUserID: scannerUserID,
+		FirstScannerName:   scannerName,
+		FirstPriceUSD:      currentPrice,
+	})
+	if err != nil {
+		return nil, err
+	}
 	stats := fmt.Sprintf(
 		"Price: %s\n24h: %s\nMCap: %s\nFDV: %s\nLiquidity: %s\nVolume (24h): %s",
-		formatUSD(parseDecimal(best.PriceUSD)),
+		formatUSD(currentPrice),
 		formatPercent(best.PriceChange.H24),
 		formatUSDCompact(mcap),
 		formatUSDCompact(best.FDV),
@@ -225,6 +239,11 @@ func (s *Service) resolveContractIntelEmbed(ctx context.Context, contract string
 		{
 			Name:   "Market Snapshot",
 			Value:  stats,
+			Inline: true,
+		},
+		{
+			Name:   "First Scan",
+			Value:  buildFirstScanField(firstScan, currentPrice, created),
 			Inline: true,
 		},
 	}
@@ -252,7 +271,7 @@ func (s *Service) resolveContractIntelEmbed(ctx context.Context, contract string
 	}, nil
 }
 
-func (s *Service) resolveCashTagEmbed(ctx context.Context, token string) (*discordgo.MessageEmbed, error) {
+func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserID, scannerName, token string) (*discordgo.MessageEmbed, error) {
 	var search cgSearchResponse
 	if err := web3FetchJSON(ctx, "https://api.coingecko.com/api/v3/search?query="+url.QueryEscape(token), &search); err != nil {
 		return nil, err
@@ -278,6 +297,19 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, token string) (*disco
 	if m.PriceChangePercentage24H != nil {
 		change = *m.PriceChangePercentage24H
 	}
+	firstScan, created, err := s.repos.Web3Scans.GetOrCreateFirstScan(ctx, models.Web3FirstScanRow{
+		GuildID:            guildID,
+		AssetKey:           "coingecko:" + strings.TrimSpace(coin.ID),
+		AssetType:          "coingecko",
+		DisplaySymbol:      strings.ToUpper(fallback(m.Symbol, coin.Symbol)),
+		DisplayName:        fallback(m.Name, coin.Name),
+		FirstScannerUserID: scannerUserID,
+		FirstScannerName:   scannerName,
+		FirstPriceUSD:      m.CurrentPrice,
+	})
+	if err != nil {
+		return nil, err
+	}
 	description := fmt.Sprintf(
 		"%s (%s)\n%s",
 		fallback(m.Name, coin.Name),
@@ -301,6 +333,11 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, token string) (*disco
 					formatUSDCompact(m.MarketCap),
 					formatUSDCompact(fdv),
 				),
+			},
+			{
+				Name:   "First Scan",
+				Inline: false,
+				Value:  buildFirstScanField(firstScan, m.CurrentPrice, created),
 			},
 		},
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
@@ -578,4 +615,25 @@ func trimEmbedText(s string, max int) string {
 		return s
 	}
 	return s[:max-3] + "..."
+}
+
+func normalizeContractKey(addr string) string {
+	a := strings.TrimSpace(addr)
+	if web3EVMContractRe.MatchString(a) {
+		return strings.ToLower(a)
+	}
+	return a
+}
+
+func buildFirstScanField(first models.Web3FirstScanRow, currentPrice float64, created bool) string {
+	whenUnix := first.FirstScannedAt.UTC().Unix()
+	header := fmt.Sprintf("By <@%s> • <t:%d:R>", first.FirstScannerUserID, whenUnix)
+	if created {
+		return header + "\nInitial scan recorded now."
+	}
+	if first.FirstPriceUSD <= 0 || currentPrice <= 0 {
+		return header + fmt.Sprintf("\nInitial price: %s", formatUSD(first.FirstPriceUSD))
+	}
+	since := ((currentPrice - first.FirstPriceUSD) / first.FirstPriceUSD) * 100
+	return header + fmt.Sprintf("\nSince first: %s (from %s)", formatPercent(since), formatUSD(first.FirstPriceUSD))
 }

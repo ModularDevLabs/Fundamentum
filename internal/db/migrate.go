@@ -449,6 +449,20 @@ func Migrate(db *sql.DB) error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_dashboard_sessions_expiry
 		ON dashboard_sessions(expires_at, revoked);`,
+		`CREATE TABLE IF NOT EXISTS web3_first_scans (
+			guild_id TEXT NOT NULL,
+			asset_key TEXT NOT NULL,
+			asset_type TEXT NOT NULL,
+			display_symbol TEXT,
+			display_name TEXT,
+			first_scanner_user_id TEXT NOT NULL,
+			first_scanner_name TEXT,
+			first_price_usd REAL NOT NULL DEFAULT 0,
+			first_scanned_at TEXT NOT NULL,
+			PRIMARY KEY (guild_id, asset_key)
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_web3_first_scans_guild_time
+		ON web3_first_scans(guild_id, first_scanned_at DESC);`,
 	}
 
 	for _, stmt := range stmts {

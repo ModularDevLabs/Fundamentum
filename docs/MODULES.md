@@ -348,6 +348,8 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - Contract lookups query Dexscreener and pick the highest-liquidity pair snapshot.
 - Cash-tag lookups query CoinGecko search + market data.
 - Returns compact price / 24h change / market cap context in-channel.
+- Stores per-guild first-scan baseline (scanner, timestamp, initial price) for each tracked asset key.
+- Subsequent scans include "since first scan" percentage move from the initial baseline.
 - Supported targets:
 - Ethereum and EVM L2 ecosystems, Solana, BNB Chain, Hyperliquid, Monad (as surfaced by Dexscreener data), and CoinGecko-indexed token names.
 - Config keys: `feature_flags.web3_intel`.

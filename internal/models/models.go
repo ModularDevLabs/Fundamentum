@@ -403,6 +403,18 @@ type AuditTrailRow struct {
 	RecordedAt time.Time `json:"recorded_at"`
 }
 
+type Web3FirstScanRow struct {
+	GuildID            string    `json:"guild_id"`
+	AssetKey           string    `json:"asset_key"`
+	AssetType          string    `json:"asset_type"`
+	DisplaySymbol      string    `json:"display_symbol"`
+	DisplayName        string    `json:"display_name"`
+	FirstScannerUserID string    `json:"first_scanner_user_id"`
+	FirstScannerName   string    `json:"first_scanner_name"`
+	FirstPriceUSD      float64   `json:"first_price_usd"`
+	FirstScannedAt     time.Time `json:"first_scanned_at"`
+}
+
 const (
 	FeatureWelcomeMessages = "welcome_messages"
 	FeatureGoodbyeMessages = "goodbye_messages"

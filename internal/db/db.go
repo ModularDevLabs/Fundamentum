@@ -70,6 +70,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Streaks:         &StreaksRepo{db: db},
 		SeasonResets:    &SeasonResetsRepo{db: db},
 		DashboardAuth:   &DashboardAuthRepo{db: db},
+		Web3Scans:       &Web3ScansRepo{db: db},
 	}
 }
 
@@ -109,4 +110,5 @@ type Repositories struct {
 	Streaks         *StreaksRepo
 	SeasonResets    *SeasonResetsRepo
 	DashboardAuth   *DashboardAuthRepo
+	Web3Scans       *Web3ScansRepo
 }
