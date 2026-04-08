@@ -33,6 +33,10 @@ type dexScreenerTokenResponse struct {
 	Pairs []dexPair `json:"pairs"`
 }
 
+type dexScreenerSearchResponse struct {
+	Pairs []dexPair `json:"pairs"`
+}
+
 type dexPair struct {
 	ChainID   string       `json:"chainId"`
 	DexID     string       `json:"dexId"`
@@ -278,7 +282,7 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 	}
 	coin := chooseCoinGeckoCoin(search.Coins, token)
 	if coin == nil {
-		return nil, nil
+		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, token)
 	}
 	var markets []cgMarket
 	u := "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=" + url.QueryEscape(coin.ID)
@@ -286,7 +290,7 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 		return nil, err
 	}
 	if len(markets) == 0 {
-		return nil, nil
+		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, token)
 	}
 	m := markets[0]
 	fdv := 0.0
@@ -339,6 +343,80 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 				Inline: false,
 				Value:  buildFirstScanField(firstScan, m.CurrentPrice, created),
 			},
+		},
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	}, nil
+}
+
+func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scannerUserID, scannerName, token string) (*discordgo.MessageEmbed, error) {
+	var search dexScreenerSearchResponse
+	u := "https://api.dexscreener.com/latest/dex/search/?q=" + url.QueryEscape(strings.ToUpper(strings.TrimSpace(token)))
+	if err := web3FetchJSON(ctx, u, &search); err != nil {
+		return nil, err
+	}
+	best := chooseBestDexPairForTicker(search.Pairs, token)
+	if best == nil {
+		return nil, nil
+	}
+	tokenAddr := best.BaseToken.Address
+	if tokenAddr == "" {
+		tokenAddr = best.PairAddr
+	}
+	name := fallback(best.BaseToken.Name, strings.ToUpper(token))
+	symbol := strings.ToUpper(fallback(best.BaseToken.Symbol, token))
+	currentPrice := parseDecimal(best.PriceUSD)
+
+	firstScan, created, err := s.repos.Web3Scans.GetOrCreateFirstScan(ctx, models.Web3FirstScanRow{
+		GuildID:            guildID,
+		AssetKey:           "contract:" + normalizeContractKey(tokenAddr),
+		AssetType:          "contract",
+		DisplaySymbol:      symbol,
+		DisplayName:        name,
+		FirstScannerUserID: scannerUserID,
+		FirstScannerName:   scannerName,
+		FirstPriceUSD:      currentPrice,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	description := fmt.Sprintf("%s (%s) on **%s** via **%s**\n%s",
+		name,
+		symbol,
+		formatChain(best.ChainID),
+		fallback(strings.ToUpper(best.DexID), "DEX"),
+		formatQuickLinks([]quickLink{
+			{Label: "Chart", URL: best.URL},
+			{Label: "Defined", URL: "https://www.defined.fi/search?query=" + url.QueryEscape(tokenAddr)},
+			{Label: "Explorer", URL: explorerTokenURL(best.ChainID, tokenAddr)},
+			{Label: "X Search", URL: "https://x.com/search?q=" + url.QueryEscape(tokenAddr)},
+		}),
+	)
+
+	return &discordgo.MessageEmbed{
+		Title:       fmt.Sprintf("Web3 Intel • $%s (Dex fallback)", strings.ToUpper(token)),
+		Description: trimEmbedText(description, 1024),
+		Color:       0xf39c12,
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "Market Snapshot",
+				Inline: true,
+				Value: fmt.Sprintf("Price: %s\n24h: %s\nMCap: %s\nFDV: %s\nLiquidity: %s",
+					formatUSD(currentPrice),
+					formatPercent(best.PriceChange.H24),
+					formatUSDCompact(maxFloat(best.MarketCap, best.FDV)),
+					formatUSDCompact(best.FDV),
+					formatUSDCompact(best.Liquidity.USD),
+				),
+			},
+			{
+				Name:   "First Scan",
+				Inline: true,
+				Value:  buildFirstScanField(firstScan, currentPrice, created),
+			},
+		},
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "Source: Dexscreener fallback (CoinGecko miss)",
 		},
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}, nil
@@ -601,6 +679,44 @@ func formatQuickLinks(links []quickLink) string {
 		return "n/a"
 	}
 	return strings.Join(out, " • ")
+}
+
+func chooseBestDexPairForTicker(pairs []dexPair, ticker string) *dexPair {
+	if len(pairs) == 0 {
+		return nil
+	}
+	needle := strings.ToUpper(strings.TrimSpace(ticker))
+	candidates := make([]dexPair, 0, len(pairs))
+	for _, p := range pairs {
+		if strings.TrimSpace(p.PriceUSD) == "" {
+			continue
+		}
+		if needle != "" {
+			sym := strings.ToUpper(strings.TrimSpace(p.BaseToken.Symbol))
+			name := strings.ToUpper(strings.TrimSpace(p.BaseToken.Name))
+			if sym != needle && !strings.Contains(name, needle) {
+				continue
+			}
+		}
+		candidates = append(candidates, p)
+	}
+	if len(candidates) == 0 {
+		candidates = append(candidates, pairs...)
+	}
+	sort.SliceStable(candidates, func(i, j int) bool {
+		if candidates[i].Liquidity.USD == candidates[j].Liquidity.USD {
+			return candidates[i].Volume.H24 > candidates[j].Volume.H24
+		}
+		return candidates[i].Liquidity.USD > candidates[j].Liquidity.USD
+	})
+	return &candidates[0]
+}
+
+func maxFloat(a, b float64) float64 {
+	if a >= b {
+		return a
+	}
+	return b
 }
 
 func fallback(v, d string) string {
