@@ -364,6 +364,7 @@ func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scanne
 	}
 	name := fallback(best.BaseToken.Name, strings.ToUpper(token))
 	symbol := strings.ToUpper(fallback(best.BaseToken.Symbol, token))
+	chain := formatChain(best.ChainID)
 	currentPrice := parseDecimal(best.PriceUSD)
 
 	firstScan, created, err := s.repos.Web3Scans.GetOrCreateFirstScan(ctx, models.Web3FirstScanRow{
@@ -380,43 +381,65 @@ func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scanne
 		return nil, err
 	}
 
-	description := fmt.Sprintf("%s (%s) on **%s** via **%s**\n%s",
-		name,
-		symbol,
-		formatChain(best.ChainID),
-		fallback(strings.ToUpper(best.DexID), "DEX"),
-		formatQuickLinks([]quickLink{
-			{Label: "Chart", URL: best.URL},
-			{Label: "Defined", URL: "https://www.defined.fi/search?query=" + url.QueryEscape(tokenAddr)},
-			{Label: "Explorer", URL: explorerTokenURL(best.ChainID, tokenAddr)},
-			{Label: "X Search", URL: "https://x.com/search?q=" + url.QueryEscape(tokenAddr)},
-		}),
-	)
+	primaryLinks := make([]quickLink, 0, 5)
+	if best.URL != "" {
+		primaryLinks = append(primaryLinks, quickLink{Label: "Chart", URL: best.URL})
+	}
+	primaryLinks = append(primaryLinks, quickLink{Label: "Defined", URL: "https://www.defined.fi/search?query=" + url.QueryEscape(tokenAddr)})
+	if explorer := explorerTokenURL(best.ChainID, tokenAddr); explorer != "" {
+		primaryLinks = append(primaryLinks, quickLink{Label: "Explorer", URL: explorer})
+	}
+	primaryLinks = append(primaryLinks, quickLink{Label: "X Search", URL: "https://x.com/search?q=" + url.QueryEscape(tokenAddr)})
+	primaryLinks = append(primaryLinks, quickLink{Label: "CG Search", URL: "https://www.coingecko.com/en/search?query=" + url.QueryEscape(tokenAddr)})
+	socialLinks := socialLinksFromDex(best)
+	tradeLinks := tradeLinksForChain(best.ChainID, tokenAddr, best.PairAddr)
+
+	description := fmt.Sprintf("%s (%s) on **%s** via **%s**", name, symbol, chain, fallback(strings.ToUpper(best.DexID), "DEX"))
+	if len(primaryLinks) > 0 {
+		description += "\n" + formatQuickLinks(primaryLinks)
+	}
+	if len(socialLinks) > 0 {
+		description += "\nSocial: " + formatQuickLinks(socialLinks)
+	}
+
+	fields := []*discordgo.MessageEmbedField{
+		{
+			Name:   "Market Snapshot",
+			Inline: true,
+			Value: fmt.Sprintf("Price: %s\n24h: %s\nMCap: %s\nFDV: %s\nLiquidity: %s\nVolume (24h): %s",
+				formatUSD(currentPrice),
+				formatPercent(best.PriceChange.H24),
+				formatUSDCompact(maxFloat(best.MarketCap, best.FDV)),
+				formatUSDCompact(best.FDV),
+				formatUSDCompact(best.Liquidity.USD),
+				formatUSDCompact(best.Volume.H24),
+			),
+		},
+		{
+			Name:   "First Scan",
+			Inline: true,
+			Value:  buildFirstScanField(firstScan, currentPrice, created),
+		},
+	}
+	if len(tradeLinks) > 0 {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Quick Trade",
+			Value:  formatQuickLinks(tradeLinks),
+			Inline: true,
+		})
+	}
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:  "Contract",
+		Value: "`" + tokenAddr + "`",
+	})
 
 	return &discordgo.MessageEmbed{
-		Title:       fmt.Sprintf("Web3 Intel • $%s (Dex fallback)", strings.ToUpper(token)),
+		Title:       "Web3 Intel",
 		Description: trimEmbedText(description, 1024),
-		Color:       0xf39c12,
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "Market Snapshot",
-				Inline: true,
-				Value: fmt.Sprintf("Price: %s\n24h: %s\nMCap: %s\nFDV: %s\nLiquidity: %s",
-					formatUSD(currentPrice),
-					formatPercent(best.PriceChange.H24),
-					formatUSDCompact(maxFloat(best.MarketCap, best.FDV)),
-					formatUSDCompact(best.FDV),
-					formatUSDCompact(best.Liquidity.USD),
-				),
-			},
-			{
-				Name:   "First Scan",
-				Inline: true,
-				Value:  buildFirstScanField(firstScan, currentPrice, created),
-			},
-		},
+		Color:       0x2ecc71,
+		Fields:      fields,
 		Footer: &discordgo.MessageEmbedFooter{
-			Text: "Source: Dexscreener fallback (CoinGecko miss)",
+			Text: "Sources: Dexscreener / Defined / CoinGecko",
 		},
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}, nil
