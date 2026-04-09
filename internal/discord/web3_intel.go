@@ -94,9 +94,30 @@ type cgMarket struct {
 	Symbol                   string   `json:"symbol"`
 	Name                     string   `json:"name"`
 	CurrentPrice             float64  `json:"current_price"`
+	TotalVolume              float64  `json:"total_volume"`
 	MarketCap                float64  `json:"market_cap"`
 	FDV                      *float64 `json:"fully_diluted_valuation"`
 	PriceChangePercentage24H *float64 `json:"price_change_percentage_24h"`
+}
+
+type cgTickersResponse struct {
+	Tickers []cgTicker `json:"tickers"`
+}
+
+type cgTicker struct {
+	TrustScore        string             `json:"trust_score"`
+	ConvertedVolume   map[string]float64 `json:"converted_volume"`
+	CostToMoveUpUSD   *float64           `json:"cost_to_move_up_usd"`
+	CostToMoveDownUSD *float64           `json:"cost_to_move_down_usd"`
+	IsStale           bool               `json:"is_stale"`
+	IsAnomaly         bool               `json:"is_anomaly"`
+}
+
+type cgTickerStats struct {
+	TrustedMarkets int
+	Volume24hUSD   float64
+	DepthUpUSD     float64
+	DepthDownUSD   float64
 }
 
 type quickLink struct {
@@ -497,6 +518,7 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 	if m.FDV != nil {
 		fdv = *m.FDV
 	}
+	tickerStats, _ := fetchCoinGeckoTickerStats(ctx, coin.ID)
 	change := 0.0
 	if m.PriceChangePercentage24H != nil {
 		change = *m.PriceChangePercentage24H
@@ -523,13 +545,17 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 			{Label: "Search DexScreener", URL: "https://dexscreener.com/?q=" + url.QueryEscape(strings.ToUpper(token))},
 		}),
 	)
+	snapshotVol := m.TotalVolume
+	if tickerStats.Volume24hUSD > snapshotVol {
+		snapshotVol = tickerStats.Volume24hUSD
+	}
 	stats := marketSnapshotRow(
 		formatUSD(m.CurrentPrice),
 		formatPercent(change),
 		formatUSDCompact(m.MarketCap),
 		formatUSDCompact(fdv),
 		"n/a",
-		"n/a",
+		formatUSDCompact(snapshotVol),
 	)
 	fields := []*discordgo.MessageEmbedField{
 		{
@@ -551,7 +577,14 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 			Value:  buildFirstScanField(firstScan, m.CurrentPrice, created),
 		},
 	}
-	fields = append(fields, buildCoinGeckoSignalFields(cfg, m.CurrentPrice, change, m.MarketCap, fdv, firstScan, created)...)
+	if tickerStats.DepthUpUSD > 0 || tickerStats.DepthDownUSD > 0 || tickerStats.Volume24hUSD > 0 {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "CEX Market Depth",
+			Inline: false,
+			Value:  fmt.Sprintf("Vol %s • +2%% depth %s • -2%% depth %s • trusted markets %d", formatUSDCompact(tickerStats.Volume24hUSD), formatUSDCompact(tickerStats.DepthUpUSD), formatUSDCompact(tickerStats.DepthDownUSD), tickerStats.TrustedMarkets),
+		})
+	}
+	fields = append(fields, buildCoinGeckoSignalFields(cfg, m.CurrentPrice, change, m.MarketCap, fdv, snapshotVol, tickerStats, firstScan, created)...)
 
 	return &discordgo.MessageEmbed{
 		Title:       fmt.Sprintf("Web3 Intel • $%s", strings.ToUpper(token)),
@@ -709,7 +742,7 @@ func buildWeb3SignalFields(cfg web3ModuleConfig, pair *dexPair, tokenAddr string
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name:   "Trend Signal",
 			Inline: false,
-			Value:  trendSummary(change24h, pair.Volume.H24, pair.Liquidity.USD),
+			Value:  trendSummary(change24h, pair.Volume.H24, pair.Liquidity.USD, 0),
 		})
 	}
 	if cfg.RugRiskEnabled {
@@ -739,15 +772,15 @@ func buildWeb3SignalFields(cfg web3ModuleConfig, pair *dexPair, tokenAddr string
 	}
 	if cfg.ConfidenceEnabled {
 		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Confidence",
+			Name:   "Market Signal Confidence",
 			Inline: false,
-			Value:  confidenceSummary(pair.Liquidity.USD, pair.Volume.H24, mcap, currentPrice, first, created),
+			Value:  confidenceSummary(pair.Liquidity.USD, 0, 0, pair.Volume.H24, mcap, currentPrice, first, created),
 		})
 	}
 	return fields
 }
 
-func buildCoinGeckoSignalFields(cfg web3ModuleConfig, currentPrice, change24h, mcap, fdv float64, first models.Web3FirstScanRow, created bool) []*discordgo.MessageEmbedField {
+func buildCoinGeckoSignalFields(cfg web3ModuleConfig, currentPrice, change24h, mcap, fdv, volume float64, tick cgTickerStats, first models.Web3FirstScanRow, created bool) []*discordgo.MessageEmbedField {
 	fields := make([]*discordgo.MessageEmbedField, 0, 3)
 	if cfg.PriceAlertsEnabled {
 		if change24h >= cfg.PriceAlertPumpPct {
@@ -768,14 +801,14 @@ func buildCoinGeckoSignalFields(cfg web3ModuleConfig, currentPrice, change24h, m
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name:   "Trend Signal",
 			Inline: false,
-			Value:  trendSummary(change24h, 0, 0),
+			Value:  trendSummary(change24h, volume, 0, (tick.DepthUpUSD+tick.DepthDownUSD)/2),
 		})
 	}
 	if cfg.ConfidenceEnabled {
 		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Confidence",
+			Name:   "Market Signal Confidence",
 			Inline: false,
-			Value:  confidenceSummary(0, 0, maxFloat(mcap, fdv), currentPrice, first, created),
+			Value:  confidenceSummary(0, tick.DepthUpUSD, tick.DepthDownUSD, volume, maxFloat(mcap, fdv), currentPrice, first, created),
 		})
 	}
 	return fields
@@ -802,7 +835,7 @@ func miniTASummary(change24h, vol24h, liq float64) string {
 	return fmt.Sprintf("%s • %s", momentum, participation)
 }
 
-func trendSummary(change24h, vol24h, liq float64) string {
+func trendSummary(change24h, vol24h, liq, depthAvg float64) string {
 	trend := "neutral"
 	switch {
 	case change24h >= 8:
@@ -811,9 +844,13 @@ func trendSummary(change24h, vol24h, liq float64) string {
 		trend = "downtrend"
 	}
 	conviction := "moderate conviction"
-	if liq > 0 && vol24h/liq >= 1.2 {
+	denominator := liq
+	if denominator <= 0 {
+		denominator = depthAvg
+	}
+	if denominator > 0 && vol24h/denominator >= 1.2 {
 		conviction = "high conviction"
-	} else if liq > 0 && vol24h/liq < 0.25 {
+	} else if denominator > 0 && vol24h/denominator < 0.25 {
 		conviction = "low conviction"
 	}
 	return fmt.Sprintf("%s • %s", trend, conviction)
@@ -850,27 +887,51 @@ func rugRiskSummary(liquidity, mcap, volume float64) string {
 	}
 }
 
-func confidenceSummary(liquidity, volume, mcap, price float64, first models.Web3FirstScanRow, created bool) string {
+func confidenceSummary(liquidity, depthUp, depthDown, volume, mcap, price float64, first models.Web3FirstScanRow, created bool) string {
 	score := 50
+	reasons := make([]string, 0, 4)
 	if liquidity >= 100000 {
 		score += 20
+		reasons = append(reasons, "deep onchain liquidity")
 	} else if liquidity >= 25000 {
 		score += 10
+		reasons = append(reasons, "usable onchain liquidity")
+	}
+	depthAvg := (depthUp + depthDown) / 2
+	if liquidity <= 0 {
+		if depthAvg >= 250000 {
+			score += 20
+			reasons = append(reasons, "strong CEX depth")
+		} else if depthAvg >= 50000 {
+			score += 10
+			reasons = append(reasons, "moderate CEX depth")
+		}
 	}
 	if mcap >= 5_000_000 {
 		score += 10
+		reasons = append(reasons, "established market cap")
 	}
-	if volume > 0 && liquidity > 0 {
-		ratio := volume / liquidity
+	denominator := liquidity
+	if denominator <= 0 {
+		denominator = depthAvg
+	}
+	if volume > 0 && denominator > 0 {
+		ratio := volume / denominator
 		if ratio >= 0.2 && ratio <= 4 {
 			score += 10
+			reasons = append(reasons, "healthy turnover")
 		}
 	}
 	if first.FirstPriceUSD > 0 && price > 0 && !created {
 		move := math.Abs((price - first.FirstPriceUSD) / first.FirstPriceUSD * 100)
 		if move > 75 {
 			score -= 10
+			reasons = append(reasons, "high post-scan volatility")
 		}
+	}
+	if liquidity <= 0 && depthAvg <= 0 {
+		score -= 8
+		reasons = append(reasons, "missing depth/liquidity")
 	}
 	if score > 100 {
 		score = 100
@@ -884,7 +945,10 @@ func confidenceSummary(liquidity, volume, mcap, price float64, first models.Web3
 	} else if score <= 35 {
 		label = "low"
 	}
-	return fmt.Sprintf("%d/100 (%s confidence)", score, label)
+	if len(reasons) == 0 {
+		reasons = append(reasons, "baseline market profile only")
+	}
+	return fmt.Sprintf("%d/100 (%s confidence)\nBased on: %s", score, label, strings.Join(reasons, ", "))
 }
 
 func chooseBestDexPair(pairs []dexPair, sig web3Signal) *dexPair {
@@ -951,6 +1015,50 @@ func chooseCoinGeckoCoin(coins []cgSearchCoin, query string) *cgSearchCoin {
 		return &coins[bestIdx]
 	}
 	return &coins[0]
+}
+
+func fetchCoinGeckoTickerStats(ctx context.Context, coinID string) (cgTickerStats, error) {
+	var resp cgTickersResponse
+	u := "https://api.coingecko.com/api/v3/coins/" + url.PathEscape(strings.TrimSpace(coinID)) + "/tickers?depth=true"
+	if err := web3FetchJSON(ctx, u, &resp); err != nil {
+		return cgTickerStats{}, err
+	}
+	stats := cgTickerStats{}
+	for _, t := range resp.Tickers {
+		if t.IsStale || t.IsAnomaly {
+			continue
+		}
+		trusted := strings.EqualFold(strings.TrimSpace(t.TrustScore), "green")
+		if !trusted {
+			continue
+		}
+		stats.TrustedMarkets++
+		stats.Volume24hUSD += t.ConvertedVolume["usd"]
+		if t.CostToMoveUpUSD != nil && *t.CostToMoveUpUSD > 0 {
+			stats.DepthUpUSD += *t.CostToMoveUpUSD
+		}
+		if t.CostToMoveDownUSD != nil && *t.CostToMoveDownUSD > 0 {
+			stats.DepthDownUSD += *t.CostToMoveDownUSD
+		}
+	}
+	if stats.TrustedMarkets > 0 {
+		return stats, nil
+	}
+	// Fallback to all non-stale markets when trust metadata is absent.
+	for _, t := range resp.Tickers {
+		if t.IsStale || t.IsAnomaly {
+			continue
+		}
+		stats.TrustedMarkets++
+		stats.Volume24hUSD += t.ConvertedVolume["usd"]
+		if t.CostToMoveUpUSD != nil && *t.CostToMoveUpUSD > 0 {
+			stats.DepthUpUSD += *t.CostToMoveUpUSD
+		}
+		if t.CostToMoveDownUSD != nil && *t.CostToMoveDownUSD > 0 {
+			stats.DepthDownUSD += *t.CostToMoveDownUSD
+		}
+	}
+	return stats, nil
 }
 
 func web3FetchJSON(ctx context.Context, endpoint string, out any) error {

@@ -225,7 +225,7 @@ const WEB3_MODULE_TOOLTIPS = {
   settingsWeb3TrendSignalsEnabled: 'Enable directional trend signal derived from available 24h movement and turnover.',
   settingsWeb3RugRiskEnabled: 'Enable simple liquidity/market-cap/turnover heuristic risk callout.',
   settingsWeb3HolderViewEnabled: 'Include holder-distribution explorer links when chain explorer supports it.',
-  settingsWeb3ConfidenceScoreEnabled: 'Enable aggregate confidence score derived from liquidity, cap, and volatility profile.',
+  settingsWeb3ConfidenceScoreEnabled: 'Enable market-signal confidence score derived from liquidity/depth, turnover, market cap, and volatility.',
   settingsWeb3WalletWatchEnabled: 'Enable watchlist matching against token contracts in scans.',
   settingsWeb3WalletWatchlist: 'Comma or newline separated token/wallet addresses to highlight when matched.',
 };
