@@ -28,6 +28,10 @@ var (
 type web3Signal struct {
 	Contract string
 	CashTag  string
+	Chain    string
+	Dex      string
+	Pair     string
+	Exact    bool
 }
 
 type dexScreenerTokenResponse struct {
@@ -146,9 +150,9 @@ func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.Messa
 	var err error
 	switch {
 	case signal.Contract != "":
-		embed, err = s.resolveContractIntelEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal.Contract, cfg)
+		embed, err = s.resolveContractIntelEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal, cfg)
 	case signal.CashTag != "":
-		embed, err = s.resolveCashTagEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal.CashTag, cfg)
+		embed, err = s.resolveCashTagEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal, cfg)
 	}
 	if err != nil {
 		s.logger.Debug("web3 intel lookup failed guild=%s channel=%s err=%v", m.GuildID, m.ChannelID, err)
@@ -234,19 +238,8 @@ func detectWeb3Signal(content string, commandsEnabled bool) web3Signal {
 		return web3Signal{}
 	}
 	if commandsEnabled {
-		cmdMatch := web3CommandRe.FindStringSubmatch(text)
-		if len(cmdMatch) >= 2 {
-			target := strings.TrimSpace(cmdMatch[1])
-			if target == "" {
-				return web3Signal{}
-			}
-			if strings.HasPrefix(target, "$") {
-				return web3Signal{CashTag: strings.ToLower(strings.TrimPrefix(target, "$"))}
-			}
-			if web3EVMContractRe.MatchString(target) || web3SolAddressRe.MatchString(target) {
-				return web3Signal{Contract: normalizeContractKey(target)}
-			}
-			return web3Signal{CashTag: strings.ToLower(target)}
+		if sig, ok := parseWeb3CommandSignal(text); ok {
+			return sig
 		}
 	}
 	evmLoc := web3EVMContractRe.FindStringIndex(text)
@@ -264,12 +257,126 @@ func detectWeb3Signal(content string, commandsEnabled bool) web3Signal {
 	return web3Signal{}
 }
 
-func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scannerUserID, scannerName, contract string, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
+func parseWeb3CommandSignal(text string) (web3Signal, bool) {
+	if !web3CommandRe.MatchString(text) {
+		return web3Signal{}, false
+	}
+	parts := strings.Fields(strings.TrimSpace(text))
+	if len(parts) < 2 {
+		return web3Signal{}, true
+	}
+	cmd := strings.TrimLeft(strings.ToLower(parts[0]), "!/")
+	args := parts[1:]
+	sig := web3Signal{}
+
+	if cmd == "scan" && len(args) >= 2 && !strings.HasPrefix(args[0], "-") {
+		if ch := normalizeWeb3Chain(args[0]); ch != "" {
+			sig.Chain = ch
+			args = args[1:]
+		}
+	}
+
+	target := ""
+	for i := 0; i < len(args); i++ {
+		a := strings.TrimSpace(args[i])
+		if a == "" {
+			continue
+		}
+		switch strings.ToLower(a) {
+		case "--chain":
+			if i+1 < len(args) {
+				sig.Chain = normalizeWeb3Chain(args[i+1])
+				i++
+			}
+			continue
+		case "--dex":
+			if i+1 < len(args) {
+				sig.Dex = strings.ToLower(strings.TrimSpace(args[i+1]))
+				i++
+			}
+			continue
+		case "--pair":
+			if i+1 < len(args) {
+				sig.Pair = strings.TrimSpace(args[i+1])
+				i++
+			}
+			continue
+		case "--exact":
+			sig.Exact = true
+			continue
+		}
+		if strings.HasPrefix(a, "--chain=") {
+			sig.Chain = normalizeWeb3Chain(strings.TrimPrefix(a, "--chain="))
+			continue
+		}
+		if strings.HasPrefix(a, "--dex=") {
+			sig.Dex = strings.ToLower(strings.TrimSpace(strings.TrimPrefix(a, "--dex=")))
+			continue
+		}
+		if strings.HasPrefix(a, "--pair=") {
+			sig.Pair = strings.TrimSpace(strings.TrimPrefix(a, "--pair="))
+			continue
+		}
+		if a == "--exact=true" {
+			sig.Exact = true
+			continue
+		}
+		if target == "" {
+			target = strings.Trim(a, "\"'")
+		}
+	}
+	if target == "" {
+		return web3Signal{}, true
+	}
+	if strings.HasPrefix(target, "$") {
+		sig.CashTag = strings.ToLower(strings.TrimPrefix(target, "$"))
+		return sig, true
+	}
+	if cmd == "ca" && target != "" {
+		sig.Contract = normalizeContractKey(target)
+		return sig, true
+	}
+	if web3EVMContractRe.MatchString(target) || web3SolAddressRe.MatchString(target) {
+		sig.Contract = normalizeContractKey(target)
+		return sig, true
+	}
+	sig.CashTag = strings.ToLower(target)
+	return sig, true
+}
+
+func normalizeWeb3Chain(raw string) string {
+	v := strings.ToLower(strings.TrimSpace(raw))
+	switch v {
+	case "eth", "ethereum":
+		return "ethereum"
+	case "arb", "arbitrum":
+		return "arbitrum"
+	case "op", "optimism":
+		return "optimism"
+	case "base":
+		return "base"
+	case "poly", "polygon":
+		return "polygon"
+	case "bnb", "bsc":
+		return "bsc"
+	case "sol", "solana":
+		return "solana"
+	case "hl", "hyperliquid":
+		return "hyperliquid"
+	case "monad":
+		return "monad"
+	default:
+		return ""
+	}
+}
+
+func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scannerUserID, scannerName string, sig web3Signal, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
 	var dex dexScreenerTokenResponse
+	contract := sig.Contract
 	if err := web3FetchJSON(ctx, "https://api.dexscreener.com/latest/dex/tokens/"+url.PathEscape(contract), &dex); err != nil {
 		return nil, err
 	}
-	best := chooseBestDexPair(dex.Pairs)
+	best := chooseBestDexPair(dex.Pairs, sig)
 	if best == nil {
 		return nil, nil
 	}
@@ -364,14 +471,18 @@ func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scanne
 	}, nil
 }
 
-func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserID, scannerName, token string, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
+func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserID, scannerName string, sig web3Signal, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
+	token := sig.CashTag
+	if sig.Chain != "" || sig.Dex != "" || sig.Pair != "" || sig.Exact {
+		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, sig, cfg)
+	}
 	var search cgSearchResponse
 	if err := web3FetchJSON(ctx, "https://api.coingecko.com/api/v3/search?query="+url.QueryEscape(token), &search); err != nil {
 		return nil, err
 	}
 	coin := chooseCoinGeckoCoin(search.Coins, token)
 	if coin == nil {
-		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, token, cfg)
+		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, sig, cfg)
 	}
 	var markets []cgMarket
 	u := "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=" + url.QueryEscape(coin.ID)
@@ -379,7 +490,7 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 		return nil, err
 	}
 	if len(markets) == 0 {
-		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, token, cfg)
+		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, sig, cfg)
 	}
 	m := markets[0]
 	fdv := 0.0
@@ -451,13 +562,14 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 	}, nil
 }
 
-func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scannerUserID, scannerName, token string, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
+func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scannerUserID, scannerName string, sig web3Signal, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
+	token := sig.CashTag
 	var search dexScreenerSearchResponse
 	u := "https://api.dexscreener.com/latest/dex/search/?q=" + url.QueryEscape(strings.ToUpper(strings.TrimSpace(token)))
 	if err := web3FetchJSON(ctx, u, &search); err != nil {
 		return nil, err
 	}
-	best := chooseBestDexPairForTicker(search.Pairs, token)
+	best := chooseBestDexPairForTicker(search.Pairs, token, sig)
 	if best == nil {
 		return nil, nil
 	}
@@ -775,13 +887,16 @@ func confidenceSummary(liquidity, volume, mcap, price float64, first models.Web3
 	return fmt.Sprintf("%d/100 (%s confidence)", score, label)
 }
 
-func chooseBestDexPair(pairs []dexPair) *dexPair {
+func chooseBestDexPair(pairs []dexPair, sig web3Signal) *dexPair {
 	if len(pairs) == 0 {
 		return nil
 	}
 	candidates := make([]dexPair, 0, len(pairs))
 	for _, p := range pairs {
 		if strings.TrimSpace(p.PriceUSD) == "" {
+			continue
+		}
+		if !pairMatchesSignalOptions(p, sig) {
 			continue
 		}
 		candidates = append(candidates, p)
@@ -1060,7 +1175,7 @@ func formatQuickLinks(links []quickLink) string {
 	return strings.Join(out, " • ")
 }
 
-func chooseBestDexPairForTicker(pairs []dexPair, ticker string) *dexPair {
+func chooseBestDexPairForTicker(pairs []dexPair, ticker string, sig web3Signal) *dexPair {
 	if len(pairs) == 0 {
 		return nil
 	}
@@ -1070,16 +1185,23 @@ func chooseBestDexPairForTicker(pairs []dexPair, ticker string) *dexPair {
 		if strings.TrimSpace(p.PriceUSD) == "" {
 			continue
 		}
+		if !pairMatchesSignalOptions(p, sig) {
+			continue
+		}
 		if needle != "" {
 			sym := strings.ToUpper(strings.TrimSpace(p.BaseToken.Symbol))
 			name := strings.ToUpper(strings.TrimSpace(p.BaseToken.Name))
-			if sym != needle && !strings.Contains(name, needle) {
+			if sig.Exact {
+				if sym != needle && name != needle {
+					continue
+				}
+			} else if sym != needle && !strings.Contains(name, needle) {
 				continue
 			}
 		}
 		candidates = append(candidates, p)
 	}
-	if len(candidates) == 0 {
+	if len(candidates) == 0 && !sig.Exact && sig.Chain == "" && sig.Dex == "" && sig.Pair == "" {
 		candidates = append(candidates, pairs...)
 	}
 	sort.SliceStable(candidates, func(i, j int) bool {
@@ -1089,6 +1211,19 @@ func chooseBestDexPairForTicker(pairs []dexPair, ticker string) *dexPair {
 		return candidates[i].Liquidity.USD > candidates[j].Liquidity.USD
 	})
 	return &candidates[0]
+}
+
+func pairMatchesSignalOptions(p dexPair, sig web3Signal) bool {
+	if sig.Pair != "" && !strings.EqualFold(strings.TrimSpace(p.PairAddr), strings.TrimSpace(sig.Pair)) {
+		return false
+	}
+	if sig.Chain != "" && normalizeWeb3Chain(p.ChainID) != sig.Chain {
+		return false
+	}
+	if sig.Dex != "" && strings.ToLower(strings.TrimSpace(p.DexID)) != sig.Dex {
+		return false
+	}
+	return true
 }
 
 func maxFloat(a, b float64) float64 {

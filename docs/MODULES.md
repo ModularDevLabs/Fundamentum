@@ -345,7 +345,16 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - Behavior:
 - Detects EVM-style (`0x...`) and Solana-style contract strings.
 - Detects `$TOKEN` cash-tags for CoinGecko lookup.
-- Optional command triggers: `!scan <ticker|contract>`, `/scan <ticker|contract>`, `!token`, `!ca`.
+- Optional command triggers:
+- `!scan <ticker|contract>`
+- `/scan <ticker|contract>`
+- `!token <ticker|contract>`
+- `!ca <contract>`
+- Command options:
+- `--chain <chain>` (or shorthand `!scan <chain> <ticker>`)
+- `--dex <dex_id>`
+- `--exact` (exact symbol/name match only for ticker searches)
+- `--pair <pair_address>`
 - Contract lookups query Dexscreener and pick the highest-liquidity pair snapshot.
 - Cash-tag lookups query CoinGecko search + market data.
 - If a CoinGecko cash-tag is not found, falls back to Dexscreener ticker search.

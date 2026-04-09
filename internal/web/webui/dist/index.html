@@ -2140,10 +2140,11 @@
               </div>
               <ul class="module-guide-list">
                 <li>Triggers: <code>$TICKER</code>, token contract addresses, and optional text commands.</li>
-                <li>Command: <code>!scan &lt;ticker|contract&gt;</code> scans a ticker or contract and posts the same Web3 intel embed.</li>
-                <li>Command: <code>/scan &lt;ticker|contract&gt;</code> slash-style text trigger for the same scan behavior.</li>
-                <li>Command: <code>!token &lt;ticker|contract&gt;</code> alias of scan.</li>
-                <li>Command: <code>!ca &lt;contract&gt;</code> contract-focused alias of scan.</li>
+                <li>Base commands: <code>!scan &lt;ticker|contract&gt;</code>, <code>/scan &lt;ticker|contract&gt;</code>, <code>!token &lt;ticker|contract&gt;</code>, <code>!ca &lt;contract&gt;</code>.</li>
+                <li>Filter by chain: <code>!scan pepe --chain base</code> or shorthand <code>!scan base pepe</code>.</li>
+                <li>Filter by DEX: <code>!scan pepe --dex uniswap</code>.</li>
+                <li>Exact ticker mode: <code>!scan pepe --exact</code> (no fuzzy name match).</li>
+                <li>Pin to specific pair: <code>!scan 0xTOKEN --pair 0xPAIR</code>.</li>
                 <li>CoinGecko is attempted first for cash-tags; if not found, ticker lookup falls back to Dexscreener.</li>
                 <li>Allowed channel IDs restrict lookups to selected channels; leave blank for all channels.</li>
                 <li>Anti-spam + cooldown prevent repeated responses for the same asset in short windows.</li>
