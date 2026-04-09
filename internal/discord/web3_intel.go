@@ -222,8 +222,7 @@ func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scanne
 	if err != nil {
 		return nil, err
 	}
-	stats := fmt.Sprintf(
-		"Price: %s\n24h: %s\nMCap: %s\nFDV: %s\nLiquidity: %s\nVolume (24h): %s",
+	stats := marketSnapshotRow(
 		formatUSD(currentPrice),
 		formatPercent(best.PriceChange.H24),
 		formatUSDCompact(mcap),
@@ -238,29 +237,26 @@ func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scanne
 	if len(socialLinks) > 0 {
 		desc += "\nSocial: " + formatQuickLinks(socialLinks)
 	}
+	desc += "\nCA: `" + tokenAddr + "`"
 
 	fields := []*discordgo.MessageEmbedField{
 		{
 			Name:   "Market Snapshot",
 			Value:  stats,
-			Inline: true,
-		},
-		{
-			Name:   "First Scan",
-			Value:  buildFirstScanField(firstScan, currentPrice, created),
-			Inline: true,
+			Inline: false,
 		},
 	}
 	if len(tradeLinks) > 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name:   "Quick Trade",
 			Value:  formatQuickLinks(tradeLinks),
-			Inline: true,
+			Inline: false,
 		})
 	}
 	fields = append(fields, &discordgo.MessageEmbedField{
-		Name:  "Contract",
-		Value: "`" + tokenAddr + "`",
+		Name:   "First Scan",
+		Value:  buildFirstScanField(firstScan, currentPrice, created),
+		Inline: false,
 	})
 
 	return &discordgo.MessageEmbed{
@@ -323,6 +319,14 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 			{Label: "Search DexScreener", URL: "https://dexscreener.com/?q=" + url.QueryEscape(strings.ToUpper(token))},
 		}),
 	)
+	stats := marketSnapshotRow(
+		formatUSD(m.CurrentPrice),
+		formatPercent(change),
+		formatUSDCompact(m.MarketCap),
+		formatUSDCompact(fdv),
+		"n/a",
+		"n/a",
+	)
 	return &discordgo.MessageEmbed{
 		Title:       fmt.Sprintf("Web3 Intel • $%s", strings.ToUpper(token)),
 		Description: trimEmbedText(description, 1024),
@@ -331,12 +335,15 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 			{
 				Name:   "Market Snapshot",
 				Inline: false,
-				Value: fmt.Sprintf("Price: %s\n24h: %s\nMCap: %s\nFDV: %s",
-					formatUSD(m.CurrentPrice),
-					formatPercent(change),
-					formatUSDCompact(m.MarketCap),
-					formatUSDCompact(fdv),
-				),
+				Value:  stats,
+			},
+			{
+				Name:   "Quick Trade",
+				Inline: false,
+				Value: formatQuickLinks([]quickLink{
+					{Label: "Search DexScreener", URL: "https://dexscreener.com/?q=" + url.QueryEscape(strings.ToUpper(token))},
+					{Label: "CoinGecko", URL: "https://www.coingecko.com/en/coins/" + coin.ID},
+				}),
 			},
 			{
 				Name:   "First Scan",
@@ -402,36 +409,34 @@ func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scanne
 		description += "\nSocial: " + formatQuickLinks(socialLinks)
 	}
 
+	stats := marketSnapshotRow(
+		formatUSD(currentPrice),
+		formatPercent(best.PriceChange.H24),
+		formatUSDCompact(maxFloat(best.MarketCap, best.FDV)),
+		formatUSDCompact(best.FDV),
+		formatUSDCompact(best.Liquidity.USD),
+		formatUSDCompact(best.Volume.H24),
+	)
 	fields := []*discordgo.MessageEmbedField{
 		{
 			Name:   "Market Snapshot",
-			Inline: true,
-			Value: fmt.Sprintf("Price: %s\n24h: %s\nMCap: %s\nFDV: %s\nLiquidity: %s\nVolume (24h): %s",
-				formatUSD(currentPrice),
-				formatPercent(best.PriceChange.H24),
-				formatUSDCompact(maxFloat(best.MarketCap, best.FDV)),
-				formatUSDCompact(best.FDV),
-				formatUSDCompact(best.Liquidity.USD),
-				formatUSDCompact(best.Volume.H24),
-			),
-		},
-		{
-			Name:   "First Scan",
-			Inline: true,
-			Value:  buildFirstScanField(firstScan, currentPrice, created),
+			Inline: false,
+			Value:  stats,
 		},
 	}
 	if len(tradeLinks) > 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name:   "Quick Trade",
 			Value:  formatQuickLinks(tradeLinks),
-			Inline: true,
+			Inline: false,
 		})
 	}
 	fields = append(fields, &discordgo.MessageEmbedField{
-		Name:  "Contract",
-		Value: "`" + tokenAddr + "`",
+		Name:   "First Scan",
+		Inline: false,
+		Value:  buildFirstScanField(firstScan, currentPrice, created),
 	})
+	description += "\nCA: `" + tokenAddr + "`"
 
 	return &discordgo.MessageEmbed{
 		Title:       "Web3 Intel",
@@ -754,6 +759,10 @@ func trimEmbedText(s string, max int) string {
 		return s
 	}
 	return s[:max-3] + "..."
+}
+
+func marketSnapshotRow(price, chg24, mcap, fdv, liq, vol string) string {
+	return fmt.Sprintf("Price %s • 24h %s • MCap %s • FDV %s • Liq %s • Vol %s", price, chg24, mcap, fdv, liq, vol)
 }
 
 func normalizeContractKey(addr string) string {
