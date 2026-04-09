@@ -60,6 +60,12 @@ type dexPair struct {
 	PriceChange struct {
 		H24 float64 `json:"h24"`
 	} `json:"priceChange"`
+	Txns struct {
+		H24 struct {
+			Buys  int `json:"buys"`
+			Sells int `json:"sells"`
+		} `json:"h24"`
+	} `json:"txns"`
 	Info struct {
 		Websites []struct {
 			Label string `json:"label"`
@@ -696,28 +702,24 @@ func buildWeb3SignalFields(cfg web3ModuleConfig, pair *dexPair, tokenAddr string
 	if pair == nil {
 		return nil
 	}
-	fields := make([]*discordgo.MessageEmbedField, 0, 8)
+	lines := make([]string, 0, 8)
 
-	if cfg.WhaleAlertsEnabled && pair.Volume.H24 >= cfg.WhaleMinTradeUSD {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Whale Flow",
-			Inline: false,
-			Value:  fmt.Sprintf("24h volume %s crossed whale threshold %s.", formatUSDCompact(pair.Volume.H24), formatUSDCompact(cfg.WhaleMinTradeUSD)),
-		})
+	if cfg.WhaleAlertsEnabled {
+		buys := pair.Txns.H24.Buys
+		sells := pair.Txns.H24.Sells
+		total := buys + sells
+		if total > 0 && pair.Volume.H24 > 0 {
+			estBuyUSD := pair.Volume.H24 * (float64(buys) / float64(total))
+			if estBuyUSD >= cfg.WhaleMinTradeUSD && buys > sells && change24h > 0 {
+				lines = append(lines, fmt.Sprintf("Whale Buy Pressure: est buy-side %s (thr %s)", formatUSDCompact(estBuyUSD), formatUSDCompact(cfg.WhaleMinTradeUSD)))
+			}
+		}
 	}
 	if cfg.PriceAlertsEnabled {
 		if change24h >= cfg.PriceAlertPumpPct {
-			fields = append(fields, &discordgo.MessageEmbedField{
-				Name:   "Price Alert",
-				Inline: false,
-				Value:  fmt.Sprintf("Pump signal: %s in 24h (threshold +%.0f%%).", formatPercent(change24h), cfg.PriceAlertPumpPct),
-			})
+			lines = append(lines, fmt.Sprintf("Price Alert: pump %s (thr +%.0f%%)", formatPercent(change24h), cfg.PriceAlertPumpPct))
 		} else if change24h <= -cfg.PriceAlertDumpPct {
-			fields = append(fields, &discordgo.MessageEmbedField{
-				Name:   "Price Alert",
-				Inline: false,
-				Value:  fmt.Sprintf("Dump signal: %s in 24h (threshold -%.0f%%).", formatPercent(change24h), cfg.PriceAlertDumpPct),
-			})
+			lines = append(lines, fmt.Sprintf("Price Alert: dump %s (thr -%.0f%%)", formatPercent(change24h), cfg.PriceAlertDumpPct))
 		}
 	}
 	if cfg.HealthChecksEnabled {
@@ -725,93 +727,67 @@ func buildWeb3SignalFields(cfg web3ModuleConfig, pair *dexPair, tokenAddr string
 		if pair.Liquidity.USD < cfg.HealthMinLiquidityUSD {
 			liqStatus = "thin-liquidity"
 		}
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Health Check",
-			Inline: false,
-			Value:  fmt.Sprintf("%s • Liquidity %s (min %s)", liqStatus, formatUSDCompact(pair.Liquidity.USD), formatUSDCompact(cfg.HealthMinLiquidityUSD)),
-		})
+		lines = append(lines, fmt.Sprintf("Health: %s • Liq %s (min %s)", liqStatus, formatUSDCompact(pair.Liquidity.USD), formatUSDCompact(cfg.HealthMinLiquidityUSD)))
 	}
 	if cfg.MiniTAEnabled {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Mini TA",
-			Inline: false,
-			Value:  miniTASummary(change24h, pair.Volume.H24, pair.Liquidity.USD),
-		})
+		lines = append(lines, "Mini TA: "+miniTASummary(change24h, pair.Volume.H24, pair.Liquidity.USD))
 	}
 	if cfg.TrendSignalsEnabled {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Trend Signal",
-			Inline: false,
-			Value:  trendSummary(change24h, pair.Volume.H24, pair.Liquidity.USD, 0),
-		})
+		lines = append(lines, "Trend: "+trendSummary(change24h, pair.Volume.H24, pair.Liquidity.USD, 0))
 	}
 	if cfg.RugRiskEnabled {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Rug Risk",
-			Inline: false,
-			Value:  rugRiskSummary(pair.Liquidity.USD, mcap, pair.Volume.H24),
-		})
+		lines = append(lines, "Rug Risk: "+rugRiskSummary(pair.Liquidity.USD, mcap, pair.Volume.H24))
 	}
 	if cfg.HolderViewEnabled {
 		if holders := explorerHoldersURL(pair.ChainID, tokenAddr); holders != "" {
-			fields = append(fields, &discordgo.MessageEmbedField{
-				Name:   "Holder View",
-				Inline: false,
-				Value:  fmt.Sprintf("[Open holders](%s)", holders),
-			})
+			lines = append(lines, fmt.Sprintf("Holder View: [Open holders](%s)", holders))
 		}
 	}
 	if cfg.WalletWatchEnabled && tokenAddr != "" {
 		if _, ok := cfg.WalletWatchlist[normalizeContractKey(tokenAddr)]; ok {
-			fields = append(fields, &discordgo.MessageEmbedField{
-				Name:   "Watchlist Match",
-				Inline: false,
-				Value:  "Token contract matched this guild wallet/token watchlist.",
-			})
+			lines = append(lines, "Watchlist: token matched your guild watchlist")
 		}
 	}
 	if cfg.ConfidenceEnabled {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Market Signal Confidence",
-			Inline: false,
-			Value:  confidenceSummary(pair.Liquidity.USD, 0, 0, pair.Volume.H24, mcap, currentPrice, first, created),
-		})
+		lines = append(lines, "Confidence: "+confidenceSummary(pair.Liquidity.USD, 0, 0, pair.Volume.H24, mcap, currentPrice, first, created))
 	}
-	return fields
+	if len(lines) == 0 {
+		return nil
+	}
+	return []*discordgo.MessageEmbedField{
+		{
+			Name:   "Signal Summary",
+			Inline: false,
+			Value:  trimEmbedText(strings.Join(lines, "\n"), 1024),
+		},
+	}
 }
 
 func buildCoinGeckoSignalFields(cfg web3ModuleConfig, currentPrice, change24h, mcap, fdv, volume float64, tick cgTickerStats, first models.Web3FirstScanRow, created bool) []*discordgo.MessageEmbedField {
-	fields := make([]*discordgo.MessageEmbedField, 0, 3)
+	lines := make([]string, 0, 3)
 	if cfg.PriceAlertsEnabled {
 		if change24h >= cfg.PriceAlertPumpPct {
-			fields = append(fields, &discordgo.MessageEmbedField{
-				Name:   "Price Alert",
-				Inline: false,
-				Value:  fmt.Sprintf("Pump signal: %s in 24h (threshold +%.0f%%).", formatPercent(change24h), cfg.PriceAlertPumpPct),
-			})
+			lines = append(lines, fmt.Sprintf("Price Alert: pump %s (thr +%.0f%%)", formatPercent(change24h), cfg.PriceAlertPumpPct))
 		} else if change24h <= -cfg.PriceAlertDumpPct {
-			fields = append(fields, &discordgo.MessageEmbedField{
-				Name:   "Price Alert",
-				Inline: false,
-				Value:  fmt.Sprintf("Dump signal: %s in 24h (threshold -%.0f%%).", formatPercent(change24h), cfg.PriceAlertDumpPct),
-			})
+			lines = append(lines, fmt.Sprintf("Price Alert: dump %s (thr -%.0f%%)", formatPercent(change24h), cfg.PriceAlertDumpPct))
 		}
 	}
 	if cfg.TrendSignalsEnabled {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Trend Signal",
-			Inline: false,
-			Value:  trendSummary(change24h, volume, 0, (tick.DepthUpUSD+tick.DepthDownUSD)/2),
-		})
+		lines = append(lines, "Trend: "+trendSummary(change24h, volume, 0, (tick.DepthUpUSD+tick.DepthDownUSD)/2))
 	}
 	if cfg.ConfidenceEnabled {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   "Market Signal Confidence",
-			Inline: false,
-			Value:  confidenceSummary(0, tick.DepthUpUSD, tick.DepthDownUSD, volume, maxFloat(mcap, fdv), currentPrice, first, created),
-		})
+		lines = append(lines, "Confidence: "+confidenceSummary(0, tick.DepthUpUSD, tick.DepthDownUSD, volume, maxFloat(mcap, fdv), currentPrice, first, created))
 	}
-	return fields
+	if len(lines) == 0 {
+		return nil
+	}
+	return []*discordgo.MessageEmbedField{
+		{
+			Name:   "Signal Summary",
+			Inline: false,
+			Value:  trimEmbedText(strings.Join(lines, "\n"), 1024),
+		},
+	}
 }
 
 func miniTASummary(change24h, vol24h, liq float64) string {
@@ -948,7 +924,7 @@ func confidenceSummary(liquidity, depthUp, depthDown, volume, mcap, price float6
 	if len(reasons) == 0 {
 		reasons = append(reasons, "baseline market profile only")
 	}
-	return fmt.Sprintf("%d/100 (%s confidence)\nBased on: %s", score, label, strings.Join(reasons, ", "))
+	return fmt.Sprintf("%d/100 (%s) • %s", score, label, strings.Join(reasons, ", "))
 }
 
 func chooseBestDexPair(pairs []dexPair, sig web3Signal) *dexPair {
