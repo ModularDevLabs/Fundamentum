@@ -2134,6 +2134,33 @@
               </div>
               <p class="module-note">Tip: optional analysis fields only appear when their toggle is enabled and source data is available for that asset.</p>
             </article>
+            <article class="module-card module-guide-card" id="moduleWeb3GuideCard">
+              <div class="module-head">
+                <div class="module-title">How To Use</div>
+              </div>
+              <ul class="module-guide-list">
+                <li>Triggers: <code>$TICKER</code>, token contract addresses, and optional text commands.</li>
+                <li>Command: <code>!scan &lt;ticker|contract&gt;</code> scans a ticker or contract and posts the same Web3 intel embed.</li>
+                <li>Command: <code>/scan &lt;ticker|contract&gt;</code> slash-style text trigger for the same scan behavior.</li>
+                <li>Command: <code>!token &lt;ticker|contract&gt;</code> alias of scan.</li>
+                <li>Command: <code>!ca &lt;contract&gt;</code> contract-focused alias of scan.</li>
+                <li>CoinGecko is attempted first for cash-tags; if not found, ticker lookup falls back to Dexscreener.</li>
+                <li>Allowed channel IDs restrict lookups to selected channels; leave blank for all channels.</li>
+                <li>Anti-spam + cooldown prevent repeated responses for the same asset in short windows.</li>
+              </ul>
+              <div class="module-guide-hint">
+                <strong>Feature Reference</strong><br />
+                <code>Price alerts</code>: adds a pump/dump field when 24h movement crosses thresholds.<br />
+                <code>Whale alerts</code>: adds whale-flow field when 24h volume crosses the USD threshold.<br />
+                <code>Health checks</code>: reports healthy vs thin-liquidity using your min liquidity value.<br />
+                <code>Mini TA</code>: momentum + turnover summary.<br />
+                <code>Trend signals</code>: directional trend with conviction estimate.<br />
+                <code>Rug risk</code>: liquidity/cap/flow heuristic risk callout.<br />
+                <code>Holder view</code>: adds explorer holder links when chain supports them.<br />
+                <code>Wallet watch</code>: highlights when scanned token matches your watchlist.<br />
+                <code>Confidence score</code>: aggregate 0-100 confidence indicator from market profile.
+              </div>
+            </article>
           </div>
           <div class="panel-actions panel-actions-compact">
             <button id="web3IntelSave" class="ghost">Save web3 intel module</button>
