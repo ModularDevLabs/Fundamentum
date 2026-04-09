@@ -724,7 +724,7 @@ Each schedule contains:
 - UI label: `Whale alerts enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `false`
-- Notes: adds whale-flow field when 24h volume threshold is crossed.
+- Notes: detects large recent buy trades from pool trade feeds when available; otherwise falls back to estimated buy-pressure signal.
 
 100. `web3_whale_min_trade_usd`
 - UI label: `Whale min trade USD` (Web3 Intel module)
@@ -735,31 +735,37 @@ Each schedule contains:
 - UI label: `Health checks enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
+- Notes: legacy setting; no longer shown in UI.
 
 102. `web3_health_min_liquidity_usd`
 - UI label: `Health min liquidity USD` (Web3 Intel module)
 - Type: integer (USD)
 - Default: `20000`
+- Notes: legacy setting; no longer shown in UI.
 
 103. `web3_mini_ta_enabled`
 - UI label: `Mini TA enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `false`
+- Notes: legacy setting; no longer shown in UI.
 
 104. `web3_trend_signals_enabled`
 - UI label: `Trend signals enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
+- Notes: legacy setting; no longer shown in UI.
 
 105. `web3_rug_risk_enabled`
 - UI label: `Rug risk enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
+- Notes: legacy setting; no longer shown in UI.
 
 106. `web3_holder_view_enabled`
 - UI label: `Holder view enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
+- Notes: legacy setting; no longer shown in UI.
 
 107. `web3_wallet_watch_enabled`
 - UI label: `Wallet watch enabled` (Web3 Intel module)
@@ -776,6 +782,7 @@ Each schedule contains:
 - UI label: `Confidence score enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
+- Notes: legacy setting; no longer shown in UI.
 
 ## Giveaways Records
 

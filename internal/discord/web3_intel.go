@@ -143,23 +143,16 @@ type quickLink struct {
 }
 
 type web3ModuleConfig struct {
-	WhaleAlertsEnabled    bool
-	WhaleMinTradeUSD      float64
-	PriceAlertsEnabled    bool
-	PriceAlertPumpPct     float64
-	PriceAlertDumpPct     float64
-	HealthChecksEnabled   bool
-	HealthMinLiquidityUSD float64
-	MiniTAEnabled         bool
-	TrendSignalsEnabled   bool
-	RugRiskEnabled        bool
-	HolderViewEnabled     bool
-	WalletWatchEnabled    bool
-	WalletWatchlist       map[string]struct{}
-	ConfidenceEnabled     bool
-	CommandsEnabled       bool
-	AntiSpamEnabled       bool
-	PerTokenCooldownSec   time.Duration
+	WhaleAlertsEnabled  bool
+	WhaleMinTradeUSD    float64
+	PriceAlertsEnabled  bool
+	PriceAlertPumpPct   float64
+	PriceAlertDumpPct   float64
+	WalletWatchEnabled  bool
+	WalletWatchlist     map[string]struct{}
+	CommandsEnabled     bool
+	AntiSpamEnabled     bool
+	PerTokenCooldownSec time.Duration
 }
 
 func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.MessageCreate, settings models.GuildSettings) {
@@ -221,23 +214,16 @@ func buildWeb3ModuleConfig(settings models.GuildSettings) web3ModuleConfig {
 		cooldownSec = 30
 	}
 	return web3ModuleConfig{
-		WhaleAlertsEnabled:    settings.Web3WhaleAlertsEnabled,
-		WhaleMinTradeUSD:      float64(settings.Web3WhaleMinTradeUSD),
-		PriceAlertsEnabled:    settings.Web3PriceAlertsEnabled,
-		PriceAlertPumpPct:     float64(settings.Web3PriceAlertPumpPct),
-		PriceAlertDumpPct:     float64(settings.Web3PriceAlertDumpPct),
-		HealthChecksEnabled:   settings.Web3HealthChecksEnabled,
-		HealthMinLiquidityUSD: float64(settings.Web3HealthMinLiquidityUSD),
-		MiniTAEnabled:         settings.Web3MiniTAEnabled,
-		TrendSignalsEnabled:   settings.Web3TrendSignalsEnabled,
-		RugRiskEnabled:        settings.Web3RugRiskEnabled,
-		HolderViewEnabled:     settings.Web3HolderViewEnabled,
-		WalletWatchEnabled:    settings.Web3WalletWatchEnabled,
-		WalletWatchlist:       watch,
-		ConfidenceEnabled:     settings.Web3ConfidenceScoreEnabled,
-		CommandsEnabled:       settings.Web3CommandsEnabled,
-		AntiSpamEnabled:       settings.Web3AntiSpamEnabled,
-		PerTokenCooldownSec:   time.Duration(cooldownSec) * time.Second,
+		WhaleAlertsEnabled:  settings.Web3WhaleAlertsEnabled,
+		WhaleMinTradeUSD:    float64(settings.Web3WhaleMinTradeUSD),
+		PriceAlertsEnabled:  settings.Web3PriceAlertsEnabled,
+		PriceAlertPumpPct:   float64(settings.Web3PriceAlertPumpPct),
+		PriceAlertDumpPct:   float64(settings.Web3PriceAlertDumpPct),
+		WalletWatchEnabled:  settings.Web3WalletWatchEnabled,
+		WalletWatchlist:     watch,
+		CommandsEnabled:     settings.Web3CommandsEnabled,
+		AntiSpamEnabled:     settings.Web3AntiSpamEnabled,
+		PerTokenCooldownSec: time.Duration(cooldownSec) * time.Second,
 	}
 }
 
@@ -709,7 +695,7 @@ func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scanne
 	}, nil
 }
 
-func buildWeb3SignalFields(ctx context.Context, cfg web3ModuleConfig, pair *dexPair, tokenAddr string, currentPrice, change24h, mcap float64, first models.Web3FirstScanRow, created bool) []*discordgo.MessageEmbedField {
+func buildWeb3SignalFields(ctx context.Context, cfg web3ModuleConfig, pair *dexPair, tokenAddr string, _ float64, change24h, _ float64, _ models.Web3FirstScanRow, _ bool) []*discordgo.MessageEmbedField {
 	if pair == nil {
 		return nil
 	}
@@ -737,34 +723,10 @@ func buildWeb3SignalFields(ctx context.Context, cfg web3ModuleConfig, pair *dexP
 			lines = append(lines, fmt.Sprintf("Price Alert: dump %s (thr -%.0f%%)", formatPercent(change24h), cfg.PriceAlertDumpPct))
 		}
 	}
-	if cfg.HealthChecksEnabled {
-		liqStatus := "healthy"
-		if pair.Liquidity.USD < cfg.HealthMinLiquidityUSD {
-			liqStatus = "thin-liquidity"
-		}
-		lines = append(lines, fmt.Sprintf("Health: %s • Liq %s (min %s)", liqStatus, formatUSDCompact(pair.Liquidity.USD), formatUSDCompact(cfg.HealthMinLiquidityUSD)))
-	}
-	if cfg.MiniTAEnabled {
-		lines = append(lines, "Mini TA: "+miniTASummary(change24h, pair.Volume.H24, pair.Liquidity.USD))
-	}
-	if cfg.TrendSignalsEnabled {
-		lines = append(lines, "Trend: "+trendSummary(change24h, pair.Volume.H24, pair.Liquidity.USD, 0))
-	}
-	if cfg.RugRiskEnabled {
-		lines = append(lines, "Rug Risk: "+rugRiskSummary(pair.Liquidity.USD, mcap, pair.Volume.H24))
-	}
-	if cfg.HolderViewEnabled {
-		if holders := explorerHoldersURL(pair.ChainID, tokenAddr); holders != "" {
-			lines = append(lines, fmt.Sprintf("Holder View: [Open holders](%s)", holders))
-		}
-	}
 	if cfg.WalletWatchEnabled && tokenAddr != "" {
 		if _, ok := cfg.WalletWatchlist[normalizeContractKey(tokenAddr)]; ok {
 			lines = append(lines, "Watchlist: token matched your guild watchlist")
 		}
-	}
-	if cfg.ConfidenceEnabled {
-		lines = append(lines, "Confidence: "+confidenceSummary(pair.Liquidity.USD, 0, 0, pair.Volume.H24, mcap, currentPrice, first, created))
 	}
 	if len(lines) == 0 {
 		return nil
@@ -778,8 +740,8 @@ func buildWeb3SignalFields(ctx context.Context, cfg web3ModuleConfig, pair *dexP
 	}
 }
 
-func buildCoinGeckoSignalFields(cfg web3ModuleConfig, currentPrice, change24h, mcap, fdv, volume float64, tick cgTickerStats, first models.Web3FirstScanRow, created bool) []*discordgo.MessageEmbedField {
-	lines := make([]string, 0, 3)
+func buildCoinGeckoSignalFields(cfg web3ModuleConfig, _ float64, change24h, _, _, _ float64, _ cgTickerStats, _ models.Web3FirstScanRow, _ bool) []*discordgo.MessageEmbedField {
+	lines := make([]string, 0, 1)
 	if cfg.PriceAlertsEnabled {
 		if change24h >= cfg.PriceAlertPumpPct {
 			lines = append(lines, fmt.Sprintf("Price Alert: pump %s (thr +%.0f%%)", formatPercent(change24h), cfg.PriceAlertPumpPct))
@@ -787,12 +749,6 @@ func buildCoinGeckoSignalFields(cfg web3ModuleConfig, currentPrice, change24h, m
 			lines = append(lines, fmt.Sprintf("Price Alert: dump %s (thr -%.0f%%)", formatPercent(change24h), cfg.PriceAlertDumpPct))
 		}
 	}
-	if cfg.TrendSignalsEnabled {
-		lines = append(lines, "Trend: "+trendSummary(change24h, volume, 0, (tick.DepthUpUSD+tick.DepthDownUSD)/2))
-	}
-	if cfg.ConfidenceEnabled {
-		lines = append(lines, "Confidence: "+confidenceSummary(0, tick.DepthUpUSD, tick.DepthDownUSD, volume, maxFloat(mcap, fdv), currentPrice, first, created))
-	}
 	if len(lines) == 0 {
 		return nil
 	}
@@ -803,143 +759,6 @@ func buildCoinGeckoSignalFields(cfg web3ModuleConfig, currentPrice, change24h, m
 			Value:  trimEmbedText(strings.Join(lines, "\n"), 1024),
 		},
 	}
-}
-
-func miniTASummary(change24h, vol24h, liq float64) string {
-	momentum := "sideways"
-	switch {
-	case change24h >= 12:
-		momentum = "strong bullish momentum"
-	case change24h >= 3:
-		momentum = "bullish momentum"
-	case change24h <= -12:
-		momentum = "strong bearish momentum"
-	case change24h <= -3:
-		momentum = "bearish momentum"
-	}
-	participation := "normal participation"
-	if liq > 0 && vol24h/liq > 2.0 {
-		participation = "high turnover"
-	} else if vol24h > 0 && liq > 0 && vol24h/liq < 0.2 {
-		participation = "low turnover"
-	}
-	return fmt.Sprintf("%s • %s", momentum, participation)
-}
-
-func trendSummary(change24h, vol24h, liq, depthAvg float64) string {
-	trend := "neutral"
-	switch {
-	case change24h >= 8:
-		trend = "uptrend"
-	case change24h <= -8:
-		trend = "downtrend"
-	}
-	conviction := "moderate conviction"
-	denominator := liq
-	if denominator <= 0 {
-		denominator = depthAvg
-	}
-	if denominator > 0 && vol24h/denominator >= 1.2 {
-		conviction = "high conviction"
-	} else if denominator > 0 && vol24h/denominator < 0.25 {
-		conviction = "low conviction"
-	}
-	return fmt.Sprintf("%s • %s", trend, conviction)
-}
-
-func rugRiskSummary(liquidity, mcap, volume float64) string {
-	if liquidity <= 0 {
-		return "high risk • no liquidity data"
-	}
-	score := 0
-	if liquidity < 10000 {
-		score += 2
-	} else if liquidity < 25000 {
-		score++
-	}
-	if mcap > 0 {
-		ratio := liquidity / mcap
-		if ratio < 0.01 {
-			score += 2
-		} else if ratio < 0.03 {
-			score++
-		}
-	}
-	if volume > 0 && liquidity > 0 && volume/liquidity > 6 {
-		score++
-	}
-	switch {
-	case score >= 4:
-		return "high risk • thin liquidity relative to size/flow"
-	case score >= 2:
-		return "medium risk • monitor liquidity and flow consistency"
-	default:
-		return "lower risk • liquidity profile looks healthier"
-	}
-}
-
-func confidenceSummary(liquidity, depthUp, depthDown, volume, mcap, price float64, first models.Web3FirstScanRow, created bool) string {
-	score := 50
-	reasons := make([]string, 0, 4)
-	if liquidity >= 100000 {
-		score += 20
-		reasons = append(reasons, "deep onchain liquidity")
-	} else if liquidity >= 25000 {
-		score += 10
-		reasons = append(reasons, "usable onchain liquidity")
-	}
-	depthAvg := (depthUp + depthDown) / 2
-	if liquidity <= 0 {
-		if depthAvg >= 250000 {
-			score += 20
-			reasons = append(reasons, "strong CEX depth")
-		} else if depthAvg >= 50000 {
-			score += 10
-			reasons = append(reasons, "moderate CEX depth")
-		}
-	}
-	if mcap >= 5_000_000 {
-		score += 10
-		reasons = append(reasons, "established market cap")
-	}
-	denominator := liquidity
-	if denominator <= 0 {
-		denominator = depthAvg
-	}
-	if volume > 0 && denominator > 0 {
-		ratio := volume / denominator
-		if ratio >= 0.2 && ratio <= 4 {
-			score += 10
-			reasons = append(reasons, "healthy turnover")
-		}
-	}
-	if first.FirstPriceUSD > 0 && price > 0 && !created {
-		move := math.Abs((price - first.FirstPriceUSD) / first.FirstPriceUSD * 100)
-		if move > 75 {
-			score -= 10
-			reasons = append(reasons, "high post-scan volatility")
-		}
-	}
-	if liquidity <= 0 && depthAvg <= 0 {
-		score -= 8
-		reasons = append(reasons, "missing depth/liquidity")
-	}
-	if score > 100 {
-		score = 100
-	}
-	if score < 0 {
-		score = 0
-	}
-	label := "moderate"
-	if score >= 75 {
-		label = "high"
-	} else if score <= 35 {
-		label = "low"
-	}
-	if len(reasons) == 0 {
-		reasons = append(reasons, "baseline market profile only")
-	}
-	return fmt.Sprintf("%d/100 (%s) • %s", score, label, strings.Join(reasons, ", "))
 }
 
 func chooseBestDexPair(pairs []dexPair, sig web3Signal) *dexPair {

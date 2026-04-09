@@ -2075,52 +2075,6 @@
                   <input id="settingsWeb3WhaleMinTradeUsd" type="number" min="1000" step="1000" />
                 </label>
                 <label>
-                  Health checks enabled
-                  <select id="settingsWeb3HealthChecksEnabled">
-                    <option value="true">Enabled</option>
-                    <option value="false">Disabled</option>
-                  </select>
-                </label>
-                <label>
-                  Health min liquidity USD
-                  <input id="settingsWeb3HealthMinLiquidityUsd" type="number" min="1000" step="1000" />
-                </label>
-                <label>
-                  Mini TA enabled
-                  <select id="settingsWeb3MiniTaEnabled">
-                    <option value="false">Disabled</option>
-                    <option value="true">Enabled</option>
-                  </select>
-                </label>
-                <label>
-                  Trend signals enabled
-                  <select id="settingsWeb3TrendSignalsEnabled">
-                    <option value="true">Enabled</option>
-                    <option value="false">Disabled</option>
-                  </select>
-                </label>
-                <label>
-                  Rug risk enabled
-                  <select id="settingsWeb3RugRiskEnabled">
-                    <option value="true">Enabled</option>
-                    <option value="false">Disabled</option>
-                  </select>
-                </label>
-                <label>
-                  Holder view enabled
-                  <select id="settingsWeb3HolderViewEnabled">
-                    <option value="true">Enabled</option>
-                    <option value="false">Disabled</option>
-                  </select>
-                </label>
-                <label>
-                  Confidence score enabled
-                  <select id="settingsWeb3ConfidenceScoreEnabled">
-                    <option value="true">Enabled</option>
-                    <option value="false">Disabled</option>
-                  </select>
-                </label>
-                <label>
                   Wallet watch enabled
                   <select id="settingsWeb3WalletWatchEnabled">
                     <option value="false">Disabled</option>
@@ -2153,13 +2107,8 @@
                 <strong>Feature Reference</strong><br />
                 <code>Price alerts</code>: adds a pump/dump field when 24h movement crosses thresholds.<br />
                 <code>Whale alerts</code>: detects large recent buy trades from pool trade feeds when available; falls back to estimated buy-pressure from 24h tx mix.<br />
-                <code>Health checks</code>: reports healthy vs thin-liquidity using your min liquidity value.<br />
-                <code>Mini TA</code>: momentum + turnover summary.<br />
-                <code>Trend signals</code>: directional trend with conviction estimate.<br />
-                <code>Rug risk</code>: liquidity/cap/flow heuristic risk callout.<br />
-                <code>Holder view</code>: adds explorer holder links when chain supports them.<br />
                 <code>Wallet watch</code>: highlights when scanned token matches your watchlist.<br />
-                <code>Confidence score</code>: aggregate 0-100 market-signal confidence from liquidity/depth, turnover, market cap, and volatility.
+                <code>Signal summary</code>: compact block with only high-value enabled signals.
               </div>
             </article>
           </div>

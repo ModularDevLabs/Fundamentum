@@ -154,7 +154,7 @@ const MODULE_GUIDES = {
   trivia: { title: 'How To Use', points: ['Enable trivia, then generate a question.', 'Submit answers with acting user ID to award score.', 'Refresh leaderboard to track competition.'] },
   calendar: { title: 'How To Use', points: ['Enable calendar before creating events.', 'Create events with ISO start time and creator user ID.', 'Use RSVP controls and view responses per event.'] },
   confessions: { title: 'How To Use', points: ['Enable confessions and set channel/review settings.', 'Review pending items and approve/reject them.', 'Approved confessions are posted anonymously to configured channel.'] },
-  web3intel: { title: 'How To Use', points: ['Enable the module first, then tune optional analysis toggles in this module panel.', 'Set Allowed channel IDs to restrict Web3 lookups to specific channels (leave blank for all channels).', 'Supported triggers: $cash-tags, token contract addresses, and command scans.', 'Command examples: !scan pepe --chain base, !scan pepe --dex uniswap --exact, !scan 0x... --pair 0xPAIR.', 'Set anti-spam cooldown to control repeated posts for the same asset.', 'Optional sections (price alerts, risk, health, confidence, holder links) render only when enabled and source data exists.'] },
+  web3intel: { title: 'How To Use', points: ['Enable the module first, then tune optional signal toggles in this module panel.', 'Set Allowed channel IDs to restrict Web3 lookups to specific channels (leave blank for all channels).', 'Supported triggers: $cash-tags, token contract addresses, and command scans.', 'Command examples: !scan pepe --chain base, !scan pepe --dex uniswap --exact, !scan 0x... --pair 0xPAIR.', 'Set anti-spam cooldown to control repeated posts for the same asset.', 'Signal Summary now focuses on price alerts, whale buy signal, and wallet watch match.'] },
 };
 const CORE_SETTINGS_TOOLTIPS = {
   settingsAdminPolicy: 'How to handle targets with Administrator permission: refuse, quarantine, or remove admin roles first.',
@@ -219,13 +219,6 @@ const WEB3_MODULE_TOOLTIPS = {
   settingsWeb3PriceAlertDumpPct: 'Dump alert threshold in percent (24h change less than or equal to negative this value).',
   settingsWeb3WhaleAlertsEnabled: 'Enable whale-buy detection from recent pool trade feeds (with buy-pressure estimate fallback when trade feed is unavailable).',
   settingsWeb3WhaleMinTradeUsd: 'Minimum single-buy size threshold (USD) for whale trade alerts; also used as fallback buy-pressure threshold.',
-  settingsWeb3HealthChecksEnabled: 'Enable liquidity health check output in Web3 embeds.',
-  settingsWeb3HealthMinLiquidityUsd: 'Minimum liquidity USD for healthy status.',
-  settingsWeb3MiniTaEnabled: 'Enable lightweight momentum + participation summary.',
-  settingsWeb3TrendSignalsEnabled: 'Enable directional trend signal derived from available 24h movement and turnover.',
-  settingsWeb3RugRiskEnabled: 'Enable simple liquidity/market-cap/turnover heuristic risk callout.',
-  settingsWeb3HolderViewEnabled: 'Include holder-distribution explorer links when chain explorer supports it.',
-  settingsWeb3ConfidenceScoreEnabled: 'Enable market-signal confidence score derived from liquidity/depth, turnover, market cap, and volatility.',
   settingsWeb3WalletWatchEnabled: 'Enable watchlist matching against token contracts in scans.',
   settingsWeb3WalletWatchlist: 'Comma or newline separated token/wallet addresses to highlight when matched.',
 };
@@ -1040,13 +1033,6 @@ async function loadSettings() {
   qs('#settingsWeb3PriceAlertDumpPct').value = cfg.web3_price_alert_dump_pct || 25;
   qs('#settingsWeb3WhaleAlertsEnabled').value = String(!!cfg.web3_whale_alerts_enabled);
   qs('#settingsWeb3WhaleMinTradeUsd').value = cfg.web3_whale_min_trade_usd || 25000;
-  qs('#settingsWeb3HealthChecksEnabled').value = String(cfg.web3_health_checks_enabled !== false);
-  qs('#settingsWeb3HealthMinLiquidityUsd').value = cfg.web3_health_min_liquidity_usd || 20000;
-  qs('#settingsWeb3MiniTaEnabled').value = String(!!cfg.web3_mini_ta_enabled);
-  qs('#settingsWeb3TrendSignalsEnabled').value = String(cfg.web3_trend_signals_enabled !== false);
-  qs('#settingsWeb3RugRiskEnabled').value = String(cfg.web3_rug_risk_enabled !== false);
-  qs('#settingsWeb3HolderViewEnabled').value = String(cfg.web3_holder_view_enabled !== false);
-  qs('#settingsWeb3ConfidenceScoreEnabled').value = String(cfg.web3_confidence_score_enabled !== false);
   qs('#settingsWeb3WalletWatchEnabled').value = String(!!cfg.web3_wallet_watch_enabled);
   qs('#settingsWeb3WalletWatchlist').value = (cfg.web3_wallet_watchlist || []).join('\n');
   refreshIncidentBanner(cfg);
@@ -3724,15 +3710,8 @@ async function saveWeb3IntelModule() {
       web3_price_alert_dump_pct: toInt('settingsWeb3PriceAlertDumpPct', 25),
       web3_whale_alerts_enabled: qs('#settingsWeb3WhaleAlertsEnabled').value === 'true',
       web3_whale_min_trade_usd: toInt('settingsWeb3WhaleMinTradeUsd', 25000),
-      web3_health_checks_enabled: qs('#settingsWeb3HealthChecksEnabled').value === 'true',
-      web3_health_min_liquidity_usd: toInt('settingsWeb3HealthMinLiquidityUsd', 20000),
-      web3_mini_ta_enabled: qs('#settingsWeb3MiniTaEnabled').value === 'true',
-      web3_trend_signals_enabled: qs('#settingsWeb3TrendSignalsEnabled').value === 'true',
-      web3_rug_risk_enabled: qs('#settingsWeb3RugRiskEnabled').value === 'true',
-      web3_holder_view_enabled: qs('#settingsWeb3HolderViewEnabled').value === 'true',
       web3_wallet_watch_enabled: qs('#settingsWeb3WalletWatchEnabled').value === 'true',
       web3_wallet_watchlist: watchlist,
-      web3_confidence_score_enabled: qs('#settingsWeb3ConfidenceScoreEnabled').value === 'true',
       feature_flags: {
         ...(current.feature_flags || {}),
         [FEATURE_WEB3_INTEL]: qs('#settingsWeb3IntelEnabled').value === 'true',
