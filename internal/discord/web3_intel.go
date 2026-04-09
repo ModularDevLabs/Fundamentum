@@ -21,6 +21,7 @@ var (
 	web3EVMContractRe = regexp.MustCompile(`(?i)\b0x[a-f0-9]{40}\b`)
 	web3SolAddressRe  = regexp.MustCompile(`\b[1-9A-HJ-NP-Za-km-z]{32,44}\b`)
 	web3CashTagRe     = regexp.MustCompile(`(?i)(?:^|\s)\$([a-z][a-z0-9._-]{1,31})\b`)
+	web3CommandRe     = regexp.MustCompile(`(?i)^(?:!|/)(?:scan|token|ca)\s+(\S+)`)
 	web3HTTPClient    = &http.Client{Timeout: 4 * time.Second}
 )
 
@@ -99,15 +100,42 @@ type quickLink struct {
 	URL   string
 }
 
+type web3ModuleConfig struct {
+	WhaleAlertsEnabled    bool
+	WhaleMinTradeUSD      float64
+	PriceAlertsEnabled    bool
+	PriceAlertPumpPct     float64
+	PriceAlertDumpPct     float64
+	HealthChecksEnabled   bool
+	HealthMinLiquidityUSD float64
+	MiniTAEnabled         bool
+	TrendSignalsEnabled   bool
+	RugRiskEnabled        bool
+	HolderViewEnabled     bool
+	WalletWatchEnabled    bool
+	WalletWatchlist       map[string]struct{}
+	ConfidenceEnabled     bool
+	CommandsEnabled       bool
+	AntiSpamEnabled       bool
+	PerTokenCooldownSec   time.Duration
+}
+
 func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.MessageCreate, settings models.GuildSettings) {
 	if !settings.FeatureEnabled(models.FeatureWeb3Intel) {
 		return
 	}
-	signal := detectWeb3Signal(m.Content)
+	cfg := buildWeb3ModuleConfig(settings)
+	signal := detectWeb3Signal(m.Content, cfg.CommandsEnabled)
 	if signal.Contract == "" && signal.CashTag == "" {
 		return
 	}
-	if !s.allowWeb3Lookup(m.ChannelID) {
+	assetKey := ""
+	if signal.Contract != "" {
+		assetKey = "contract:" + normalizeContractKey(signal.Contract)
+	} else {
+		assetKey = "cashtag:" + strings.ToLower(strings.TrimSpace(signal.CashTag))
+	}
+	if !s.allowWeb3Lookup(m.ChannelID, assetKey, cfg) {
 		return
 	}
 
@@ -118,9 +146,9 @@ func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.Messa
 	var err error
 	switch {
 	case signal.Contract != "":
-		embed, err = s.resolveContractIntelEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal.Contract)
+		embed, err = s.resolveContractIntelEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal.Contract, cfg)
 	case signal.CashTag != "":
-		embed, err = s.resolveCashTagEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal.CashTag)
+		embed, err = s.resolveCashTagEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal.CashTag, cfg)
 	}
 	if err != nil {
 		s.logger.Debug("web3 intel lookup failed guild=%s channel=%s err=%v", m.GuildID, m.ChannelID, err)
@@ -137,25 +165,89 @@ func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.Messa
 	}
 }
 
-func (s *Service) allowWeb3Lookup(channelID string) bool {
+func buildWeb3ModuleConfig(settings models.GuildSettings) web3ModuleConfig {
+	watch := map[string]struct{}{}
+	for _, raw := range settings.Web3WalletWatchlist {
+		val := normalizeContractKey(raw)
+		if val == "" {
+			continue
+		}
+		watch[val] = struct{}{}
+	}
+	cooldownSec := settings.Web3PerTokenCooldownSec
+	if cooldownSec <= 0 {
+		cooldownSec = 30
+	}
+	return web3ModuleConfig{
+		WhaleAlertsEnabled:    settings.Web3WhaleAlertsEnabled,
+		WhaleMinTradeUSD:      float64(settings.Web3WhaleMinTradeUSD),
+		PriceAlertsEnabled:    settings.Web3PriceAlertsEnabled,
+		PriceAlertPumpPct:     float64(settings.Web3PriceAlertPumpPct),
+		PriceAlertDumpPct:     float64(settings.Web3PriceAlertDumpPct),
+		HealthChecksEnabled:   settings.Web3HealthChecksEnabled,
+		HealthMinLiquidityUSD: float64(settings.Web3HealthMinLiquidityUSD),
+		MiniTAEnabled:         settings.Web3MiniTAEnabled,
+		TrendSignalsEnabled:   settings.Web3TrendSignalsEnabled,
+		RugRiskEnabled:        settings.Web3RugRiskEnabled,
+		HolderViewEnabled:     settings.Web3HolderViewEnabled,
+		WalletWatchEnabled:    settings.Web3WalletWatchEnabled,
+		WalletWatchlist:       watch,
+		ConfidenceEnabled:     settings.Web3ConfidenceScoreEnabled,
+		CommandsEnabled:       settings.Web3CommandsEnabled,
+		AntiSpamEnabled:       settings.Web3AntiSpamEnabled,
+		PerTokenCooldownSec:   time.Duration(cooldownSec) * time.Second,
+	}
+}
+
+func (s *Service) allowWeb3Lookup(channelID, assetKey string, cfg web3ModuleConfig) bool {
+	if !cfg.AntiSpamEnabled {
+		return true
+	}
 	if channelID == "" {
 		return false
 	}
 	s.web3Mu.Lock()
 	defer s.web3Mu.Unlock()
-	last := s.web3Last[channelID]
 	now := time.Now().UTC()
-	if !last.IsZero() && now.Sub(last) < 8*time.Second {
+	perChannelCooldown := cfg.PerTokenCooldownSec / 2
+	if perChannelCooldown < 4*time.Second {
+		perChannelCooldown = 4 * time.Second
+	}
+	last := s.web3Last[channelID]
+	if !last.IsZero() && now.Sub(last) < perChannelCooldown {
 		return false
+	}
+	if assetKey != "" {
+		lastAsset := s.web3LastAsset[assetKey]
+		if !lastAsset.IsZero() && now.Sub(lastAsset) < cfg.PerTokenCooldownSec {
+			return false
+		}
+		s.web3LastAsset[assetKey] = now
 	}
 	s.web3Last[channelID] = now
 	return true
 }
 
-func detectWeb3Signal(content string) web3Signal {
+func detectWeb3Signal(content string, commandsEnabled bool) web3Signal {
 	text := strings.TrimSpace(content)
 	if text == "" {
 		return web3Signal{}
+	}
+	if commandsEnabled {
+		cmdMatch := web3CommandRe.FindStringSubmatch(text)
+		if len(cmdMatch) >= 2 {
+			target := strings.TrimSpace(cmdMatch[1])
+			if target == "" {
+				return web3Signal{}
+			}
+			if strings.HasPrefix(target, "$") {
+				return web3Signal{CashTag: strings.ToLower(strings.TrimPrefix(target, "$"))}
+			}
+			if web3EVMContractRe.MatchString(target) || web3SolAddressRe.MatchString(target) {
+				return web3Signal{Contract: normalizeContractKey(target)}
+			}
+			return web3Signal{CashTag: strings.ToLower(target)}
+		}
 	}
 	evmLoc := web3EVMContractRe.FindStringIndex(text)
 	solLoc := web3SolAddressRe.FindStringIndex(text)
@@ -172,7 +264,7 @@ func detectWeb3Signal(content string) web3Signal {
 	return web3Signal{}
 }
 
-func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scannerUserID, scannerName, contract string) (*discordgo.MessageEmbed, error) {
+func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scannerUserID, scannerName, contract string, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
 	var dex dexScreenerTokenResponse
 	if err := web3FetchJSON(ctx, "https://api.dexscreener.com/latest/dex/tokens/"+url.PathEscape(contract), &dex); err != nil {
 		return nil, err
@@ -258,6 +350,7 @@ func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scanne
 		Value:  buildFirstScanField(firstScan, currentPrice, created),
 		Inline: false,
 	})
+	fields = append(fields, buildWeb3SignalFields(cfg, best, tokenAddr, currentPrice, best.PriceChange.H24, mcap, firstScan, created)...)
 
 	return &discordgo.MessageEmbed{
 		Title:       "Web3 Intel",
@@ -271,14 +364,14 @@ func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scanne
 	}, nil
 }
 
-func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserID, scannerName, token string) (*discordgo.MessageEmbed, error) {
+func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserID, scannerName, token string, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
 	var search cgSearchResponse
 	if err := web3FetchJSON(ctx, "https://api.coingecko.com/api/v3/search?query="+url.QueryEscape(token), &search); err != nil {
 		return nil, err
 	}
 	coin := chooseCoinGeckoCoin(search.Coins, token)
 	if coin == nil {
-		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, token)
+		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, token, cfg)
 	}
 	var markets []cgMarket
 	u := "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=" + url.QueryEscape(coin.ID)
@@ -286,7 +379,7 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 		return nil, err
 	}
 	if len(markets) == 0 {
-		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, token)
+		return s.resolveCashTagDexFallback(ctx, guildID, scannerUserID, scannerName, token, cfg)
 	}
 	m := markets[0]
 	fdv := 0.0
@@ -327,35 +420,38 @@ func (s *Service) resolveCashTagEmbed(ctx context.Context, guildID, scannerUserI
 		"n/a",
 		"n/a",
 	)
+	fields := []*discordgo.MessageEmbedField{
+		{
+			Name:   "Market Snapshot",
+			Inline: false,
+			Value:  stats,
+		},
+		{
+			Name:   "Quick Trade",
+			Inline: false,
+			Value: formatQuickLinks([]quickLink{
+				{Label: "Search DexScreener", URL: "https://dexscreener.com/?q=" + url.QueryEscape(strings.ToUpper(token))},
+				{Label: "CoinGecko", URL: "https://www.coingecko.com/en/coins/" + coin.ID},
+			}),
+		},
+		{
+			Name:   "First Scan",
+			Inline: false,
+			Value:  buildFirstScanField(firstScan, m.CurrentPrice, created),
+		},
+	}
+	fields = append(fields, buildCoinGeckoSignalFields(cfg, m.CurrentPrice, change, m.MarketCap, fdv, firstScan, created)...)
+
 	return &discordgo.MessageEmbed{
 		Title:       fmt.Sprintf("Web3 Intel • $%s", strings.ToUpper(token)),
 		Description: trimEmbedText(description, 1024),
 		Color:       0x3498db,
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "Market Snapshot",
-				Inline: false,
-				Value:  stats,
-			},
-			{
-				Name:   "Quick Trade",
-				Inline: false,
-				Value: formatQuickLinks([]quickLink{
-					{Label: "Search DexScreener", URL: "https://dexscreener.com/?q=" + url.QueryEscape(strings.ToUpper(token))},
-					{Label: "CoinGecko", URL: "https://www.coingecko.com/en/coins/" + coin.ID},
-				}),
-			},
-			{
-				Name:   "First Scan",
-				Inline: false,
-				Value:  buildFirstScanField(firstScan, m.CurrentPrice, created),
-			},
-		},
-		Timestamp: time.Now().UTC().Format(time.RFC3339),
+		Fields:      fields,
+		Timestamp:   time.Now().UTC().Format(time.RFC3339),
 	}, nil
 }
 
-func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scannerUserID, scannerName, token string) (*discordgo.MessageEmbed, error) {
+func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scannerUserID, scannerName, token string, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
 	var search dexScreenerSearchResponse
 	u := "https://api.dexscreener.com/latest/dex/search/?q=" + url.QueryEscape(strings.ToUpper(strings.TrimSpace(token)))
 	if err := web3FetchJSON(ctx, u, &search); err != nil {
@@ -436,6 +532,7 @@ func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scanne
 		Inline: false,
 		Value:  buildFirstScanField(firstScan, currentPrice, created),
 	})
+	fields = append(fields, buildWeb3SignalFields(cfg, best, tokenAddr, currentPrice, best.PriceChange.H24, maxFloat(best.MarketCap, best.FDV), firstScan, created)...)
 	description += "\nCA: `" + tokenAddr + "`"
 
 	return &discordgo.MessageEmbed{
@@ -448,6 +545,234 @@ func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scanne
 		},
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}, nil
+}
+
+func buildWeb3SignalFields(cfg web3ModuleConfig, pair *dexPair, tokenAddr string, currentPrice, change24h, mcap float64, first models.Web3FirstScanRow, created bool) []*discordgo.MessageEmbedField {
+	if pair == nil {
+		return nil
+	}
+	fields := make([]*discordgo.MessageEmbedField, 0, 8)
+
+	if cfg.WhaleAlertsEnabled && pair.Volume.H24 >= cfg.WhaleMinTradeUSD {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Whale Flow",
+			Inline: false,
+			Value:  fmt.Sprintf("24h volume %s crossed whale threshold %s.", formatUSDCompact(pair.Volume.H24), formatUSDCompact(cfg.WhaleMinTradeUSD)),
+		})
+	}
+	if cfg.PriceAlertsEnabled {
+		if change24h >= cfg.PriceAlertPumpPct {
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:   "Price Alert",
+				Inline: false,
+				Value:  fmt.Sprintf("Pump signal: %s in 24h (threshold +%.0f%%).", formatPercent(change24h), cfg.PriceAlertPumpPct),
+			})
+		} else if change24h <= -cfg.PriceAlertDumpPct {
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:   "Price Alert",
+				Inline: false,
+				Value:  fmt.Sprintf("Dump signal: %s in 24h (threshold -%.0f%%).", formatPercent(change24h), cfg.PriceAlertDumpPct),
+			})
+		}
+	}
+	if cfg.HealthChecksEnabled {
+		liqStatus := "healthy"
+		if pair.Liquidity.USD < cfg.HealthMinLiquidityUSD {
+			liqStatus = "thin-liquidity"
+		}
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Health Check",
+			Inline: false,
+			Value:  fmt.Sprintf("%s • Liquidity %s (min %s)", liqStatus, formatUSDCompact(pair.Liquidity.USD), formatUSDCompact(cfg.HealthMinLiquidityUSD)),
+		})
+	}
+	if cfg.MiniTAEnabled {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Mini TA",
+			Inline: false,
+			Value:  miniTASummary(change24h, pair.Volume.H24, pair.Liquidity.USD),
+		})
+	}
+	if cfg.TrendSignalsEnabled {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Trend Signal",
+			Inline: false,
+			Value:  trendSummary(change24h, pair.Volume.H24, pair.Liquidity.USD),
+		})
+	}
+	if cfg.RugRiskEnabled {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Rug Risk",
+			Inline: false,
+			Value:  rugRiskSummary(pair.Liquidity.USD, mcap, pair.Volume.H24),
+		})
+	}
+	if cfg.HolderViewEnabled {
+		if holders := explorerHoldersURL(pair.ChainID, tokenAddr); holders != "" {
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:   "Holder View",
+				Inline: false,
+				Value:  fmt.Sprintf("[Open holders](%s)", holders),
+			})
+		}
+	}
+	if cfg.WalletWatchEnabled && tokenAddr != "" {
+		if _, ok := cfg.WalletWatchlist[normalizeContractKey(tokenAddr)]; ok {
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:   "Watchlist Match",
+				Inline: false,
+				Value:  "Token contract matched this guild wallet/token watchlist.",
+			})
+		}
+	}
+	if cfg.ConfidenceEnabled {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Confidence",
+			Inline: false,
+			Value:  confidenceSummary(pair.Liquidity.USD, pair.Volume.H24, mcap, currentPrice, first, created),
+		})
+	}
+	return fields
+}
+
+func buildCoinGeckoSignalFields(cfg web3ModuleConfig, currentPrice, change24h, mcap, fdv float64, first models.Web3FirstScanRow, created bool) []*discordgo.MessageEmbedField {
+	fields := make([]*discordgo.MessageEmbedField, 0, 3)
+	if cfg.PriceAlertsEnabled {
+		if change24h >= cfg.PriceAlertPumpPct {
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:   "Price Alert",
+				Inline: false,
+				Value:  fmt.Sprintf("Pump signal: %s in 24h (threshold +%.0f%%).", formatPercent(change24h), cfg.PriceAlertPumpPct),
+			})
+		} else if change24h <= -cfg.PriceAlertDumpPct {
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:   "Price Alert",
+				Inline: false,
+				Value:  fmt.Sprintf("Dump signal: %s in 24h (threshold -%.0f%%).", formatPercent(change24h), cfg.PriceAlertDumpPct),
+			})
+		}
+	}
+	if cfg.TrendSignalsEnabled {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Trend Signal",
+			Inline: false,
+			Value:  trendSummary(change24h, 0, 0),
+		})
+	}
+	if cfg.ConfidenceEnabled {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Confidence",
+			Inline: false,
+			Value:  confidenceSummary(0, 0, maxFloat(mcap, fdv), currentPrice, first, created),
+		})
+	}
+	return fields
+}
+
+func miniTASummary(change24h, vol24h, liq float64) string {
+	momentum := "sideways"
+	switch {
+	case change24h >= 12:
+		momentum = "strong bullish momentum"
+	case change24h >= 3:
+		momentum = "bullish momentum"
+	case change24h <= -12:
+		momentum = "strong bearish momentum"
+	case change24h <= -3:
+		momentum = "bearish momentum"
+	}
+	participation := "normal participation"
+	if liq > 0 && vol24h/liq > 2.0 {
+		participation = "high turnover"
+	} else if vol24h > 0 && liq > 0 && vol24h/liq < 0.2 {
+		participation = "low turnover"
+	}
+	return fmt.Sprintf("%s • %s", momentum, participation)
+}
+
+func trendSummary(change24h, vol24h, liq float64) string {
+	trend := "neutral"
+	switch {
+	case change24h >= 8:
+		trend = "uptrend"
+	case change24h <= -8:
+		trend = "downtrend"
+	}
+	conviction := "moderate conviction"
+	if liq > 0 && vol24h/liq >= 1.2 {
+		conviction = "high conviction"
+	} else if liq > 0 && vol24h/liq < 0.25 {
+		conviction = "low conviction"
+	}
+	return fmt.Sprintf("%s • %s", trend, conviction)
+}
+
+func rugRiskSummary(liquidity, mcap, volume float64) string {
+	if liquidity <= 0 {
+		return "high risk • no liquidity data"
+	}
+	score := 0
+	if liquidity < 10000 {
+		score += 2
+	} else if liquidity < 25000 {
+		score++
+	}
+	if mcap > 0 {
+		ratio := liquidity / mcap
+		if ratio < 0.01 {
+			score += 2
+		} else if ratio < 0.03 {
+			score++
+		}
+	}
+	if volume > 0 && liquidity > 0 && volume/liquidity > 6 {
+		score++
+	}
+	switch {
+	case score >= 4:
+		return "high risk • thin liquidity relative to size/flow"
+	case score >= 2:
+		return "medium risk • monitor liquidity and flow consistency"
+	default:
+		return "lower risk • liquidity profile looks healthier"
+	}
+}
+
+func confidenceSummary(liquidity, volume, mcap, price float64, first models.Web3FirstScanRow, created bool) string {
+	score := 50
+	if liquidity >= 100000 {
+		score += 20
+	} else if liquidity >= 25000 {
+		score += 10
+	}
+	if mcap >= 5_000_000 {
+		score += 10
+	}
+	if volume > 0 && liquidity > 0 {
+		ratio := volume / liquidity
+		if ratio >= 0.2 && ratio <= 4 {
+			score += 10
+		}
+	}
+	if first.FirstPriceUSD > 0 && price > 0 && !created {
+		move := math.Abs((price - first.FirstPriceUSD) / first.FirstPriceUSD * 100)
+		if move > 75 {
+			score -= 10
+		}
+	}
+	if score > 100 {
+		score = 100
+	}
+	if score < 0 {
+		score = 0
+	}
+	label := "moderate"
+	if score >= 75 {
+		label = "high"
+	} else if score <= 35 {
+		label = "low"
+	}
+	return fmt.Sprintf("%d/100 (%s confidence)", score, label)
 }
 
 func chooseBestDexPair(pairs []dexPair) *dexPair {
@@ -622,6 +947,32 @@ func explorerTokenURL(chainID, tokenAddr string) string {
 		return "https://solscan.io/token/" + url.PathEscape(addr)
 	default:
 		return "https://dexscreener.com/search?q=" + url.QueryEscape(addr)
+	}
+}
+
+func explorerHoldersURL(chainID, tokenAddr string) string {
+	chain := strings.ToLower(strings.TrimSpace(chainID))
+	addr := strings.TrimSpace(tokenAddr)
+	if addr == "" {
+		return ""
+	}
+	switch chain {
+	case "ethereum":
+		return "https://etherscan.io/token/" + url.PathEscape(addr) + "#balances"
+	case "arbitrum":
+		return "https://arbiscan.io/token/" + url.PathEscape(addr) + "#balances"
+	case "optimism":
+		return "https://optimistic.etherscan.io/token/" + url.PathEscape(addr) + "#balances"
+	case "base":
+		return "https://basescan.org/token/" + url.PathEscape(addr) + "#balances"
+	case "polygon":
+		return "https://polygonscan.com/token/" + url.PathEscape(addr) + "#balances"
+	case "bsc":
+		return "https://bscscan.com/token/" + url.PathEscape(addr) + "#balances"
+	case "solana":
+		return "https://solscan.io/token/" + url.PathEscape(addr) + "#holders"
+	default:
+		return ""
 	}
 }
 

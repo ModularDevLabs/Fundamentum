@@ -686,6 +686,97 @@ Each schedule contains:
 - Default: `false`
 - Notes: when enabled, message parser watches for `$TOKEN` cash-tags and contract addresses and posts CoinGecko/Dexscreener snapshots.
 
+93. `web3_anti_spam_enabled`
+- UI label: `Anti-spam enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `true`
+- Notes: when enabled, applies per-channel/per-asset cooldown before posting another lookup response.
+
+94. `web3_per_token_cooldown_sec`
+- UI label: `Per-token cooldown (sec)` (Web3 Intel module)
+- Type: integer (seconds)
+- Default: `30`
+- Notes: minimum cooldown between responses for the same asset key.
+
+95. `web3_commands_enabled`
+- UI label: `Text commands enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `true`
+- Notes: enables explicit message commands: `!scan`, `/scan`, `!token`, `!ca`.
+
+96. `web3_price_alerts_enabled`
+- UI label: `Price alerts enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `false`
+- Notes: adds pump/dump alert field when thresholds are met.
+
+97. `web3_price_alert_pump_pct`
+- UI label: `Pump threshold (%)` (Web3 Intel module)
+- Type: integer (percent)
+- Default: `25`
+
+98. `web3_price_alert_dump_pct`
+- UI label: `Dump threshold (%)` (Web3 Intel module)
+- Type: integer (percent)
+- Default: `25`
+
+99. `web3_whale_alerts_enabled`
+- UI label: `Whale alerts enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `false`
+- Notes: adds whale-flow field when 24h volume threshold is crossed.
+
+100. `web3_whale_min_trade_usd`
+- UI label: `Whale min trade USD` (Web3 Intel module)
+- Type: integer (USD)
+- Default: `25000`
+
+101. `web3_health_checks_enabled`
+- UI label: `Health checks enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `true`
+
+102. `web3_health_min_liquidity_usd`
+- UI label: `Health min liquidity USD` (Web3 Intel module)
+- Type: integer (USD)
+- Default: `20000`
+
+103. `web3_mini_ta_enabled`
+- UI label: `Mini TA enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `false`
+
+104. `web3_trend_signals_enabled`
+- UI label: `Trend signals enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `true`
+
+105. `web3_rug_risk_enabled`
+- UI label: `Rug risk enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `true`
+
+106. `web3_holder_view_enabled`
+- UI label: `Holder view enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `true`
+
+107. `web3_wallet_watch_enabled`
+- UI label: `Wallet watch enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `false`
+
+108. `web3_wallet_watchlist`
+- UI label: `Wallet/token watchlist` (Web3 Intel module)
+- Type: string array
+- Default: `[]`
+- Notes: comma or newline-separated addresses in UI; matched addresses add a watchlist callout in embeds.
+
+109. `web3_confidence_score_enabled`
+- UI label: `Confidence score enabled` (Web3 Intel module)
+- Type: boolean
+- Default: `true`
+
 ## Giveaways Records
 
 Configured in the `Giveaways` module UI and stored in `giveaways` / `giveaway_entries`.

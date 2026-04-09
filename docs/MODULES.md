@@ -345,14 +345,37 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - Behavior:
 - Detects EVM-style (`0x...`) and Solana-style contract strings.
 - Detects `$TOKEN` cash-tags for CoinGecko lookup.
+- Optional command triggers: `!scan <ticker|contract>`, `/scan <ticker|contract>`, `!token`, `!ca`.
 - Contract lookups query Dexscreener and pick the highest-liquidity pair snapshot.
 - Cash-tag lookups query CoinGecko search + market data.
+- If a CoinGecko cash-tag is not found, falls back to Dexscreener ticker search.
 - Returns compact price / 24h change / market cap context in-channel.
 - Stores per-guild first-scan baseline (scanner, timestamp, initial price) for each tracked asset key.
 - Subsequent scans include "since first scan" percentage move from the initial baseline.
+- Optional per-guild analysis blocks (toggleable):
+- Whale flow signal (24h volume threshold).
+- Price pump/dump alerts (24h percent thresholds).
+- Liquidity health checks (minimum liquidity threshold).
+- Mini TA momentum/participation summary.
+- Trend signal summary.
+- Rug-risk heuristic callout.
+- Holder-view explorer links.
+- Wallet/token watchlist match callout.
+- Confidence score.
+- Optional anti-spam cooldown per channel and per asset.
 - Supported targets:
 - Ethereum and EVM L2 ecosystems, Solana, BNB Chain, Hyperliquid, Monad (as surfaced by Dexscreener data), and CoinGecko-indexed token names.
-- Config keys: `feature_flags.web3_intel`.
+- Config keys:
+- `feature_flags.web3_intel`
+- `web3_anti_spam_enabled`, `web3_per_token_cooldown_sec`
+- `web3_commands_enabled`
+- `web3_price_alerts_enabled`, `web3_price_alert_pump_pct`, `web3_price_alert_dump_pct`
+- `web3_whale_alerts_enabled`, `web3_whale_min_trade_usd`
+- `web3_health_checks_enabled`, `web3_health_min_liquidity_usd`
+- `web3_mini_ta_enabled`, `web3_trend_signals_enabled`, `web3_rug_risk_enabled`
+- `web3_holder_view_enabled`
+- `web3_wallet_watch_enabled`, `web3_wallet_watchlist`
+- `web3_confidence_score_enabled`
 
 ### Welcome Messages (`welcome_messages`)
 

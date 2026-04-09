@@ -59,6 +59,23 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			ConfessionsEnabled          bool                 `json:"confessions_enabled"`
 			ConfessionsChannelID        string               `json:"confessions_channel_id"`
 			ConfessionsRequireReview    bool                 `json:"confessions_require_review"`
+			Web3WhaleAlertsEnabled      bool                 `json:"web3_whale_alerts_enabled"`
+			Web3WhaleMinTradeUSD        int                  `json:"web3_whale_min_trade_usd"`
+			Web3PriceAlertsEnabled      bool                 `json:"web3_price_alerts_enabled"`
+			Web3PriceAlertPumpPct       int                  `json:"web3_price_alert_pump_pct"`
+			Web3PriceAlertDumpPct       int                  `json:"web3_price_alert_dump_pct"`
+			Web3HealthChecksEnabled     bool                 `json:"web3_health_checks_enabled"`
+			Web3HealthMinLiquidityUSD   int                  `json:"web3_health_min_liquidity_usd"`
+			Web3MiniTAEnabled           bool                 `json:"web3_mini_ta_enabled"`
+			Web3TrendSignalsEnabled     bool                 `json:"web3_trend_signals_enabled"`
+			Web3RugRiskEnabled          bool                 `json:"web3_rug_risk_enabled"`
+			Web3HolderViewEnabled       bool                 `json:"web3_holder_view_enabled"`
+			Web3WalletWatchEnabled      bool                 `json:"web3_wallet_watch_enabled"`
+			Web3WalletWatchlist         []string             `json:"web3_wallet_watchlist"`
+			Web3ConfidenceScoreEnabled  bool                 `json:"web3_confidence_score_enabled"`
+			Web3CommandsEnabled         bool                 `json:"web3_commands_enabled"`
+			Web3AntiSpamEnabled         bool                 `json:"web3_anti_spam_enabled"`
+			Web3PerTokenCooldownSec     int                  `json:"web3_per_token_cooldown_sec"`
 			BirthdaysEnabled            bool                 `json:"birthdays_enabled"`
 			BirthdaysChannelID          string               `json:"birthdays_channel_id"`
 			AutoRoleProgressionEnabled  bool                 `json:"auto_role_progression_enabled"`
@@ -182,6 +199,23 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		current.ConfessionsEnabled = cfg.ConfessionsEnabled
 		current.ConfessionsChannelID = cfg.ConfessionsChannelID
 		current.ConfessionsRequireReview = cfg.ConfessionsRequireReview
+		current.Web3WhaleAlertsEnabled = cfg.Web3WhaleAlertsEnabled
+		current.Web3WhaleMinTradeUSD = cfg.Web3WhaleMinTradeUSD
+		current.Web3PriceAlertsEnabled = cfg.Web3PriceAlertsEnabled
+		current.Web3PriceAlertPumpPct = cfg.Web3PriceAlertPumpPct
+		current.Web3PriceAlertDumpPct = cfg.Web3PriceAlertDumpPct
+		current.Web3HealthChecksEnabled = cfg.Web3HealthChecksEnabled
+		current.Web3HealthMinLiquidityUSD = cfg.Web3HealthMinLiquidityUSD
+		current.Web3MiniTAEnabled = cfg.Web3MiniTAEnabled
+		current.Web3TrendSignalsEnabled = cfg.Web3TrendSignalsEnabled
+		current.Web3RugRiskEnabled = cfg.Web3RugRiskEnabled
+		current.Web3HolderViewEnabled = cfg.Web3HolderViewEnabled
+		current.Web3WalletWatchEnabled = cfg.Web3WalletWatchEnabled
+		current.Web3WalletWatchlist = cfg.Web3WalletWatchlist
+		current.Web3ConfidenceScoreEnabled = cfg.Web3ConfidenceScoreEnabled
+		current.Web3CommandsEnabled = cfg.Web3CommandsEnabled
+		current.Web3AntiSpamEnabled = cfg.Web3AntiSpamEnabled
+		current.Web3PerTokenCooldownSec = cfg.Web3PerTokenCooldownSec
 		current.BirthdaysEnabled = cfg.BirthdaysEnabled
 		current.BirthdaysChannelID = cfg.BirthdaysChannelID
 		current.AutoRoleProgressionEnabled = cfg.AutoRoleProgressionEnabled

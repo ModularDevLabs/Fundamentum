@@ -238,6 +238,24 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.VoiceRewardXPPerMinute <= 0 {
 		cfg.VoiceRewardXPPerMinute = def.VoiceRewardXPPerMinute
 	}
+	if cfg.Web3WhaleMinTradeUSD <= 0 {
+		cfg.Web3WhaleMinTradeUSD = def.Web3WhaleMinTradeUSD
+	}
+	if cfg.Web3PriceAlertPumpPct <= 0 {
+		cfg.Web3PriceAlertPumpPct = def.Web3PriceAlertPumpPct
+	}
+	if cfg.Web3PriceAlertDumpPct <= 0 {
+		cfg.Web3PriceAlertDumpPct = def.Web3PriceAlertDumpPct
+	}
+	if cfg.Web3HealthMinLiquidityUSD <= 0 {
+		cfg.Web3HealthMinLiquidityUSD = def.Web3HealthMinLiquidityUSD
+	}
+	if cfg.Web3PerTokenCooldownSec <= 0 {
+		cfg.Web3PerTokenCooldownSec = def.Web3PerTokenCooldownSec
+	}
+	if cfg.Web3WalletWatchlist == nil {
+		cfg.Web3WalletWatchlist = []string{}
+	}
 	if cfg.JoinScreeningAccountAgeDays <= 0 {
 		cfg.JoinScreeningAccountAgeDays = def.JoinScreeningAccountAgeDays
 	}

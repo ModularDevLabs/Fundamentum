@@ -2026,7 +2026,109 @@
                     <option value="true">Enabled</option>
                   </select>
                 </label>
+                <label>
+                  Anti-spam enabled
+                  <select id="settingsWeb3AntiSpamEnabled">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                </label>
+                <label>
+                  Per-token cooldown (sec)
+                  <input id="settingsWeb3PerTokenCooldownSec" type="number" min="1" step="1" />
+                </label>
+                <label>
+                  Text commands enabled
+                  <select id="settingsWeb3CommandsEnabled">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                </label>
+                <label>
+                  Price alerts enabled
+                  <select id="settingsWeb3PriceAlertsEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Pump threshold (%)
+                  <input id="settingsWeb3PriceAlertPumpPct" type="number" min="1" step="1" />
+                </label>
+                <label>
+                  Dump threshold (%)
+                  <input id="settingsWeb3PriceAlertDumpPct" type="number" min="1" step="1" />
+                </label>
+                <label>
+                  Whale alerts enabled
+                  <select id="settingsWeb3WhaleAlertsEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Whale min trade USD
+                  <input id="settingsWeb3WhaleMinTradeUsd" type="number" min="1000" step="1000" />
+                </label>
+                <label>
+                  Health checks enabled
+                  <select id="settingsWeb3HealthChecksEnabled">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                </label>
+                <label>
+                  Health min liquidity USD
+                  <input id="settingsWeb3HealthMinLiquidityUsd" type="number" min="1000" step="1000" />
+                </label>
+                <label>
+                  Mini TA enabled
+                  <select id="settingsWeb3MiniTaEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label>
+                  Trend signals enabled
+                  <select id="settingsWeb3TrendSignalsEnabled">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                </label>
+                <label>
+                  Rug risk enabled
+                  <select id="settingsWeb3RugRiskEnabled">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                </label>
+                <label>
+                  Holder view enabled
+                  <select id="settingsWeb3HolderViewEnabled">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                </label>
+                <label>
+                  Confidence score enabled
+                  <select id="settingsWeb3ConfidenceScoreEnabled">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                </label>
+                <label>
+                  Wallet watch enabled
+                  <select id="settingsWeb3WalletWatchEnabled">
+                    <option value="false">Disabled</option>
+                    <option value="true">Enabled</option>
+                  </select>
+                </label>
+                <label class="span-2">
+                  Wallet/token watchlist (comma or newline)
+                  <textarea id="settingsWeb3WalletWatchlist" rows="4" placeholder="0xabc...&#10;So11111111111111111111111111111111111111112"></textarea>
+                </label>
               </div>
+              <p class="module-note">Tip: optional analysis fields only appear when their toggle is enabled and source data is available for that asset.</p>
             </article>
           </div>
           <div class="panel-actions panel-actions-compact">
