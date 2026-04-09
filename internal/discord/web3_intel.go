@@ -126,6 +126,17 @@ type cgTickerStats struct {
 	DepthDownUSD   float64
 }
 
+type gtTradesResponse struct {
+	Data []struct {
+		Attributes struct {
+			Kind           string `json:"kind"`
+			VolumeInUSD    string `json:"volume_in_usd"`
+			BlockTimestamp string `json:"block_timestamp"`
+			TxHash         string `json:"tx_hash"`
+		} `json:"attributes"`
+	} `json:"data"`
+}
+
 type quickLink struct {
 	Label string
 	URL   string
@@ -484,7 +495,7 @@ func (s *Service) resolveContractIntelEmbed(ctx context.Context, guildID, scanne
 		Value:  buildFirstScanField(firstScan, currentPrice, created),
 		Inline: false,
 	})
-	fields = append(fields, buildWeb3SignalFields(cfg, best, tokenAddr, currentPrice, best.PriceChange.H24, mcap, firstScan, created)...)
+	fields = append(fields, buildWeb3SignalFields(ctx, cfg, best, tokenAddr, currentPrice, best.PriceChange.H24, mcap, firstScan, created)...)
 
 	return &discordgo.MessageEmbed{
 		Title:       "Web3 Intel",
@@ -683,7 +694,7 @@ func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scanne
 		Inline: false,
 		Value:  buildFirstScanField(firstScan, currentPrice, created),
 	})
-	fields = append(fields, buildWeb3SignalFields(cfg, best, tokenAddr, currentPrice, best.PriceChange.H24, maxFloat(best.MarketCap, best.FDV), firstScan, created)...)
+	fields = append(fields, buildWeb3SignalFields(ctx, cfg, best, tokenAddr, currentPrice, best.PriceChange.H24, maxFloat(best.MarketCap, best.FDV), firstScan, created)...)
 	description += "\nCA: `" + tokenAddr + "`"
 
 	return &discordgo.MessageEmbed{
@@ -698,20 +709,24 @@ func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scanne
 	}, nil
 }
 
-func buildWeb3SignalFields(cfg web3ModuleConfig, pair *dexPair, tokenAddr string, currentPrice, change24h, mcap float64, first models.Web3FirstScanRow, created bool) []*discordgo.MessageEmbedField {
+func buildWeb3SignalFields(ctx context.Context, cfg web3ModuleConfig, pair *dexPair, tokenAddr string, currentPrice, change24h, mcap float64, first models.Web3FirstScanRow, created bool) []*discordgo.MessageEmbedField {
 	if pair == nil {
 		return nil
 	}
 	lines := make([]string, 0, 8)
 
 	if cfg.WhaleAlertsEnabled {
-		buys := pair.Txns.H24.Buys
-		sells := pair.Txns.H24.Sells
-		total := buys + sells
-		if total > 0 && pair.Volume.H24 > 0 {
-			estBuyUSD := pair.Volume.H24 * (float64(buys) / float64(total))
-			if estBuyUSD >= cfg.WhaleMinTradeUSD && buys > sells && change24h > 0 {
-				lines = append(lines, fmt.Sprintf("Whale Buy Pressure: est buy-side %s (thr %s)", formatUSDCompact(estBuyUSD), formatUSDCompact(cfg.WhaleMinTradeUSD)))
+		if whaleLine, ok := detectWhaleBuyTrade(ctx, pair, cfg.WhaleMinTradeUSD); ok {
+			lines = append(lines, whaleLine)
+		} else {
+			buys := pair.Txns.H24.Buys
+			sells := pair.Txns.H24.Sells
+			total := buys + sells
+			if total > 0 && pair.Volume.H24 > 0 {
+				estBuyUSD := pair.Volume.H24 * (float64(buys) / float64(total))
+				if estBuyUSD >= cfg.WhaleMinTradeUSD && buys > sells && change24h > 0 {
+					lines = append(lines, fmt.Sprintf("Whale Buy Pressure (estimate): %s (thr %s)", formatUSDCompact(estBuyUSD), formatUSDCompact(cfg.WhaleMinTradeUSD)))
+				}
 			}
 		}
 	}
@@ -1035,6 +1050,93 @@ func fetchCoinGeckoTickerStats(ctx context.Context, coinID string) (cgTickerStat
 		}
 	}
 	return stats, nil
+}
+
+func detectWhaleBuyTrade(ctx context.Context, pair *dexPair, minUSD float64) (string, bool) {
+	if pair == nil || strings.TrimSpace(pair.PairAddr) == "" || strings.TrimSpace(pair.ChainID) == "" || minUSD <= 0 {
+		return "", false
+	}
+	network := geckoNetworkForChain(pair.ChainID)
+	if network == "" {
+		return "", false
+	}
+	endpoint := fmt.Sprintf(
+		"https://api.geckoterminal.com/api/v2/networks/%s/pools/%s/trades?trade_volume_in_usd_greater_than=%d",
+		url.PathEscape(network),
+		url.PathEscape(strings.TrimSpace(pair.PairAddr)),
+		int(minUSD),
+	)
+	var resp gtTradesResponse
+	if err := web3FetchJSON(ctx, endpoint, &resp); err != nil {
+		return "", false
+	}
+	maxBuyUSD := 0.0
+	var maxBuyAt time.Time
+	for _, t := range resp.Data {
+		kind := strings.ToLower(strings.TrimSpace(t.Attributes.Kind))
+		if kind != "buy" {
+			continue
+		}
+		usd := parseDecimal(t.Attributes.VolumeInUSD)
+		if usd <= 0 {
+			continue
+		}
+		ts := parseTimeBestEffort(t.Attributes.BlockTimestamp)
+		if usd > maxBuyUSD {
+			maxBuyUSD = usd
+			maxBuyAt = ts
+		}
+	}
+	if maxBuyUSD < minUSD {
+		return "", false
+	}
+	when := "recently"
+	if !maxBuyAt.IsZero() {
+		mins := int(time.Since(maxBuyAt).Minutes())
+		if mins < 1 {
+			when = "<1m ago"
+		} else if mins < 120 {
+			when = fmt.Sprintf("%dm ago", mins)
+		} else {
+			when = maxBuyAt.UTC().Format("2006-01-02 15:04 UTC")
+		}
+	}
+	return fmt.Sprintf("Whale Buy Trade: largest recent buy %s (%s)", formatUSDCompact(maxBuyUSD), when), true
+}
+
+func geckoNetworkForChain(chainID string) string {
+	switch normalizeWeb3Chain(chainID) {
+	case "ethereum":
+		return "eth"
+	case "arbitrum":
+		return "arbitrum"
+	case "optimism":
+		return "optimism"
+	case "base":
+		return "base"
+	case "polygon":
+		return "polygon_pos"
+	case "bsc":
+		return "bsc"
+	case "solana":
+		return "solana"
+	default:
+		return ""
+	}
+}
+
+func parseTimeBestEffort(raw string) time.Time {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return time.Time{}
+	}
+	layouts := []string{time.RFC3339Nano, time.RFC3339, "2006-01-02T15:04:05Z07:00"}
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t.UTC()
+		}
+	}
+	return time.Time{}
 }
 
 func web3FetchJSON(ctx context.Context, endpoint string, out any) error {

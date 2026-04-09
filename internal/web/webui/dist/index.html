@@ -2152,7 +2152,7 @@
               <div class="module-guide-hint">
                 <strong>Feature Reference</strong><br />
                 <code>Price alerts</code>: adds a pump/dump field when 24h movement crosses thresholds.<br />
-                <code>Whale alerts</code>: adds whale-buy-pressure signal (estimated buy-side flow from 24h tx buy/sell mix) when threshold is crossed.<br />
+                <code>Whale alerts</code>: detects large recent buy trades from pool trade feeds when available; falls back to estimated buy-pressure from 24h tx mix.<br />
                 <code>Health checks</code>: reports healthy vs thin-liquidity using your min liquidity value.<br />
                 <code>Mini TA</code>: momentum + turnover summary.<br />
                 <code>Trend signals</code>: directional trend with conviction estimate.<br />
