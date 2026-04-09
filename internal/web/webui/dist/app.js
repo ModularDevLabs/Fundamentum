@@ -154,7 +154,7 @@ const MODULE_GUIDES = {
   trivia: { title: 'How To Use', points: ['Enable trivia, then generate a question.', 'Submit answers with acting user ID to award score.', 'Refresh leaderboard to track competition.'] },
   calendar: { title: 'How To Use', points: ['Enable calendar before creating events.', 'Create events with ISO start time and creator user ID.', 'Use RSVP controls and view responses per event.'] },
   confessions: { title: 'How To Use', points: ['Enable confessions and set channel/review settings.', 'Review pending items and approve/reject them.', 'Approved confessions are posted anonymously to configured channel.'] },
-  web3intel: { title: 'How To Use', points: ['Enable the module first, then tune optional analysis toggles in this module panel.', 'Supported triggers: $cash-tags, token contract addresses, and optional commands like !scan <ticker|contract>.', 'Set anti-spam cooldown to control repeated posts for the same asset.', 'Use module channel scopes in Settings to limit where lookups are allowed: {"web3_intel":["123456789012345678"]}.', 'Optional sections (price alerts, risk, health, confidence, holder links) render only when enabled and source data exists.'] },
+  web3intel: { title: 'How To Use', points: ['Enable the module first, then tune optional analysis toggles in this module panel.', 'Set Allowed channel IDs to restrict Web3 lookups to specific channels (leave blank for all channels).', 'Supported triggers: $cash-tags, token contract addresses, and optional commands like !scan <ticker|contract>.', 'Set anti-spam cooldown to control repeated posts for the same asset.', 'Optional sections (price alerts, risk, health, confidence, holder links) render only when enabled and source data exists.'] },
 };
 const CORE_SETTINGS_TOOLTIPS = {
   settingsAdminPolicy: 'How to handle targets with Administrator permission: refuse, quarantine, or remove admin roles first.',
@@ -210,6 +210,7 @@ const CORE_SETTINGS_TOOLTIPS = {
 };
 const WEB3_MODULE_TOOLTIPS = {
   settingsWeb3IntelEnabled: 'Master enable for passive Web3 lookups in allowed channels.',
+  settingsWeb3AllowedChannels: 'Optional comma-separated Discord channel IDs allowed for this module. Leave empty to allow all channels.',
   settingsWeb3AntiSpamEnabled: 'Enable channel + per-asset cooldown protection for Web3 responses.',
   settingsWeb3PerTokenCooldownSec: 'Minimum seconds before the same asset can trigger another automatic response.',
   settingsWeb3CommandsEnabled: 'Allow explicit commands: !scan <ticker|contract>, /scan <ticker|contract>, !token, or !ca.',
@@ -1030,6 +1031,7 @@ async function loadSettings() {
   qs('#moduleCalendarEnabled').value = String(!!flags[FEATURE_CALENDAR]);
   qs('#moduleConfessionsEnabled').value = String(!!flags[FEATURE_CONFESSIONS]);
   qs('#settingsWeb3IntelEnabled').value = String(!!flags[FEATURE_WEB3_INTEL]);
+  qs('#settingsWeb3AllowedChannels').value = ((cfg.module_channel_scopes || {})[FEATURE_WEB3_INTEL] || []).join(',');
   qs('#settingsWeb3AntiSpamEnabled').value = String(cfg.web3_anti_spam_enabled !== false);
   qs('#settingsWeb3PerTokenCooldownSec').value = cfg.web3_per_token_cooldown_sec || 30;
   qs('#settingsWeb3CommandsEnabled').value = String(cfg.web3_commands_enabled !== false);
@@ -3697,12 +3699,23 @@ async function saveWeb3IntelModule() {
       const n = parseInt((qs(`#${id}`)?.value || '').trim(), 10);
       return Number.isFinite(n) && n > 0 ? n : fallback;
     };
+    const allowedChannels = (qs('#settingsWeb3AllowedChannels').value || '')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean);
+    const nextModuleScopes = { ...(current.module_channel_scopes || {}) };
+    if (allowedChannels.length > 0) {
+      nextModuleScopes[FEATURE_WEB3_INTEL] = allowedChannels;
+    } else {
+      delete nextModuleScopes[FEATURE_WEB3_INTEL];
+    }
     const watchlist = (qs('#settingsWeb3WalletWatchlist').value || '')
       .split(/[\n,]/)
       .map((v) => v.trim())
       .filter(Boolean);
     const payload = {
       ...current,
+      module_channel_scopes: nextModuleScopes,
       web3_anti_spam_enabled: qs('#settingsWeb3AntiSpamEnabled').value === 'true',
       web3_per_token_cooldown_sec: toInt('settingsWeb3PerTokenCooldownSec', 30),
       web3_commands_enabled: qs('#settingsWeb3CommandsEnabled').value === 'true',
