@@ -702,83 +702,89 @@ Each schedule contains:
 - UI label: `Text commands enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
-- Notes: enables explicit message commands: `!scan`, `/scan`, `!token`, `!ca`.
+- Notes: enables explicit message commands: `!scan`, `/scan`, `!token`, `!ca`, `!trending`, `/trending`.
 
-96. `web3_price_alerts_enabled`
+96. `web3_trending_count`
+- UI label: `Trending result count (max 50)` (Web3 Intel module)
+- Type: integer
+- Default: `20`
+- Notes: default number of rows returned by trending commands; can be overridden per command with `--limit`, capped at `50`.
+
+97. `web3_price_alerts_enabled`
 - UI label: `Price alerts enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `false`
 - Notes: adds pump/dump alert field when thresholds are met.
 
-97. `web3_price_alert_pump_pct`
+98. `web3_price_alert_pump_pct`
 - UI label: `Pump threshold (%)` (Web3 Intel module)
 - Type: integer (percent)
 - Default: `25`
 
-98. `web3_price_alert_dump_pct`
+99. `web3_price_alert_dump_pct`
 - UI label: `Dump threshold (%)` (Web3 Intel module)
 - Type: integer (percent)
 - Default: `25`
 
-99. `web3_whale_alerts_enabled`
+100. `web3_whale_alerts_enabled`
 - UI label: `Whale alerts enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `false`
 - Notes: detects large recent buy trades from pool trade feeds when available; otherwise falls back to estimated buy-pressure signal.
 
-100. `web3_whale_min_trade_usd`
+101. `web3_whale_min_trade_usd`
 - UI label: `Whale min trade USD` (Web3 Intel module)
 - Type: integer (USD)
 - Default: `25000`
 
-101. `web3_health_checks_enabled`
+102. `web3_health_checks_enabled`
 - UI label: `Health checks enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
 - Notes: legacy setting; no longer shown in UI.
 
-102. `web3_health_min_liquidity_usd`
+103. `web3_health_min_liquidity_usd`
 - UI label: `Health min liquidity USD` (Web3 Intel module)
 - Type: integer (USD)
 - Default: `20000`
 - Notes: legacy setting; no longer shown in UI.
 
-103. `web3_mini_ta_enabled`
+104. `web3_mini_ta_enabled`
 - UI label: `Mini TA enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `false`
 - Notes: legacy setting; no longer shown in UI.
 
-104. `web3_trend_signals_enabled`
+105. `web3_trend_signals_enabled`
 - UI label: `Trend signals enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
 - Notes: legacy setting; no longer shown in UI.
 
-105. `web3_rug_risk_enabled`
+106. `web3_rug_risk_enabled`
 - UI label: `Rug risk enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
 - Notes: legacy setting; no longer shown in UI.
 
-106. `web3_holder_view_enabled`
+107. `web3_holder_view_enabled`
 - UI label: `Holder view enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`
 - Notes: legacy setting; no longer shown in UI.
 
-107. `web3_wallet_watch_enabled`
+108. `web3_wallet_watch_enabled`
 - UI label: `Wallet watch enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `false`
 
-108. `web3_wallet_watchlist`
+109. `web3_wallet_watchlist`
 - UI label: `Wallet/token watchlist` (Web3 Intel module)
 - Type: string array
 - Default: `[]`
 - Notes: comma or newline-separated addresses in UI; matched addresses add a watchlist callout in embeds.
 
-109. `web3_confidence_score_enabled`
+110. `web3_confidence_score_enabled`
 - UI label: `Confidence score enabled` (Web3 Intel module)
 - Type: boolean
 - Default: `true`

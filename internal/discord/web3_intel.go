@@ -22,6 +22,7 @@ var (
 	web3SolAddressRe  = regexp.MustCompile(`\b[1-9A-HJ-NP-Za-km-z]{32,44}\b`)
 	web3CashTagRe     = regexp.MustCompile(`(?i)(?:^|\s)\$([a-z][a-z0-9._-]{1,31})\b`)
 	web3CommandRe     = regexp.MustCompile(`(?i)^(?:!|/)(?:scan|token|ca)\s+(\S+)`)
+	web3TrendingRe    = regexp.MustCompile(`(?i)^(?:!|/)trending(?:\s+(.+))?$`)
 	web3HTTPClient    = &http.Client{Timeout: 4 * time.Second}
 )
 
@@ -32,6 +33,9 @@ type web3Signal struct {
 	Dex      string
 	Pair     string
 	Exact    bool
+	Trending bool
+	Source   string
+	Limit    int
 }
 
 type dexScreenerTokenResponse struct {
@@ -40,6 +44,15 @@ type dexScreenerTokenResponse struct {
 
 type dexScreenerSearchResponse struct {
 	Pairs []dexPair `json:"pairs"`
+}
+
+type dexBoostToken struct {
+	URL          string  `json:"url"`
+	ChainID      string  `json:"chainId"`
+	TokenAddress string  `json:"tokenAddress"`
+	Description  string  `json:"description"`
+	Amount       float64 `json:"amount"`
+	TotalAmount  float64 `json:"totalAmount"`
 }
 
 type dexPair struct {
@@ -86,6 +99,23 @@ type dexTokenMeta struct {
 
 type cgSearchResponse struct {
 	Coins []cgSearchCoin `json:"coins"`
+}
+
+type cgTrendingResponse struct {
+	Coins []struct {
+		Item struct {
+			ID            string `json:"id"`
+			Name          string `json:"name"`
+			Symbol        string `json:"symbol"`
+			MarketCapRank int    `json:"market_cap_rank"`
+			Data          struct {
+				Price                 any `json:"price"`
+				PriceChangePercent24h struct {
+					USD any `json:"usd"`
+				} `json:"price_change_percentage_24h"`
+			} `json:"data"`
+		} `json:"item"`
+	} `json:"coins"`
 }
 
 type cgSearchCoin struct {
@@ -153,6 +183,7 @@ type web3ModuleConfig struct {
 	CommandsEnabled     bool
 	AntiSpamEnabled     bool
 	PerTokenCooldownSec time.Duration
+	TrendingCount       int
 }
 
 func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.MessageCreate, settings models.GuildSettings) {
@@ -161,11 +192,17 @@ func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.Messa
 	}
 	cfg := buildWeb3ModuleConfig(settings)
 	signal := detectWeb3Signal(m.Content, cfg.CommandsEnabled)
-	if signal.Contract == "" && signal.CashTag == "" {
+	if signal.Contract == "" && signal.CashTag == "" && !signal.Trending {
 		return
 	}
 	assetKey := ""
-	if signal.Contract != "" {
+	if signal.Trending {
+		scope := signal.Source
+		if signal.Chain != "" {
+			scope += ":" + signal.Chain
+		}
+		assetKey = "trending:" + scope
+	} else if signal.Contract != "" {
 		assetKey = "contract:" + normalizeContractKey(signal.Contract)
 	} else {
 		assetKey = "cashtag:" + strings.ToLower(strings.TrimSpace(signal.CashTag))
@@ -180,6 +217,8 @@ func (s *Service) handleWeb3IntelMessage(ctx context.Context, m *discordgo.Messa
 	var embed *discordgo.MessageEmbed
 	var err error
 	switch {
+	case signal.Trending:
+		embed, err = s.resolveTrendingEmbed(lookupCtx, signal, cfg)
 	case signal.Contract != "":
 		embed, err = s.resolveContractIntelEmbed(lookupCtx, m.GuildID, m.Author.ID, m.Author.Username, signal, cfg)
 	case signal.CashTag != "":
@@ -213,6 +252,13 @@ func buildWeb3ModuleConfig(settings models.GuildSettings) web3ModuleConfig {
 	if cooldownSec <= 0 {
 		cooldownSec = 30
 	}
+	trendingCount := settings.Web3TrendingCount
+	if trendingCount <= 0 {
+		trendingCount = 20
+	}
+	if trendingCount > 50 {
+		trendingCount = 50
+	}
 	return web3ModuleConfig{
 		WhaleAlertsEnabled:  settings.Web3WhaleAlertsEnabled,
 		WhaleMinTradeUSD:    float64(settings.Web3WhaleMinTradeUSD),
@@ -224,6 +270,7 @@ func buildWeb3ModuleConfig(settings models.GuildSettings) web3ModuleConfig {
 		CommandsEnabled:     settings.Web3CommandsEnabled,
 		AntiSpamEnabled:     settings.Web3AntiSpamEnabled,
 		PerTokenCooldownSec: time.Duration(cooldownSec) * time.Second,
+		TrendingCount:       trendingCount,
 	}
 }
 
@@ -282,6 +329,13 @@ func detectWeb3Signal(content string, commandsEnabled bool) web3Signal {
 }
 
 func parseWeb3CommandSignal(text string) (web3Signal, bool) {
+	if m := web3TrendingRe.FindStringSubmatch(strings.TrimSpace(text)); len(m) > 0 {
+		rest := ""
+		if len(m) > 1 {
+			rest = m[1]
+		}
+		return parseTrendingSignal(rest), true
+	}
 	if !web3CommandRe.MatchString(text) {
 		return web3Signal{}, false
 	}
@@ -366,6 +420,52 @@ func parseWeb3CommandSignal(text string) (web3Signal, bool) {
 	}
 	sig.CashTag = strings.ToLower(target)
 	return sig, true
+}
+
+func parseTrendingSignal(rest string) web3Signal {
+	sig := web3Signal{Trending: true, Source: "dexscreener"}
+	args := strings.Fields(strings.TrimSpace(rest))
+	if len(args) == 0 {
+		return sig
+	}
+	for i := 0; i < len(args); i++ {
+		a := strings.Trim(args[i], "\"'")
+		lower := strings.ToLower(strings.TrimSpace(a))
+		if lower == "" {
+			continue
+		}
+		switch lower {
+		case "coingecko", "cg":
+			sig.Source = "coingecko"
+			continue
+		case "--limit":
+			if i+1 < len(args) {
+				if n, err := strconv.Atoi(strings.Trim(args[i+1], "\"'")); err == nil {
+					sig.Limit = n
+				}
+				i++
+			}
+			continue
+		}
+		if strings.HasPrefix(lower, "--limit=") {
+			if n, err := strconv.Atoi(strings.TrimPrefix(lower, "--limit=")); err == nil {
+				sig.Limit = n
+			}
+			continue
+		}
+		if n, err := strconv.Atoi(lower); err == nil {
+			sig.Limit = n
+			continue
+		}
+		if ch := normalizeWeb3Chain(lower); ch != "" {
+			sig.Chain = ch
+			continue
+		}
+	}
+	if sig.Source == "coingecko" {
+		sig.Chain = ""
+	}
+	return sig
 }
 
 func normalizeWeb3Chain(raw string) string {
@@ -693,6 +793,170 @@ func (s *Service) resolveCashTagDexFallback(ctx context.Context, guildID, scanne
 		},
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}, nil
+}
+
+func (s *Service) resolveTrendingEmbed(ctx context.Context, sig web3Signal, cfg web3ModuleConfig) (*discordgo.MessageEmbed, error) {
+	limit := cfg.TrendingCount
+	if sig.Limit > 0 {
+		limit = sig.Limit
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 50 {
+		limit = 50
+	}
+	source := strings.ToLower(strings.TrimSpace(sig.Source))
+	if source == "" {
+		source = "dexscreener"
+	}
+	switch source {
+	case "coingecko":
+		return s.resolveCoinGeckoTrendingEmbed(ctx, limit)
+	default:
+		return s.resolveDexTrendingEmbed(ctx, sig.Chain, limit)
+	}
+}
+
+func (s *Service) resolveCoinGeckoTrendingEmbed(ctx context.Context, limit int) (*discordgo.MessageEmbed, error) {
+	var resp cgTrendingResponse
+	endpoint := "https://api.coingecko.com/api/v3/search/trending"
+	if limit > 15 {
+		endpoint += "?show_max=coins"
+	}
+	if err := web3FetchJSON(ctx, endpoint, &resp); err != nil {
+		return nil, err
+	}
+	if len(resp.Coins) == 0 {
+		return nil, nil
+	}
+	maxN := minInt(limit, len(resp.Coins))
+	lines := make([]string, 0, maxN)
+	for i := 0; i < maxN; i++ {
+		it := resp.Coins[i].Item
+		symbol := strings.ToUpper(fallback(it.Symbol, "?"))
+		name := fallback(it.Name, symbol)
+		price := formatUSD(parseAnyFloat(it.Data.Price))
+		chg := formatPercent(parseAnyFloat(it.Data.PriceChangePercent24h.USD))
+		rank := "n/a"
+		if it.MarketCapRank > 0 {
+			rank = fmt.Sprintf("#%d", it.MarketCapRank)
+		}
+		url := "https://www.coingecko.com/en/coins/" + strings.TrimSpace(it.ID)
+		lines = append(lines, fmt.Sprintf("%d. [%s](%s) (%s) • %s • 24h %s • mcap %s", i+1, trimEmbedText(name, 26), url, symbol, price, chg, rank))
+	}
+	return &discordgo.MessageEmbed{
+		Title:       "Trending • CoinGecko",
+		Description: trimEmbedText(strings.Join(lines, "\n"), 3900),
+		Color:       0x3498db,
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: fmt.Sprintf("Requested %d • Returned %d", limit, len(lines)),
+		},
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	}, nil
+}
+
+func (s *Service) resolveDexTrendingEmbed(ctx context.Context, chain string, limit int) (*discordgo.MessageEmbed, error) {
+	ch := normalizeWeb3Chain(chain)
+	if ch == "" {
+		ch = "solana"
+	}
+	var boosts []dexBoostToken
+	if err := web3FetchJSON(ctx, "https://api.dexscreener.com/token-boosts/top/v1", &boosts); err != nil {
+		return nil, err
+	}
+	filtered := make([]dexBoostToken, 0, len(boosts))
+	for _, b := range boosts {
+		if normalizeWeb3Chain(b.ChainID) != ch {
+			continue
+		}
+		if strings.TrimSpace(b.TokenAddress) == "" {
+			continue
+		}
+		filtered = append(filtered, b)
+	}
+	if len(filtered) == 0 {
+		return nil, nil
+	}
+	maxN := minInt(limit, len(filtered))
+	filtered = filtered[:maxN]
+	enriched, _ := fetchDexTokenPairsBatch(ctx, ch, filtered)
+	lines := make([]string, 0, maxN)
+	for i, row := range filtered {
+		key := normalizeContractKey(row.TokenAddress)
+		pair, ok := enriched[key]
+		name := trimEmbedText(strings.TrimSpace(row.TokenAddress), 14)
+		symbol := "?"
+		price := "n/a"
+		chg := "n/a"
+		if ok && pair != nil {
+			name = trimEmbedText(fallback(pair.BaseToken.Name, name), 24)
+			symbol = strings.ToUpper(fallback(pair.BaseToken.Symbol, "?"))
+			price = formatUSD(parseDecimal(pair.PriceUSD))
+			chg = formatPercent(pair.PriceChange.H24)
+		}
+		link := strings.TrimSpace(row.URL)
+		if link == "" {
+			link = "https://dexscreener.com/" + url.PathEscape(ch) + "/" + url.PathEscape(row.TokenAddress)
+		}
+		boostLabel := "boost n/a"
+		if row.TotalAmount > 0 {
+			boostLabel = fmt.Sprintf("boost %.0f", row.TotalAmount)
+		} else if row.Amount > 0 {
+			boostLabel = fmt.Sprintf("boost %.0f", row.Amount)
+		}
+		lines = append(lines, fmt.Sprintf("%d. [%s](%s) (%s) • %s • 24h %s • %s", i+1, name, link, symbol, price, chg, boostLabel))
+	}
+	return &discordgo.MessageEmbed{
+		Title:       fmt.Sprintf("Trending • Dexscreener • %s", formatChain(ch)),
+		Description: trimEmbedText(strings.Join(lines, "\n"), 3900),
+		Color:       0x2ecc71,
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: fmt.Sprintf("Requested %d • Returned %d", limit, len(lines)),
+		},
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	}, nil
+}
+
+func fetchDexTokenPairsBatch(ctx context.Context, chain string, rows []dexBoostToken) (map[string]*dexPair, error) {
+	out := map[string]*dexPair{}
+	if len(rows) == 0 {
+		return out, nil
+	}
+	addrs := make([]string, 0, len(rows))
+	seen := map[string]struct{}{}
+	for _, r := range rows {
+		addr := strings.TrimSpace(r.TokenAddress)
+		if addr == "" {
+			continue
+		}
+		key := normalizeContractKey(addr)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		addrs = append(addrs, addr)
+	}
+	if len(addrs) == 0 {
+		return out, nil
+	}
+	var pairs []dexPair
+	endpoint := "https://api.dexscreener.com/tokens/v1/" + url.PathEscape(chain) + "/" + url.PathEscape(strings.Join(addrs, ","))
+	if err := web3FetchJSON(ctx, endpoint, &pairs); err != nil {
+		return out, err
+	}
+	byToken := map[string][]dexPair{}
+	for _, p := range pairs {
+		key := normalizeContractKey(p.BaseToken.Address)
+		byToken[key] = append(byToken[key], p)
+	}
+	for key, group := range byToken {
+		best := chooseBestDexPair(group, web3Signal{Chain: chain})
+		if best != nil {
+			out[key] = best
+		}
+	}
+	return out, nil
 }
 
 func buildWeb3SignalFields(ctx context.Context, cfg web3ModuleConfig, pair *dexPair, tokenAddr string, _ float64, change24h, _ float64, _ models.Web3FirstScanRow, _ bool) []*discordgo.MessageEmbedField {
@@ -1104,6 +1368,26 @@ func parseDecimal(raw string) float64 {
 	return n
 }
 
+func parseAnyFloat(v any) float64 {
+	switch t := v.(type) {
+	case float64:
+		return t
+	case float32:
+		return float64(t)
+	case int:
+		return float64(t)
+	case int64:
+		return float64(t)
+	case json.Number:
+		f, _ := t.Float64()
+		return f
+	case string:
+		return parseDecimal(t)
+	default:
+		return 0
+	}
+}
+
 func formatUSD(v float64) string {
 	if v <= 0 {
 		return "n/a"
@@ -1233,6 +1517,13 @@ func pairMatchesSignalOptions(p dexPair, sig web3Signal) bool {
 
 func maxFloat(a, b float64) float64 {
 	if a >= b {
+		return a
+	}
+	return b
+}
+
+func minInt(a, b int) int {
+	if a <= b {
 		return a
 	}
 	return b

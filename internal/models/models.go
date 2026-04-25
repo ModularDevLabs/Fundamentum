@@ -70,6 +70,7 @@ type GuildSettings struct {
 	Web3CommandsEnabled         bool                `json:"web3_commands_enabled"`
 	Web3AntiSpamEnabled         bool                `json:"web3_anti_spam_enabled"`
 	Web3PerTokenCooldownSec     int                 `json:"web3_per_token_cooldown_sec"`
+	Web3TrendingCount           int                 `json:"web3_trending_count"`
 	BirthdaysEnabled            bool                `json:"birthdays_enabled"`
 	BirthdaysChannelID          string              `json:"birthdays_channel_id"`
 	AutoRoleProgressionEnabled  bool                `json:"auto_role_progression_enabled"`
@@ -584,6 +585,7 @@ func DefaultGuildSettings(guildID string) GuildSettings {
 		Web3CommandsEnabled:         true,
 		Web3AntiSpamEnabled:         true,
 		Web3PerTokenCooldownSec:     30,
+		Web3TrendingCount:           20,
 		BirthdaysEnabled:            false,
 		BirthdaysChannelID:          "",
 		AutoRoleProgressionEnabled:  false,

@@ -350,11 +350,15 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `/scan <ticker|contract>`
 - `!token <ticker|contract>`
 - `!ca <contract>`
+- `!trending <chain>`
+- `/trending <chain>`
+- `!trending coingecko`
 - Command options:
 - `--chain <chain>` (or shorthand `!scan <chain> <ticker>`)
 - `--dex <dex_id>`
 - `--exact` (exact symbol/name match only for ticker searches)
 - `--pair <pair_address>`
+- `--limit <n>` for `trending` commands (`n` capped at 50)
 - Contract lookups query Dexscreener and pick the highest-liquidity pair snapshot.
 - Cash-tag lookups query CoinGecko search + market data.
 - If a CoinGecko cash-tag is not found, falls back to Dexscreener ticker search.
@@ -372,6 +376,7 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `feature_flags.web3_intel`
 - `web3_anti_spam_enabled`, `web3_per_token_cooldown_sec`
 - `web3_commands_enabled`
+- `web3_trending_count`
 - `web3_price_alerts_enabled`, `web3_price_alert_pump_pct`, `web3_price_alert_dump_pct`
 - `web3_whale_alerts_enabled`, `web3_whale_min_trade_usd`
 - `web3_wallet_watch_enabled`, `web3_wallet_watchlist`

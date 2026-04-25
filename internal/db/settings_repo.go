@@ -253,6 +253,12 @@ func applyGuildSettingDefaults(cfg models.GuildSettings) models.GuildSettings {
 	if cfg.Web3PerTokenCooldownSec <= 0 {
 		cfg.Web3PerTokenCooldownSec = def.Web3PerTokenCooldownSec
 	}
+	if cfg.Web3TrendingCount <= 0 {
+		cfg.Web3TrendingCount = def.Web3TrendingCount
+	}
+	if cfg.Web3TrendingCount > 50 {
+		cfg.Web3TrendingCount = 50
+	}
 	if cfg.Web3WalletWatchlist == nil {
 		cfg.Web3WalletWatchlist = []string{}
 	}

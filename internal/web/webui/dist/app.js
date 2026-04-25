@@ -154,7 +154,7 @@ const MODULE_GUIDES = {
   trivia: { title: 'How To Use', points: ['Enable trivia, then generate a question.', 'Submit answers with acting user ID to award score.', 'Refresh leaderboard to track competition.'] },
   calendar: { title: 'How To Use', points: ['Enable calendar before creating events.', 'Create events with ISO start time and creator user ID.', 'Use RSVP controls and view responses per event.'] },
   confessions: { title: 'How To Use', points: ['Enable confessions and set channel/review settings.', 'Review pending items and approve/reject them.', 'Approved confessions are posted anonymously to configured channel.'] },
-  web3intel: { title: 'How To Use', points: ['Enable the module first, then tune optional signal toggles in this module panel.', 'Set Allowed channel IDs to restrict Web3 lookups to specific channels (leave blank for all channels).', 'Supported triggers: $cash-tags, token contract addresses, and command scans.', 'Command examples: !scan pepe --chain base, !scan pepe --dex uniswap --exact, !scan 0x... --pair 0xPAIR.', 'Set anti-spam cooldown to control repeated posts for the same asset.', 'Signal Summary now focuses on price alerts, whale buy signal, and wallet watch match.'] },
+  web3intel: { title: 'How To Use', points: ['Enable the module first, then tune optional signal toggles in this module panel.', 'Set Allowed channel IDs to restrict Web3 lookups to specific channels (leave blank for all channels).', 'Supported triggers: $cash-tags, token contract addresses, command scans, and command trending lookups.', 'Command examples: !scan pepe --chain base, !scan pepe --dex uniswap --exact, !scan 0x... --pair 0xPAIR.', 'Trending examples: !trending base, !trending coingecko, !trending base 25, !trending coingecko --limit 30.', 'Set anti-spam cooldown to control repeated posts for the same asset.', 'Signal Summary now focuses on price alerts, whale buy signal, and wallet watch match.'] },
 };
 const CORE_SETTINGS_TOOLTIPS = {
   settingsAdminPolicy: 'How to handle targets with Administrator permission: refuse, quarantine, or remove admin roles first.',
@@ -213,7 +213,8 @@ const WEB3_MODULE_TOOLTIPS = {
   settingsWeb3AllowedChannels: 'Optional comma-separated Discord channel IDs allowed for this module. Leave empty to allow all channels.',
   settingsWeb3AntiSpamEnabled: 'Enable channel + per-asset cooldown protection for Web3 responses.',
   settingsWeb3PerTokenCooldownSec: 'Minimum seconds before the same asset can trigger another automatic response.',
-  settingsWeb3CommandsEnabled: 'Allow explicit commands: !scan <ticker|contract>, /scan <ticker|contract>, !token, or !ca.',
+  settingsWeb3CommandsEnabled: 'Allow explicit commands: !scan, /scan, !token, !ca, !trending, and /trending.',
+  settingsWeb3TrendingCount: 'Default number of trending rows returned by trending commands. Command --limit can override this, up to 50.',
   settingsWeb3PriceAlertsEnabled: 'Enable alert section when 24h movement crosses configured pump/dump thresholds.',
   settingsWeb3PriceAlertPumpPct: 'Pump alert threshold in percent (24h change greater than or equal to this value).',
   settingsWeb3PriceAlertDumpPct: 'Dump alert threshold in percent (24h change less than or equal to negative this value).',
@@ -1028,6 +1029,7 @@ async function loadSettings() {
   qs('#settingsWeb3AntiSpamEnabled').value = String(cfg.web3_anti_spam_enabled !== false);
   qs('#settingsWeb3PerTokenCooldownSec').value = cfg.web3_per_token_cooldown_sec || 30;
   qs('#settingsWeb3CommandsEnabled').value = String(cfg.web3_commands_enabled !== false);
+  qs('#settingsWeb3TrendingCount').value = cfg.web3_trending_count || 20;
   qs('#settingsWeb3PriceAlertsEnabled').value = String(!!cfg.web3_price_alerts_enabled);
   qs('#settingsWeb3PriceAlertPumpPct').value = cfg.web3_price_alert_pump_pct || 25;
   qs('#settingsWeb3PriceAlertDumpPct').value = cfg.web3_price_alert_dump_pct || 25;
@@ -3705,6 +3707,7 @@ async function saveWeb3IntelModule() {
       web3_anti_spam_enabled: qs('#settingsWeb3AntiSpamEnabled').value === 'true',
       web3_per_token_cooldown_sec: toInt('settingsWeb3PerTokenCooldownSec', 30),
       web3_commands_enabled: qs('#settingsWeb3CommandsEnabled').value === 'true',
+      web3_trending_count: Math.min(50, toInt('settingsWeb3TrendingCount', 20)),
       web3_price_alerts_enabled: qs('#settingsWeb3PriceAlertsEnabled').value === 'true',
       web3_price_alert_pump_pct: toInt('settingsWeb3PriceAlertPumpPct', 25),
       web3_price_alert_dump_pct: toInt('settingsWeb3PriceAlertDumpPct', 25),
