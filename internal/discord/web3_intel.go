@@ -27,15 +27,16 @@ var (
 )
 
 type web3Signal struct {
-	Contract string
-	CashTag  string
-	Chain    string
-	Dex      string
-	Pair     string
-	Exact    bool
-	Trending bool
-	Source   string
-	Limit    int
+	Contract     string
+	CashTag      string
+	Chain        string
+	InvalidChain string
+	Dex          string
+	Pair         string
+	Exact        bool
+	Trending     bool
+	Source       string
+	Limit        int
 }
 
 type dexScreenerTokenResponse struct {
@@ -44,15 +45,6 @@ type dexScreenerTokenResponse struct {
 
 type dexScreenerSearchResponse struct {
 	Pairs []dexPair `json:"pairs"`
-}
-
-type dexBoostToken struct {
-	URL          string  `json:"url"`
-	ChainID      string  `json:"chainId"`
-	TokenAddress string  `json:"tokenAddress"`
-	Description  string  `json:"description"`
-	Amount       float64 `json:"amount"`
-	TotalAmount  float64 `json:"totalAmount"`
 }
 
 type dexPair struct {
@@ -163,6 +155,22 @@ type gtTradesResponse struct {
 			VolumeInUSD    string `json:"volume_in_usd"`
 			BlockTimestamp string `json:"block_timestamp"`
 			TxHash         string `json:"tx_hash"`
+		} `json:"attributes"`
+	} `json:"data"`
+}
+
+type gtTrendingPoolsResponse struct {
+	Data []struct {
+		ID         string `json:"id"`
+		Attributes struct {
+			Name                  string         `json:"name"`
+			Address               string         `json:"address"`
+			BaseTokenPriceUSD     any            `json:"base_token_price_usd"`
+			PriceChangePercentage map[string]any `json:"price_change_percentage"`
+			ReserveInUSD          any            `json:"reserve_in_usd"`
+			MarketCapUSD          any            `json:"market_cap_usd"`
+			FDVUSD                any            `json:"fdv_usd"`
+			VolumeUSD             map[string]any `json:"volume_usd"`
 		} `json:"attributes"`
 	} `json:"data"`
 }
@@ -423,7 +431,7 @@ func parseWeb3CommandSignal(text string) (web3Signal, bool) {
 }
 
 func parseTrendingSignal(rest string) web3Signal {
-	sig := web3Signal{Trending: true, Source: "dexscreener"}
+	sig := web3Signal{Trending: true, Source: "onchain"}
 	args := strings.Fields(strings.TrimSpace(rest))
 	if len(args) == 0 {
 		return sig
@@ -437,6 +445,17 @@ func parseTrendingSignal(rest string) web3Signal {
 		switch lower {
 		case "coingecko", "cg":
 			sig.Source = "coingecko"
+			continue
+		case "--chain":
+			if i+1 < len(args) {
+				chRaw := strings.Trim(args[i+1], "\"'")
+				if ch := normalizeWeb3Chain(chRaw); ch != "" {
+					sig.Chain = ch
+				} else if chRaw != "" {
+					sig.InvalidChain = chRaw
+				}
+				i++
+			}
 			continue
 		case "--limit":
 			if i+1 < len(args) {
@@ -453,6 +472,15 @@ func parseTrendingSignal(rest string) web3Signal {
 			}
 			continue
 		}
+		if strings.HasPrefix(lower, "--chain=") {
+			chRaw := strings.TrimPrefix(lower, "--chain=")
+			if ch := normalizeWeb3Chain(chRaw); ch != "" {
+				sig.Chain = ch
+			} else if chRaw != "" {
+				sig.InvalidChain = chRaw
+			}
+			continue
+		}
 		if n, err := strconv.Atoi(lower); err == nil {
 			sig.Limit = n
 			continue
@@ -461,9 +489,13 @@ func parseTrendingSignal(rest string) web3Signal {
 			sig.Chain = ch
 			continue
 		}
+		if !strings.HasPrefix(lower, "--") && sig.Source != "coingecko" && sig.InvalidChain == "" {
+			sig.InvalidChain = lower
+		}
 	}
 	if sig.Source == "coingecko" {
 		sig.Chain = ""
+		sig.InvalidChain = ""
 	}
 	return sig
 }
@@ -808,13 +840,16 @@ func (s *Service) resolveTrendingEmbed(ctx context.Context, sig web3Signal, cfg 
 	}
 	source := strings.ToLower(strings.TrimSpace(sig.Source))
 	if source == "" {
-		source = "dexscreener"
+		source = "onchain"
 	}
 	switch source {
 	case "coingecko":
 		return s.resolveCoinGeckoTrendingEmbed(ctx, limit)
 	default:
-		return s.resolveDexTrendingEmbed(ctx, sig.Chain, limit)
+		if sig.InvalidChain != "" {
+			return unsupportedTrendingChainEmbed(sig.InvalidChain), nil
+		}
+		return s.resolveOnchainTrendingEmbed(ctx, sig.Chain, limit)
 	}
 }
 
@@ -856,107 +891,91 @@ func (s *Service) resolveCoinGeckoTrendingEmbed(ctx context.Context, limit int) 
 	}, nil
 }
 
-func (s *Service) resolveDexTrendingEmbed(ctx context.Context, chain string, limit int) (*discordgo.MessageEmbed, error) {
+func (s *Service) resolveOnchainTrendingEmbed(ctx context.Context, chain string, limit int) (*discordgo.MessageEmbed, error) {
 	ch := normalizeWeb3Chain(chain)
 	if ch == "" {
 		ch = "solana"
 	}
-	var boosts []dexBoostToken
-	if err := web3FetchJSON(ctx, "https://api.dexscreener.com/token-boosts/top/v1", &boosts); err != nil {
-		return nil, err
+	network := geckoNetworkForChain(ch)
+	if network == "" {
+		return unsupportedTrendingChainEmbed(ch), nil
 	}
-	filtered := make([]dexBoostToken, 0, len(boosts))
-	for _, b := range boosts {
-		if normalizeWeb3Chain(b.ChainID) != ch {
-			continue
+	rows := make([]struct {
+		Name      string
+		Address   string
+		PriceUSD  float64
+		Change24h float64
+		LiqUSD    float64
+		Vol24hUSD float64
+	}, 0, limit)
+	for page := 1; len(rows) < limit && page <= 5; page++ {
+		var resp gtTrendingPoolsResponse
+		endpoint := fmt.Sprintf("https://api.geckoterminal.com/api/v2/networks/%s/trending_pools?page=%d", url.PathEscape(network), page)
+		if err := web3FetchJSON(ctx, endpoint, &resp); err != nil {
+			return nil, err
 		}
-		if strings.TrimSpace(b.TokenAddress) == "" {
-			continue
+		if len(resp.Data) == 0 {
+			break
 		}
-		filtered = append(filtered, b)
+		for _, item := range resp.Data {
+			addr := strings.TrimSpace(item.Attributes.Address)
+			if addr == "" {
+				addr = strings.TrimPrefix(strings.TrimSpace(item.ID), network+"_")
+			}
+			if addr == "" {
+				continue
+			}
+			rows = append(rows, struct {
+				Name      string
+				Address   string
+				PriceUSD  float64
+				Change24h float64
+				LiqUSD    float64
+				Vol24hUSD float64
+			}{
+				Name:      strings.TrimSpace(item.Attributes.Name),
+				Address:   addr,
+				PriceUSD:  parseAnyFloat(item.Attributes.BaseTokenPriceUSD),
+				Change24h: parseAnyFloat(item.Attributes.PriceChangePercentage["h24"]),
+				LiqUSD:    parseAnyFloat(item.Attributes.ReserveInUSD),
+				Vol24hUSD: parseAnyFloat(item.Attributes.VolumeUSD["h24"]),
+			})
+			if len(rows) >= limit {
+				break
+			}
+		}
 	}
-	if len(filtered) == 0 {
+	if len(rows) == 0 {
 		return nil, nil
 	}
-	maxN := minInt(limit, len(filtered))
-	filtered = filtered[:maxN]
-	enriched, _ := fetchDexTokenPairsBatch(ctx, ch, filtered)
-	lines := make([]string, 0, maxN)
-	for i, row := range filtered {
-		key := normalizeContractKey(row.TokenAddress)
-		pair, ok := enriched[key]
-		name := trimEmbedText(strings.TrimSpace(row.TokenAddress), 14)
-		symbol := "?"
-		price := "n/a"
-		chg := "n/a"
-		if ok && pair != nil {
-			name = trimEmbedText(fallback(pair.BaseToken.Name, name), 24)
-			symbol = strings.ToUpper(fallback(pair.BaseToken.Symbol, "?"))
-			price = formatUSD(parseDecimal(pair.PriceUSD))
-			chg = formatPercent(pair.PriceChange.H24)
-		}
-		link := strings.TrimSpace(row.URL)
-		if link == "" {
-			link = "https://dexscreener.com/" + url.PathEscape(ch) + "/" + url.PathEscape(row.TokenAddress)
-		}
-		boostLabel := "boost n/a"
-		if row.TotalAmount > 0 {
-			boostLabel = fmt.Sprintf("boost %.0f", row.TotalAmount)
-		} else if row.Amount > 0 {
-			boostLabel = fmt.Sprintf("boost %.0f", row.Amount)
-		}
-		lines = append(lines, fmt.Sprintf("%d. [%s](%s) (%s) • %s • 24h %s • %s", i+1, name, link, symbol, price, chg, boostLabel))
+	lines := make([]string, 0, len(rows))
+	for i, r := range rows {
+		name := trimEmbedText(fallback(r.Name, r.Address), 28)
+		link := "https://www.geckoterminal.com/" + url.PathEscape(network) + "/pools/" + url.PathEscape(r.Address)
+		lines = append(lines, fmt.Sprintf("%d. [%s](%s) • %s • 24h %s • Liq %s • Vol %s", i+1, name, link, formatUSD(r.PriceUSD), formatPercent(r.Change24h), formatUSDCompact(r.LiqUSD), formatUSDCompact(r.Vol24hUSD)))
 	}
 	return &discordgo.MessageEmbed{
-		Title:       fmt.Sprintf("Trending • Dexscreener • %s", formatChain(ch)),
+		Title:       fmt.Sprintf("Trending • %s", formatChain(ch)),
 		Description: trimEmbedText(strings.Join(lines, "\n"), 3900),
 		Color:       0x2ecc71,
 		Footer: &discordgo.MessageEmbedFooter{
-			Text: fmt.Sprintf("Requested %d • Returned %d", limit, len(lines)),
+			Text: fmt.Sprintf("Source: GeckoTerminal • Requested %d • Returned %d", limit, len(lines)),
 		},
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}, nil
 }
 
-func fetchDexTokenPairsBatch(ctx context.Context, chain string, rows []dexBoostToken) (map[string]*dexPair, error) {
-	out := map[string]*dexPair{}
-	if len(rows) == 0 {
-		return out, nil
+func unsupportedTrendingChainEmbed(input string) *discordgo.MessageEmbed {
+	return &discordgo.MessageEmbed{
+		Title: "Trending • Unsupported Chain",
+		Description: fmt.Sprintf(
+			"`%s` is not supported.\nSupported chains: `%s`\nExamples: `!trending solana`, `!trending base`, `!trending coingecko`",
+			strings.TrimSpace(input),
+			strings.Join(supportedTrendingChains(), "`, `"),
+		),
+		Color:     0xe67e22,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}
-	addrs := make([]string, 0, len(rows))
-	seen := map[string]struct{}{}
-	for _, r := range rows {
-		addr := strings.TrimSpace(r.TokenAddress)
-		if addr == "" {
-			continue
-		}
-		key := normalizeContractKey(addr)
-		if _, ok := seen[key]; ok {
-			continue
-		}
-		seen[key] = struct{}{}
-		addrs = append(addrs, addr)
-	}
-	if len(addrs) == 0 {
-		return out, nil
-	}
-	var pairs []dexPair
-	endpoint := "https://api.dexscreener.com/tokens/v1/" + url.PathEscape(chain) + "/" + url.PathEscape(strings.Join(addrs, ","))
-	if err := web3FetchJSON(ctx, endpoint, &pairs); err != nil {
-		return out, err
-	}
-	byToken := map[string][]dexPair{}
-	for _, p := range pairs {
-		key := normalizeContractKey(p.BaseToken.Address)
-		byToken[key] = append(byToken[key], p)
-	}
-	for key, group := range byToken {
-		best := chooseBestDexPair(group, web3Signal{Chain: chain})
-		if best != nil {
-			out[key] = best
-		}
-	}
-	return out, nil
 }
 
 func buildWeb3SignalFields(ctx context.Context, cfg web3ModuleConfig, pair *dexPair, tokenAddr string, _ float64, change24h, _ float64, _ models.Web3FirstScanRow, _ bool) []*discordgo.MessageEmbedField {
@@ -1205,6 +1224,18 @@ func geckoNetworkForChain(chainID string) string {
 		return "solana"
 	default:
 		return ""
+	}
+}
+
+func supportedTrendingChains() []string {
+	return []string{
+		"ethereum",
+		"arbitrum",
+		"optimism",
+		"base",
+		"polygon",
+		"bsc",
+		"solana",
 	}
 }
 

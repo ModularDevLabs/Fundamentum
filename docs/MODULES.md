@@ -353,6 +353,8 @@ For field-by-field definitions and defaults, see `docs/SETTINGS.md`.
 - `!trending <chain>`
 - `/trending <chain>`
 - `!trending coingecko`
+- Chain trending source: GeckoTerminal network trending pools.
+- If an unsupported chain is provided, bot replies with supported chain list.
 - Command options:
 - `--chain <chain>` (or shorthand `!scan <chain> <ticker>`)
 - `--dex <dex_id>`
